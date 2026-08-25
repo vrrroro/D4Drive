@@ -10,6 +10,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  /**
+   * Set on charcoal grounds. The default primary is charcoal-filled, which is
+   * invisible on a charcoal panel, so on dark the fill inverts to carmine.
+   * White on carmine measures 7.13:1; charcoal on charcoal measures 1:1.
+   */
+  onDark?: boolean;
   children: ReactNode;
 }
 
@@ -28,7 +34,16 @@ const SIZES: Record<Size, string> = {
  * compositor-bound one, and it loses the directional wipe entirely.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', loading = false, children, className = '', disabled, ...props },
+  {
+    variant = 'primary',
+    size = 'md',
+    loading = false,
+    onDark = false,
+    children,
+    className = '',
+    disabled,
+    ...props
+  },
   ref,
 ) {
   const base = [
@@ -63,7 +78,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`${base} ${SIZES[size]} border border-[var(--ink)] bg-transparent text-[var(--ink)] hover:bg-[var(--ink)] hover:text-[var(--ground)] ${className}`}
+        className={`${base} ${SIZES[size]} border bg-transparent ${
+          onDark
+            ? 'border-[var(--color-paper)]/50 text-[var(--color-paper)] hover:bg-[var(--color-paper)] hover:text-[var(--color-ink)]'
+            : 'border-[var(--ink)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-[var(--ground)]'
+        } ${className}`}
         {...props}
       >
         {loading && <Loader2 aria-hidden className="mr-2 h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />}
@@ -76,14 +95,20 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={`${base} group ${SIZES[size]} bg-[var(--color-ink)] text-[var(--color-paper)] shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${className}`}
+      className={`${base} group ${SIZES[size]} shadow-[0_4px_16px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.25)] ${
+        onDark
+          ? 'bg-[var(--color-carmine)] text-[var(--color-paper)]'
+          : 'bg-[var(--btn-bg)] text-[var(--btn-fg)]'
+      } ${className}`}
       {...props}
     >
       <span
         aria-hidden
-        className="absolute inset-0 -z-10 -translate-x-full bg-[var(--color-carmine)] transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:translate-x-0 motion-reduce:transition-none"
+        className={`absolute inset-0 -z-10 -translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:translate-x-0 motion-reduce:transition-none ${
+          onDark ? 'bg-[var(--color-carmine-deep)]' : 'bg-[var(--color-carmine)]'
+        }`}
       />
-      <span className="relative z-10 inline-flex items-center">
+      <span className="relative z-10 inline-flex items-center transition-colors duration-500 group-hover:text-[var(--color-paper)]">
         {loading && <Loader2 aria-hidden className="mr-2 h-3.5 w-3.5 animate-spin" strokeWidth={1.5} />}
         {children}
       </span>

@@ -109,7 +109,7 @@ export function AuthGate({ visible, submitting, error, onSubmit }: AuthGateProps
             <>
               Sign in to{' '}
               <em className="italic-safe inline-block not-italic">
-                <span className="font-display italic text-[var(--color-foil)]">drive</span>
+                <span className="font-display italic text-[var(--color-paper)]">drive</span>
               </em>
             </>
           ) : (
@@ -153,7 +153,7 @@ export function AuthGate({ visible, submitting, error, onSubmit }: AuthGateProps
             required
           />
 
-          <Button type="submit" loading={submitting} className="mt-2 w-full">
+          <Button type="submit" loading={submitting} onDark className="mt-2 w-full">
             {mode === 'login' ? 'Sign in' : 'Create account'}
           </Button>
         </form>
@@ -163,7 +163,7 @@ export function AuthGate({ visible, submitting, error, onSubmit }: AuthGateProps
           <button
             type="button"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            className="text-[var(--color-foil)] underline underline-offset-4 transition-colors duration-500 hover:text-[var(--color-paper)]"
+            className="text-[var(--color-paper)] underline underline-offset-4 transition-colors duration-500 hover:text-[var(--color-paper)]/70"
           >
             {mode === 'login' ? 'Create one' : 'Sign in'}
           </button>

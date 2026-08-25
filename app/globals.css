@@ -52,6 +52,12 @@
   --ink: var(--color-ink);
   --surface: var(--color-surface);
   --muted: var(--color-muted);
+
+  /* Primary button fill is the inverse of the page ground, not a fixed
+     charcoal. On a dark ground a charcoal button is invisible, which is the
+     Button Contrast Check in DESIGN.md failing in the one mode nobody tests. */
+  --btn-bg: var(--color-ink);
+  --btn-fg: var(--color-paper);
   color-scheme: light;
 }
 
@@ -64,6 +70,8 @@
     --ink: #f2f0ed;
     --surface: #1f1e1c;
     --muted: #9b968f;
+    --btn-bg: var(--color-paper);
+    --btn-fg: var(--color-ink);
     color-scheme: dark;
   }
 }
@@ -73,6 +81,8 @@
   --ink: #f2f0ed;
   --surface: #1f1e1c;
   --muted: #9b968f;
+  --btn-bg: var(--color-paper);
+  --btn-fg: var(--color-ink);
   color-scheme: dark;
 }
 

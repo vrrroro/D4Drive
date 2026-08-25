@@ -1,34 +1,16 @@
 import type { NextConfig } from 'next';
 
 /**
- * Content Security Policy.
+ * Security headers that are identical on every request.
  *
- * This has to be authored by hand rather than defaulted, because the intro
- * sequence needs permissions a default policy denies: `media-src` for the hero
- * film and `data:` images for the SVG grain layer.
- *
- * `style-src 'unsafe-inline'` is present because Next injects inline styles for
- * the font loader and for streamed RSC payloads. Narrow this to a nonce before
- * any real deployment. It is the one directive here that is weaker than it
- * should be, and leaving it undocumented is how it stays that way.
+ * The Content Security Policy is deliberately NOT here. It carries a per
+ * request nonce, which a static header cannot express, so it lives in
+ * middleware.ts. Next injects its RSC payload as inline script tags, and a
+ * policy without a matching nonce blocks them, leaving a correctly
+ * server-rendered page that hydrates into a blank body.
  */
-const csp = [
-  "default-src 'self'",
-  "media-src 'self'",
-  "img-src 'self' data: blob:",
-  "script-src 'self'" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  "connect-src 'self'",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  'upgrade-insecure-requests',
-].join('; ');
 
 const securityHeaders = [
-  { key: 'Content-Security-Policy', value: csp },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },

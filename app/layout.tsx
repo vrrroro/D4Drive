@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import { Gridlines } from '@/components/ui/Gridlines';
 import { Grain } from '@/components/ui/Grain';
+import { ToastProvider } from '@/components/ui/Toast';
+import { SiteNav } from '@/components/ui/SiteNav';
 import './globals.css';
 
 /**
@@ -42,7 +44,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-IN" className={`${playfair.variable} ${inter.variable}`}>
       <body>
         <Gridlines />
-        {children}
+        <ToastProvider>
+          <SiteNav />
+          {children}
+        </ToastProvider>
         <Grain />
       </body>
     </html>

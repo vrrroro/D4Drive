@@ -7,6 +7,7 @@ import { VideoStage } from './VideoStage';
 import { AuthGate } from './AuthGate';
 import { useIntroMachine, isRevealed, type RecoveryReason } from './useIntroMachine';
 import { BOOT_MAX_MS, BOOT_MIN_MS, INTRO_SEEN_KEY, REVEAL_MS } from './constants';
+import { readCsrfToken } from '@/lib/csrf';
 
 /**
  * Orchestrates the entry sequence.
@@ -167,16 +168,4 @@ export function IntroSequence() {
       )}
     </>
   );
-}
-
-/**
- * Reads the double-submit CSRF token.
- *
- * This cookie is deliberately not httpOnly, because the pattern requires
- * same-origin script to read it and echo it in a header. A cross-origin
- * attacker can cause the cookie to be sent but cannot read it.
- */
-function readCsrfToken(): string {
-  const match = document.cookie.match(/(?:^|;\s*)d4d_csrf=([^;]+)/);
-  return match?.[1] ?? '';
 }
