@@ -13,7 +13,7 @@
     "lint:copy": "node scripts/lint-copy.mjs",
     "build:assets": "node scripts/build-video-assets.mjs",
     "db:setup": "node scripts/db-setup.mjs",
-    "test": "node --test --experimental-strip-types tests/**/*.test.ts"
+    "test": "node --import ./tests/register.mjs --experimental-strip-types --test tests/*.test.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

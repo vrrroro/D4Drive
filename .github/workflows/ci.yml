@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Copy lint
+        run: npm run lint:copy
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Build-time placeholders. No route is prerendered against a live
+          # database, so these only need to satisfy the startup assertions.
+          DB_HOST: localhost
+          DB_USER: ci
+          DB_NAME: d4drive
+          JWT_ACCESS_SECRET: ci-placeholder-secret-value-at-least-32-chars
+          JWT_REFRESH_SECRET: ci-placeholder-secret-value-at-least-32-diff
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
