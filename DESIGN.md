@@ -15,9 +15,15 @@ single strongest moment. Density is 3: this page breathes.
 
 ## 1. Colour
 
-The video opens on a crimson Porsche against neutral ground. The palette is built
-from that frame outward, so the site and the asset read as one object rather than
-a video dropped into an unrelated template.
+The film is a red Porsche 911 turning on a white studio cyclorama, ending in a
+burnout. The palette is built from that footage outward, so the site and the
+asset read as one object rather than a video dropped into an unrelated template.
+
+Two measured facts drove the palette. The paint sits at hue 5, saturation 0.85,
+sampled off the encoded frames rather than picked by eye. And the studio ground
+is already a warm near-white, which is why the alabaster page ground was kept
+rather than replaced: when the film ends, it resolves into a background the page
+already has.
 
 | Token | Hex | Role |
 |---|---|---|
@@ -25,7 +31,7 @@ a video dropped into an unrelated template.
 | `--ink` | `#1A1A1A` | Rich charcoal. Primary text and hard 1px rules. |
 | `--surface` | `#EBE5DE` | Pale taupe. Subtle elevation, alternate bands. |
 | `--muted` | `#6C6863` | Warm grey. Secondary text, captions, metadata. |
-| `--carmine` | `#A11220` | The car. The one accent. |
+| `--carmine` | `#A82519` | The car. The one accent. |
 | `--foil` | `#D4AF37` | Gold. A material, not an accent. See the rule below. |
 | `--paper` | `#FFFFFF` | Only on carmine or charcoal grounds. |
 
@@ -51,8 +57,8 @@ because every AI-built luxury site ships it. Alabaster with a brass accent is
 squarely inside that banned family. Alabaster with a deep carmine drawn from the
 actual hero asset is not.
 
-`--carmine` on `--ground` measures 7.67:1, which clears AA for body text and AAA
-for large text.
+`--carmine` on `--ground` measures 6.72:1 and white on carmine measures 7.13:1.
+Both clear AA for body text and AAA for large text.
 
 ### Theme
 

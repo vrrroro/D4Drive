@@ -1,0 +1,182 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   D4Drive design tokens
+
+   Every colour is defined once on bare `:root`. The dark block redefines only
+   the ground and ink roles. No colour gets its only definition inside a media
+   query, or the light theme breaks wherever that query does not match.
+
+   Carmine is the single accent, sampled from the car in the hero film rather
+   than picked by eye: hue 5, saturation 0.85, measured off frame 150. It
+   clears 6.72:1 against ground and 7.13:1 for white text on top of it.
+   Gold is a material, not an accent: it appears only as hairline foil and
+   never signals interactive state. See DESIGN.md section 1.
+   ========================================================================== */
+
+@theme {
+  --color-ground: #f9f8f6;
+  --color-ink: #1a1a1a;
+  --color-surface: #ebe5de;
+  --color-muted: #6c6863;
+  --color-carmine: #a82519;
+  --color-carmine-deep: #7d1a12;
+  --color-foil: #d4af37;
+  --color-paper: #ffffff;
+
+  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius is 0 across the entire system. No exceptions, no states. */
+  --radius-none: 0px;
+
+  /* Three motion tiers. Nothing snaps. */
+  --duration-interaction: 500ms;
+  --duration-colour: 700ms;
+  --duration-cinematic: 1500ms;
+  --duration-cinematic-slow: 2000ms;
+  --ease-luxury: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.02);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.06);
+  --shadow-image: 0 4px 24px rgb(0 0 0 / 0.08);
+  --shadow-image-hover: 0 8px 32px rgb(0 0 0 / 0.12);
+  --shadow-button: 0 4px 16px rgb(0 0 0 / 0.15);
+  --shadow-button-hover: 0 8px 24px rgb(0 0 0 / 0.25);
+  --shadow-stage: 0 8px 32px rgb(0 0 0 / 0.12);
+  --shadow-inner-frame: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+:root {
+  --ground: var(--color-ground);
+  --ink: var(--color-ink);
+  --surface: var(--color-surface);
+  --muted: var(--color-muted);
+  color-scheme: light;
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    /* Ground and ink swap roles. Carmine and foil hold constant, because the
+       accent is drawn from a physical object and does not change with the
+       viewer's system preference. */
+    --ground: #141414;
+    --ink: #f2f0ed;
+    --surface: #1f1e1c;
+    --muted: #9b968f;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ground: #141414;
+  --ink: #f2f0ed;
+  --surface: #1f1e1c;
+  --muted: #9b968f;
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+* {
+  border-radius: 0 !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.625;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-carmine);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-carmine);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Vertical decorative label. Capped at two instances page-wide and hidden on
+   mobile, per DESIGN.md section 7. */
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Drop cap for section-opening paragraphs. leading is deliberately tight, and
+   the float needs the sibling clear to avoid text wrapping under it awkwardly. */
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  line-height: 0.8;
+  float: left;
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  color: var(--color-carmine);
+}
+
+/* Any italic display word containing a descender clips at leading-[0.9].
+   This reserves the space. See DESIGN.md section 2. */
+.italic-safe {
+  line-height: 1.1;
+  padding-bottom: 0.25rem;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--duration-colour) var(--ease-luxury) both;
+}
+
+/* ==========================================================================
+   Reduced motion
+
+   At MOTION_INTENSITY 7 every animation on this page is gated. Transforms and
+   scales collapse; colour transitions survive, because they do not cause
+   vestibular discomfort and removing them would strip the interface of
+   feedback entirely.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .motion-safe-transform {
+    transform: none !important;
+  }
+}

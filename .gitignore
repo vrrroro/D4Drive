@@ -49,3 +49,6 @@ Thumbs.db
 # Misc
 .cache/
 *.tsbuildinfo
+
+# Generated poster stills
+public/posters/
