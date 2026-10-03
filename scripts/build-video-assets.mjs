@@ -37,7 +37,14 @@ function parseArgs() {
     console.log(`No --input given, defaulting to ${input}`);
   }
 
-  return { input: resolve(input.replace(/^~/, homedir())) };
+  const timeIndex = args.indexOf('--poster-time');
+  const posterTime = timeIndex !== -1 ? Number(args[timeIndex + 1]) : undefined;
+  if (posterTime !== undefined && !(posterTime >= 0)) {
+    console.error('--poster-time must be a number of seconds');
+    process.exit(1);
+  }
+
+  return { input: resolve(input.replace(/^~/, homedir())), posterTime };
 }
 
 async function probe(input) {
@@ -154,7 +161,7 @@ async function encodeWebm(input, height, output) {
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 
 async function main() {
-  const { input } = parseArgs();
+  const { input, posterTime: posterOverride } = parseArgs();
 
   try {
     await stat(input);
@@ -174,8 +181,9 @@ async function main() {
   console.log(`  ${stream.width}x${stream.height}  ${stream.codec_name}  ${duration.toFixed(2)}s\n`);
 
   console.log('Finding first visible frame');
-  const posterTime = await findFirstVisibleFrame(input);
-  console.log(`  POSTER_TIME = ${posterTime}\n`);
+  const firstVisible = await findFirstVisibleFrame(input);
+  console.log(`  First visible frame at ${firstVisible}s\n`);
+  const posterTime = posterOverride ?? firstVisible;
 
   console.log('Extracting poster');
   await extractPoster(input, posterTime);
@@ -205,8 +213,10 @@ async function main() {
     }
   }
 
-  console.log(`\nSet POSTER_TIME in components/intro/constants.ts to ${posterTime}`);
-  console.log('Generated media is gitignored and is not committed.\n');
+  if (posterOverride === undefined) {
+    console.log(`\nPoster cut at ${posterTime}s. Re-run with --poster-time <POSTER_TIME> to match constants.ts.`);
+  }
+  console.log('Commit public/videos and public/posters so a fresh clone plays the intro.\n');
 }
 
 main().catch((error) => {

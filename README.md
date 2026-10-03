@@ -44,12 +44,17 @@ mysql -u root -p d4drive < database/schema.sql
 mysql -u root -p d4drive < database/seed.sql
 ```
 
-Build the video assets. The source film is not in the repository, since a 16 MB
-binary in git history is permanent:
+Or do all three in one step with `npm run db:setup` (uses the `.env` credentials).
+
+The intro film is already in the repo: `public/videos/` (four encodes, about 7.5 MB)
+and `public/posters/`. The 16 MB source film is **not** committed. Only if you
+replace the film, regenerate them from the new source:
 
 ```bash
-npm run build:assets -- --input ~/Downloads/D4Drive.mp4
+npm run build:assets -- --input ~/Downloads/D4Drive.mp4 --poster-time 1.2
 ```
+
+`--poster-time` must equal `POSTER_TIME` in `components/intro/constants.ts`.
 
 Run it:
 
@@ -67,6 +72,7 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint:copy` | Fails on em-dashes and en-dashes in user-visible strings |
 | `npm run build:assets` | Transcodes the hero film and extracts poster stills |
+| `npm run db:setup` | Creates the database, loads schema and seed from `.env` |
 | `npm run test` | Unit tests for pricing, distance, availability, and the intro reducer |
 
 ## Documentation
@@ -77,14 +83,17 @@ npm run dev
 | `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic |
 | `DESIGN.md` | Design system, tokens, components, hard bans |
 | `docs/VIDEO_STATE_MACHINE.md` | The intro sequence contract |
-| `docs/ERD.md` | Data model |
+| `docs/ERD.md` | Data model (not written yet, see `PROJECT_STATUS.md`) |
 | `CONTRIBUTING.md` | Git, worktree, and review protocol |
 | `SECURITY.md` | Threat model and security rules |
 | `PROJECT_STATUS.md` | Current phase and progress |
-| `CLAUDE.md` | Agent instructions |
+| `CLAUDE.md` | Agent instructions, current state, and next step |
+| `CHANGELOG.md` | Every change, newest first |
+| `reference/vite-intro/` | Earlier Vite prototype, kept only to port its intro and particle effects |
 
 ## Status
 
-In development. See `PROJECT_STATUS.md` for the active phase.
+MVP feature-complete in code; hardening and the intro port are in progress.
+See `PROJECT_STATUS.md` for the active phase and `CLAUDE.md` for the next step.
 
 Payment is **simulated**. There is no real gateway and no card data is stored.
