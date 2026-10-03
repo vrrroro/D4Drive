@@ -2,6 +2,8 @@
 
 A members-only car rental frontend, opening with a scripted film.
 
+> **Project docs:** `CLAUDE.md` (how to work on this repo), `PROJECT_STATUS.md` (what's done / next), `ARCHITECTURE.md`, `PRD.md`, `EDRD.md` (design system). The backend (Express + MySQL in `server/`) is not built yet.
+
 ```
 npm install
 npm run dev      # http://localhost:5173

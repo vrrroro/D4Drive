@@ -22,7 +22,7 @@
 - **Delivery Management:** Update delivery lifecycle (Pending -> Out for Delivery -> Delivered).
 
 ## 3. UI/UX Requirements
-- **Landing Page Hook:** Implement a high-quality scroll-triggered animation on the hero section that transitions into the booking search widget.
-- **Styling:** Custom Bootstrap 5 theme. Dark navy (Primary), White (Secondary), Electric Blue (Accent).
+- **Landing Page Hook:** A cinematic opening film (logo → car reveal → login → particle dissolve) leads into the site. *(Built — see `README.md`.)*
+- **Styling:** Luxury / editorial design system defined in `EDRD.md` (alabaster, charcoal, gold; Playfair Display + Inter; 0px radii). This replaces the original Bootstrap navy/blue theme.
 - **Responsiveness:** Flawless mobile, tablet, and desktop views.
 - **Feedback:** Use Toast notifications for all async actions (booking, login, errors). Loading states on all buttons.
