@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // pdfkit reads its standard font metrics (Helvetica.afm and friends) from
+  // its own package directory at runtime. Bundled by webpack, those paths
+  // point inside .next/ where the files do not exist, and every invoice 500s
+  // in a production build while working fine under `next dev`.
+  serverExternalPackages: ['pdfkit'],
+
   async headers() {
     return [
       {

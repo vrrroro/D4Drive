@@ -61,6 +61,8 @@ export interface AdminCarRow extends RowDataPacket {
   transmission: string;
   seats: number;
   price_per_day: string;
+  image_url: string | null;
+  description: string | null;
   is_active: number;
 }
 
@@ -69,7 +71,7 @@ export async function listAllCars(): Promise<AdminCarRow[]> {
   return query<AdminCarRow>(
     `SELECT c.id, c.branch_id, b.name AS branch_name, c.brand, c.model, c.year,
             c.registration_no, c.fuel_type, c.transmission, c.seats,
-            c.price_per_day, c.is_active
+            c.price_per_day, c.image_url, c.description, c.is_active
        FROM cars c
        JOIN branches b ON b.id = c.branch_id
       ORDER BY c.is_active DESC, c.brand, c.model`,

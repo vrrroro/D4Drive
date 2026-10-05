@@ -3,6 +3,8 @@ import { listCars, listBrands } from '@/lib/services/cars';
 import { carFilterSchema } from '@/lib/validation/schemas';
 import { formatCurrency } from '@/lib/services/pricing';
 import { CarFilters } from '@/components/sections/CarFilters';
+import { Card } from '@/components/ui/Card';
+import { CarPhoto } from '@/components/ui/CarPhoto';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,23 +96,14 @@ export default async function CarsPage({
               </section>
             ) : (
               <section className="mt-16 grid grid-cols-1 gap-x-12 gap-y-20 sm:grid-cols-2 lg:grid-cols-3">
-                {result?.cars.map((car) => (
-                  <Link
-                    key={car.id}
-                    href={`/cars/${car.id}`}
-                    className="group block border-t border-[var(--ink)] pt-6 transition-colors duration-500"
-                  >
-                    <div className="relative aspect-[4/5] overflow-hidden bg-[var(--surface)] shadow-[0_4px_24px_rgba(0,0,0,0.08)]">
-                      {car.image_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={car.image_url}
-                          alt={`${car.brand} ${car.model}`}
-                          loading="lazy"
-                          className="h-full w-full object-cover grayscale transition-all duration-[1500ms] ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:scale-105 group-hover:grayscale-0 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                        />
-                      )}
-                    </div>
+                {result?.cars.map((car, index) => (
+                  <Card key={car.id} href={`/cars/${car.id}`} padding="flush">
+                    <CarPhoto
+                      src={car.image_url}
+                      name={`${car.brand} ${car.model}`}
+                      hoverReveal
+                      priority={index === 0}
+                    />
 
                     <h2 className="font-display mt-6 text-2xl leading-tight text-[var(--ink)] transition-colors duration-500 group-hover:text-[var(--color-carmine)]">
                       {car.brand} {car.model}
@@ -124,7 +117,7 @@ export default async function CarsPage({
                       {formatCurrency(Number(car.price_per_day))}
                       <span className="text-[var(--muted)]"> per day</span>
                     </p>
-                  </Link>
+                  </Card>
                 ))}
               </section>
             )}

@@ -46,6 +46,14 @@ mysql -u root -p d4drive < database/seed.sql
 
 Or do all three in one step with `npm run db:setup` (uses the `.env` credentials).
 
+A database created before 2026-10-05 lacks the `refresh_tokens` table. Either
+re-run `npm run db:setup` (it drops and reloads everything) or apply
+`database/migrations/001_refresh_tokens.sql`.
+
+Car photographs: the seed leaves `image_url` empty and the UI shows a labelled
+"Photograph pending" slot. To add one, put the file in `public/cars/` and set
+the car's photo to `/cars/<file>` in the admin fleet page.
+
 The intro film is already in the repo: `public/videos/` (four encodes, about 7.5 MB)
 and `public/posters/`. The 16 MB source film is **not** committed. Only if you
 replace the film, regenerate them from the new source:
@@ -73,7 +81,9 @@ npm run dev
 | `npm run lint:copy` | Fails on em-dashes and en-dashes in user-visible strings |
 | `npm run build:assets` | Transcodes the hero film and extracts poster stills |
 | `npm run db:setup` | Creates the database, loads schema and seed from `.env` |
-| `npm run test` | Unit tests for pricing, distance, availability, and the intro reducer |
+| `npm run test` | Unit tests; the MySQL tests skip unless `DB_HOST` and `DB_NAME` are set |
+| `npm run test:db` | Same, with `.env` loaded, so the double-booking and refresh-rotation tests run |
+| `npm run smoke` | Browser smoke test against a running server (see `scripts/smoke.mjs`) |
 
 ## Documentation
 
@@ -83,7 +93,7 @@ npm run dev
 | `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic |
 | `DESIGN.md` | Design system, tokens, components, hard bans |
 | `docs/VIDEO_STATE_MACHINE.md` | The intro sequence contract |
-| `docs/ERD.md` | Data model (not written yet, see `PROJECT_STATUS.md`) |
+| `docs/ERD.md` | Data model, constraints, indexes, and the verified overlap query plan |
 | `CONTRIBUTING.md` | Git, worktree, and review protocol |
 | `SECURITY.md` | Threat model and security rules |
 | `PROJECT_STATUS.md` | Current phase and progress |

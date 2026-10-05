@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/guards';
 import { getDashboardStats } from '@/lib/services/admin';
 import { formatCurrency } from '@/lib/services/pricing';
+import { Card } from '@/components/ui/Card';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,21 +41,24 @@ export default async function AdminDashboard() {
           </Link>
         </nav>
 
-        {/* Five tiles, five cells. The lead tile spans two columns so the grid
-            has rhythm rather than five identical boxes. */}
-        <section className="mt-20 grid grid-cols-1 gap-px bg-[var(--ink)]/15 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Five tiles. The lead tile spans two columns and carries the one
+            featured rule, so the grid has rhythm rather than five identical
+            boxes. */}
+        <section className="mt-20 grid grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {tiles.map((tile) => (
-            <div
+            <Card
               key={tile.label}
-              className={`bg-[var(--ground)] p-8 md:p-10 ${tile.lead ? 'sm:col-span-2' : ''}`}
+              as="div"
+              featured={tile.lead}
+              className={tile.lead ? 'sm:col-span-2' : ''}
             >
               <p className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
                 {tile.label}
               </p>
-              <p className={`font-display mt-4 text-[var(--ink)] ${tile.lead ? 'text-6xl text-[var(--color-carmine)] md:text-7xl' : 'text-4xl md:text-5xl'}`}>
+              <p className={`font-display mt-4 ${tile.lead ? 'text-6xl text-[var(--color-carmine)] md:text-7xl' : 'text-4xl text-[var(--ink)] md:text-5xl'}`}>
                 {tile.value}
               </p>
-            </div>
+            </Card>
           ))}
         </section>
       </div>

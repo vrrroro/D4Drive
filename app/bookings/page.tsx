@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth/guards';
 import { listUserBookings } from '@/lib/services/bookings';
 import { formatCurrency } from '@/lib/services/pricing';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,11 +62,11 @@ export default async function BookingsPage() {
             </Link>
           </section>
         ) : (
-          <section className="mt-20 flex flex-col gap-px bg-[var(--ink)]/15">
+          <section className="mt-20 flex flex-col">
             {bookings.map((b) => (
-              <article
+              <Card
                 key={b.id}
-                className="grid grid-cols-1 gap-6 bg-[var(--ground)] p-8 md:grid-cols-12 md:items-center md:p-10"
+                className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center"
               >
                 <div className="md:col-span-4">
                   <h2 className="font-display text-2xl text-[var(--ink)]">
@@ -108,7 +109,7 @@ export default async function BookingsPage() {
                     Invoice
                   </a>
                 </div>
-              </article>
+              </Card>
             ))}
           </section>
         )}

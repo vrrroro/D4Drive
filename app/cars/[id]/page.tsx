@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getCar } from '@/lib/services/cars';
 import { formatCurrency } from '@/lib/services/pricing';
 import { Button } from '@/components/ui/Button';
+import { CarPhoto } from '@/components/ui/CarPhoto';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,16 +60,12 @@ export default async function CarDetailPage({
             section 5, and it gives the image the weight it deserves. */}
         <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
           <div className="lg:col-span-7">
-            <div className="relative aspect-[4/3] overflow-hidden bg-[var(--surface)] shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
-              {car.image_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={car.image_url}
-                  alt={`${car.brand} ${car.model}, ${car.year}`}
-                  className="h-full w-full object-cover"
-                />
-              )}
-            </div>
+            <CarPhoto
+              src={car.image_url}
+              name={`${car.brand} ${car.model}, ${car.year}`}
+              aspect="aspect-[4/3]"
+              priority
+            />
           </div>
 
           <div className="lg:col-span-4 lg:col-start-9">

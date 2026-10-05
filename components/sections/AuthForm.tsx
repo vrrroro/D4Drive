@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { readCsrfToken } from '@/lib/csrf';
+import { refreshSession } from '@/lib/api-client';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 /**
  * Standalone sign in and register.
@@ -16,12 +18,28 @@ import { readCsrfToken } from '@/lib/csrf';
 export function AuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/cars';
+  const next = safeNextPath(searchParams.get('next'));
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
+
+  // Protected pages are server-rendered and read only the 15 minute access
+  // cookie, so an expired one lands here even when the week-long refresh
+  // token is still good. Try it once before asking for a password.
+  useEffect(() => {
+    let cancelled = false;
+    refreshSession().then((ok) => {
+      if (ok && !cancelled) {
+        router.replace(next);
+        router.refresh();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [next, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

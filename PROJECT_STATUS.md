@@ -1,17 +1,19 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 10, Close the gaps
+**Current phase:** Phase 11, Port the Vite intro effects
 **Status:** In progress
-**Last updated:** 2026-10-04
+**Last updated:** 2026-10-05
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here and in the
 "Current state" section of `CLAUDE.md`.
 
-**Verified on 2026-10-04 (Windows, Node 20+, no database):** `npm ci`,
-`npm run lint:copy`, `npm run typecheck`, `npm test` (24 pass, 1 skipped:
-the double-booking test needs MySQL), and `npm run build` all succeed.
-Nothing has been run against a live MySQL yet.
+**Verified on 2026-10-05 (cloud sandbox, Ubuntu 24.04, Node 22, MySQL 8.0.46):**
+`npm ci`, `npm run db:setup`, `npm run lint:copy`, `npm run typecheck`,
+`npm run test:db` (34 pass, 0 skipped: the double-booking and refresh-rotation
+tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
+`npm run build`, and `npm run smoke` (27 browser checks pass against
+`next start`).
 
 ---
 
@@ -20,8 +22,8 @@ Nothing has been run against a live MySQL yet.
 | Order | Phase | State |
 |---|---|---|
 | 1 | 0 to 8: Foundation through Admin | Done in code, see ticks |
-| 2 | **10: Close the gaps** | **Active** |
-| 3 | 11: Port the Vite intro effects | Next |
+| 2 | 10: Close the gaps | Done |
+| 3 | **11: Port the Vite intro effects** | **Active** |
 | 4 | 9: Hardening | Last |
 
 ---
@@ -39,12 +41,12 @@ Nothing has been run against a live MySQL yet.
 
 ### Phase 1: Database (mostly done)
 
-- [ ] Write `docs/ERD.md`, derived from `database/schema.sql` (moved to Phase 10)
+- [x] Write `docs/ERD.md`, derived from `database/schema.sql`
 - [x] Write `database/schema.sql` in 3NF with indexes and foreign keys
 - [x] Write `database/seed.sql`: 1 admin, 3 branches, 10 realistic cars
 - [x] Build `lib/db.ts` as a single pooled `mysql2/promise` instance
 - [x] `npm run db:setup` creates the database and loads schema and seed
-- [ ] Confirm the booking overlap index supports the locking query (needs MySQL, Phase 10)
+- [x] Confirm the booking overlap index supports the locking query (covering range scan, see `docs/ERD.md` section 5)
 
 ### Phase 2: Auth and session (mostly done)
 
@@ -53,8 +55,7 @@ Nothing has been run against a live MySQL yet.
 - [x] `httpOnly` `Secure` `SameSite=Lax` cookie helpers (`lib/auth/cookies.ts`)
 - [x] `POST /api/auth/register` and `POST /api/auth/login` with zod validation
 - [x] `POST /api/auth/logout` and `GET /api/auth/me`
-- [ ] **`POST /api/auth/refresh` with rotation. Missing: the refresh cookie is
-      scoped to this path but the route does not exist** (Phase 10)
+- [x] `POST /api/auth/refresh` with rotation and reuse detection (`refresh_tokens` table)
 - [x] Rate limiting on auth routes (`lib/auth/rate-limit.ts`)
 - [x] CSRF double-submit token on state-changing admin routes
 - [x] `requireSession` and `requireAdmin` guards (`lib/auth/guards.ts`)
@@ -63,7 +64,7 @@ Nothing has been run against a live MySQL yet.
 
 - [x] `Button` with variants
 - [x] `Field` with label, error slot, italic placeholder
-- [ ] `Card` built on `border-t` (no shared component yet, Phase 10)
+- [x] `Card` built on `border-t` (`components/ui/Card.tsx`)
 - [x] `Toast` system
 - [x] Fixed gridlines and paper grain layers
 - [x] Z-index scale in `lib/constants.ts`
@@ -93,7 +94,7 @@ Specification is `docs/VIDEO_STATE_MACHINE.md`.
 - [x] Availability service with `SELECT ... FOR UPDATE` locking
 - [x] `POST /api/bookings` as one transaction across booking, delivery, payment
 - [x] Checkout page
-- [ ] Concurrency test passes against a real MySQL (written, skipped without DB; Phase 10)
+- [x] Concurrency test passes against a real MySQL 8
 
 ### Phase 7: Payment simulation and post-booking (done)
 
@@ -109,16 +110,25 @@ Specification is `docs/VIDEO_STATE_MACHINE.md`.
 
 ---
 
-### Phase 10: Close the gaps (ACTIVE)
+### Phase 10: Close the gaps (done 2026-10-05)
 
-- [ ] Add `POST /api/auth/refresh`: verify refresh cookie, rotate both tokens, 401 on failure; client retries once on 401
-- [ ] Write `docs/ERD.md` from `database/schema.sql`
-- [ ] Extract a shared `Card` component and use it in catalog and admin
-- [ ] Run against a real MySQL 8 (`npm run db:setup`), then `npm test` with the DB env vars so the double-booking test runs instead of skipping
-- [ ] Smoke test in the browser: register, log in, intro, catalog, book, invoice, admin status change
-- [ ] Car photography: `seed.sql` points `image_url` at random `picsum.photos` stills, not cars. Replace with real photos in `public/cars/` or labelled placeholder slots per `DESIGN.md` ("real images only")
+- [x] Add `POST /api/auth/refresh`: verify refresh cookie, rotate both tokens, 401 on failure; client retries once on 401 (`lib/api-client.ts`)
+- [x] Write `docs/ERD.md` from `database/schema.sql`
+- [x] Extract a shared `Card` component and use it in catalog and admin (and the customer bookings list)
+- [x] Run against a real MySQL 8 (`npm run db:setup`), then `npm run test:db` so the double-booking test runs instead of skipping
+- [x] Smoke test in the browser: register, log in, intro, catalog, book, invoice, admin status change (`npm run smoke`)
+- [x] Car photography: labelled "Photograph pending" slots (`components/ui/CarPhoto.tsx`); seed `image_url` is `NULL`, picsum removed from seed and CSP
+- [ ] Real photographs of the ten seeded cars in `public/cars/`. **Cannot be done in the sandbox:** it needs real photography of these specific models, and stock images are banned. Upload via the admin fleet page's Photo field.
 
-### Phase 11: Port the Vite intro effects (next)
+Found and fixed while closing the gaps:
+
+- [x] `scripts/db-setup.mjs` had a syntax error (`'\'` instead of `'\\'`), so `npm run db:setup` had never run
+- [x] Double-booking test leaked a booking into the next test; it now clears before each test
+- [x] Invoices returned 500 in production builds (`pdfkit` bundled without its font files); `serverExternalPackages`
+- [x] Editing a car in admin wiped its photo and description (fields had no default values)
+- [x] `?next=` on `/login` was an open redirect
+
+### Phase 11: Port the Vite intro effects (ACTIVE)
 
 Source: `reference/vite-intro/` (read its `REFERENCE.md` first). Target: `components/intro/`.
 Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
@@ -131,6 +141,7 @@ Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
 - [ ] Recolour everything to `DESIGN.md` (carmine accent, gold hairline only), rupees, no em-dashes
 - [ ] Update `docs/VIDEO_STATE_MACHINE.md` and unit tests for any new states
 - [ ] Delete ported files from `reference/vite-intro/`; delete the folder when empty
+- [ ] Fix `AuthGate` register mode: it has no mobile field and submits to the login endpoint, so registering from the gate always fails
 
 ### Phase 9: Hardening (last)
 
@@ -141,6 +152,11 @@ Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
 - [ ] Screen reader pass on forms and the auth gate
 - [ ] Verify no error response leaks a stack trace or SQL fragment
 - [ ] Device check: iOS Safari, Android Chrome, throttled network
+- [ ] `npm audit --audit-level=high` fails (9 high: PostCSS bundled in `next`, `sharp`); CI runs this step
+- [ ] Gridlines sit at sixths of the unpadded container, not on the content's 12-column boundaries (DESIGN.md section 7: align or cut)
+- [ ] `Button` link variant animates `width`; must be `scaleX`
+- [ ] `<Link><Button>` nests a button inside an anchor (invalid HTML, two tab stops)
+- [ ] `/favicon.ico` returns 404
 
 ---
 

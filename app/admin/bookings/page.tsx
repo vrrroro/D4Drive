@@ -38,7 +38,7 @@ export default async function AdminBookingsPage() {
             </p>
           </section>
         ) : (
-          <section className="mt-16 flex flex-col gap-px bg-[var(--ink)]/15">
+          <section className="mt-16 flex flex-col">
             {bookings.map((b) => (
               <AdminBookingRow
                 key={b.id}

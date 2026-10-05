@@ -7,6 +7,49 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-05: Phase 10, close the gaps
+
+#### Added
+- `POST /api/auth/refresh`: rotates both tokens on every call. Refresh token
+  ids are recorded in a new `refresh_tokens` table (plus
+  `database/migrations/001_refresh_tokens.sql`); a retired token replayed
+  outside a 10 second two-tab window revokes the user's whole token family.
+  The role is re-read from `users` on each refresh. Logout now revokes the
+  token server-side. The refresh cookie path widened from
+  `/api/auth/refresh` to `/api/auth` so logout can read it.
+- `lib/api-client.ts`: `apiFetch` retries once after a single, de-duplicated
+  refresh when a call returns 401. Used by checkout and every admin mutation.
+  `/login` tries a silent refresh before asking for a password.
+- `docs/ERD.md`: Mermaid ERD, relationships, normal form, constraints, and the
+  measured `EXPLAIN` showing `idx_bookings_overlap` as a covering range scan.
+- `components/ui/Card.tsx` (border-t card per DESIGN.md section 6), used in the
+  catalog, admin dashboard, admin bookings, admin fleet, and customer bookings.
+- `components/ui/CarPhoto.tsx`: real photo, or a labelled "Photograph pending"
+  slot with `data-placeholder="car-photo"`.
+- `lib/safe-redirect.ts` with tests: `?next=` accepts same-origin paths only.
+- Tests: `tests/refresh-rotation.test.ts` (MySQL), `tests/safe-redirect.test.ts`.
+- Scripts: `npm run test:db` (tests with `.env` loaded), `npm run smoke`
+  (`scripts/smoke.mjs`, 27 browser checks through `playwright-core`).
+
+#### Changed
+- Seed cars have `image_url = NULL` instead of random picsum stills; picsum
+  removed from the CSP `img-src`. Admin photo field takes a `/cars/<file>` path.
+
+#### Fixed
+- `npm run db:setup` never ran: a `'\'` string literal in the SQL splitter
+  was a syntax error.
+- Double-booking test 2 failed against a real database because test 1 left
+  its booking behind. Bookings are now cleared before each test. The
+  concurrency test itself passed: two simultaneous bookings yield exactly one.
+- Every invoice returned 500 in a production build: webpack bundled `pdfkit`
+  away from its `.afm` font files. Now in `serverExternalPackages`.
+- Editing a car in admin silently cleared its photo and description.
+- Open redirect through `/login?next=https://...`.
+
+#### Verified
+- MySQL 8.0.46 in the sandbox: `db:setup`, `test:db` 34/34, `npm test`
+  27 pass and 2 skip without a database, `build`, and `smoke` 27/27.
+
 ### 2026-10-04: Combine the two frontends, make the repo resumable
 
 #### Added

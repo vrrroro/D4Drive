@@ -54,8 +54,15 @@ interpolate a value.
 XSS anywhere on the page becomes a full account takeover.
 
 **Access tokens are short-lived** (15 minutes) with a rotating refresh token
-(7 days). A used refresh token is invalidated on rotation, so replay of a stolen
-one is detectable.
+(7 days). Each refresh token's `jti` is recorded in `refresh_tokens`;
+`POST /api/auth/refresh` retires the presented token and issues a new pair. A
+retired token presented again (outside a 10 second window that absorbs two tabs
+refreshing at once) is treated as theft and revokes every live token for that
+user. Logout revokes the current token server-side. The refresh cookie is
+scoped to `/api/auth`, so it travels only to refresh and logout.
+
+**Post-login redirects are same-origin only.** `?next=` is validated by
+`lib/safe-redirect.ts`; absolute and protocol-relative URLs fall back to `/cars`.
 
 **Authorisation is checked server-side, every time.** Hiding an admin link in the
 UI is not access control. Every admin route re-verifies the role from the session

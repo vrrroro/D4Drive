@@ -4,9 +4,10 @@ import { useState, useTransition, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { Field } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
-import { readCsrfToken } from '@/lib/csrf';
+import { apiFetch } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/services/pricing';
 
 interface Car {
@@ -21,6 +22,8 @@ interface Car {
   transmission: string;
   seats: number;
   pricePerDay: string;
+  imageUrl: string | null;
+  description: string | null;
   isActive: boolean;
 }
 
@@ -74,9 +77,9 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
     const url = editing ? `/api/admin/cars/${editing.id}` : '/api/admin/cars';
 
     try {
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: editing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': readCsrfToken() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -104,9 +107,8 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
 
   async function deactivate(car: Car) {
     try {
-      const response = await fetch(`/api/admin/cars/${car.id}`, {
+      const response = await apiFetch(`/api/admin/cars/${car.id}`, {
         method: 'DELETE',
-        headers: { 'x-csrf-token': readCsrfToken() },
       });
 
       if (!response.ok) {
@@ -140,7 +142,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
             {editing ? `${editing.brand} ${editing.model}` : 'New car'}
           </h2>
 
-          <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2" noValidate>
+          <form key={editing?.id ?? 'new'} onSubmit={handleSubmit} className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2" noValidate>
             <Field label="Brand" name="brand" defaultValue={editing?.brand} error={fields.brand} required />
             <Field label="Model" name="model" defaultValue={editing?.model} error={fields.model} required />
             <Field label="Year" name="year" type="number" defaultValue={editing?.year ?? 2024} error={fields.year} required />
@@ -175,10 +177,17 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
 
             <Field label="Seats" name="seats" type="number" min={2} max={9} defaultValue={editing?.seats ?? 5} error={fields.seats} required />
             <Field label="Price per day" name="pricePerDay" type="number" step="1" defaultValue={editing?.pricePerDay} error={fields.pricePerDay} required />
-            <Field label="Image URL" name="imageUrl" type="url" placeholder="https://" error={fields.imageUrl} />
+            <Field
+              label="Photo"
+              name="imageUrl"
+              placeholder="/cars/swift-vxi.jpg"
+              defaultValue={editing?.imageUrl ?? ''}
+              helper="A file in public/cars. Leave empty to show a labelled placeholder."
+              error={fields.imageUrl}
+            />
 
             <div className="sm:col-span-2">
-              <Field label="Description" name="description" placeholder="One or two lines a renter would find useful." error={fields.description} />
+              <Field label="Description" name="description" placeholder="One or two lines a renter would find useful." defaultValue={editing?.description ?? ''} error={fields.description} />
             </div>
 
             <label className="flex items-center gap-3 sm:col-span-2">
@@ -194,9 +203,9 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
         </section>
       )}
 
-      <section className="mt-16 flex flex-col gap-px bg-[var(--ink)]/15">
+      <section className="mt-16 flex flex-col">
         {cars.map((car) => (
-          <article key={car.id} className="grid grid-cols-1 gap-6 bg-[var(--ground)] p-8 md:grid-cols-12 md:items-center md:p-10">
+          <Card key={car.id} className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center">
             <div className="md:col-span-4">
               <h3 className={`font-display text-xl ${car.isActive ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
                 {car.brand} {car.model}
@@ -240,7 +249,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
                 </button>
               )}
             </div>
-          </article>
+          </Card>
         ))}
       </section>
     </>

@@ -11,6 +11,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS refresh_tokens;
 DROP TABLE IF EXISTS payments;
 DROP TABLE IF EXISTS deliveries;
 DROP TABLE IF EXISTS bookings;
@@ -222,4 +223,33 @@ CREATE TABLE payments (
     ON DELETE CASCADE ON UPDATE CASCADE,
 
   CONSTRAINT chk_payments_amount CHECK (amount >= 0)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- refresh_tokens
+--
+-- One row per issued refresh token, keyed by the JWT's jti. The token itself
+-- is never stored: the jti is a random UUID that is useless without the
+-- signing secret, so a leaked table cannot be replayed.
+--
+-- Rotation: every successful refresh revokes the presented row and records
+-- its successor. A revoked jti presented again means the token was copied
+-- (the legitimate client already holds the successor), so every live token
+-- for that user is revoked and they sign in again.
+-- -----------------------------------------------------------------------------
+CREATE TABLE refresh_tokens (
+  jti           CHAR(36)        NOT NULL,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  expires_at    DATETIME        NOT NULL,
+  revoked_at    DATETIME        NULL,
+  replaced_by   CHAR(36)        NULL,
+  created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (jti),
+  -- Covers "revoke every live token for this user" on reuse and logout.
+  KEY idx_refresh_tokens_user (user_id, revoked_at),
+
+  CONSTRAINT fk_refresh_tokens_user
+    FOREIGN KEY (user_id) REFERENCES users (id)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;

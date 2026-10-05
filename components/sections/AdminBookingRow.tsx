@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
-import { readCsrfToken } from '@/lib/csrf';
+import { apiFetch } from '@/lib/api-client';
+import { Card } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/services/pricing';
 
 interface AdminBookingRowProps {
@@ -65,9 +66,9 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
     setBusy(true);
 
     try {
-      const response = await fetch(`/api/admin/${kind}/${booking.id}`, {
+      const response = await apiFetch(`/api/admin/${kind}/${booking.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': readCsrfToken() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
 
@@ -95,7 +96,7 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
   const disabled = busy || pending;
 
   return (
-    <article className="grid grid-cols-1 gap-6 bg-[var(--ground)] p-8 md:grid-cols-12 md:items-center md:p-10">
+    <Card className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center">
       <div className="md:col-span-3">
         <h2 className="font-display text-xl text-[var(--ink)]">
           {booking.brand} {booking.model}
@@ -152,6 +153,6 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
           </button>
         ))}
       </div>
-    </article>
+    </Card>
   );
 }

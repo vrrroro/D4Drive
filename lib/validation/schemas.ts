@@ -102,7 +102,15 @@ export const carInputSchema = z.object({
   transmission: z.enum(['manual', 'automatic']),
   seats: z.coerce.number().int().min(2).max(9),
   pricePerDay: z.coerce.number().positive().max(1_000_000),
-  imageUrl: z.string().trim().url().max(500).optional().or(z.literal('')),
+  // A file in public/cars/, never a remote URL. The CSP serves images from
+  // 'self' only, and a hotlinked photo is one the fleet does not control.
+  imageUrl: z
+    .string()
+    .trim()
+    .regex(/^\/cars\/[\w-]+\.(jpe?g|png|webp|avif)$/i, 'Use a path like /cars/swift-vxi.jpg')
+    .max(500)
+    .optional()
+    .or(z.literal('')),
   description: z.string().trim().max(2000).optional(),
   isActive: z.boolean().default(true),
 });

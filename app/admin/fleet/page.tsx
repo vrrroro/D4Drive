@@ -40,6 +40,8 @@ export default async function AdminFleetPage() {
             transmission: c.transmission,
             seats: c.seats,
             pricePerDay: c.price_per_day,
+            imageUrl: c.image_url,
+            description: c.description,
             isActive: c.is_active === 1,
           }))}
           branches={branches.map((b) => ({ id: b.id, name: b.name, city: b.city }))}

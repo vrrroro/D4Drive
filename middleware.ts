@@ -28,8 +28,8 @@ export function middleware(request: NextRequest) {
     // Narrowing this to a nonce is the next hardening step.
     "style-src 'self' 'unsafe-inline'",
     "media-src 'self'",
-    // picsum.photos serves the seeded fleet photography.
-    "img-src 'self' data: blob: https://picsum.photos https://fastly.picsum.photos",
+    // Fleet photography is served from public/cars, never hotlinked.
+    "img-src 'self' data: blob:",
     "font-src 'self' data:",
     "connect-src 'self'" + (isDev ? ' ws: wss:' : ''),
     "object-src 'none'",

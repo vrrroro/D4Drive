@@ -7,7 +7,7 @@ import { Field } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { calculatePrice, formatCurrency } from '@/lib/services/pricing';
 import { quoteDelivery } from '@/lib/services/distance';
-import { readCsrfToken } from '@/lib/csrf';
+import { apiFetch } from '@/lib/api-client';
 
 interface CheckoutFormProps {
   carId: number;
@@ -101,9 +101,9 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
         : { method: 'upi' as const, upiHandle: String(form.get('upiHandle') ?? '') };
 
     try {
-      const response = await fetch('/api/bookings', {
+      const response = await apiFetch('/api/bookings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': readCsrfToken() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ carId, startDate, endDate, delivery, payment }),
       });
 

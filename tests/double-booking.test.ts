@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import type { RowDataPacket } from 'mysql2/promise';
 
@@ -26,6 +26,17 @@ if (!CONFIGURED) {
   let userId: number;
   let carId: number;
 
+  // Every booking these tests create starts on one of these dates. Clearing
+  // them before each test keeps the tests independent: without it, the
+  // booking the concurrency test leaves behind collides with the first
+  // booking of the handover test, and that failure says nothing about the
+  // engine.
+  const clearTestBookings = () =>
+    execute(
+      "DELETE FROM bookings WHERE car_id = ? AND start_date IN ('2027-06-01', '2027-06-05')",
+      [carId],
+    );
+
   before(async () => {
     const users = await query<RowDataPacket & { id: number }>(
       "SELECT id FROM users WHERE role = 'customer' LIMIT 1",
@@ -39,19 +50,12 @@ if (!CONFIGURED) {
 
     userId = users[0].id;
     carId = cars[0].id;
-
-    // Clear any prior run so the test is repeatable.
-    await execute(
-      "DELETE FROM bookings WHERE car_id = ? AND start_date = '2027-06-01'",
-      [carId],
-    );
   });
 
+  beforeEach(clearTestBookings);
+
   after(async () => {
-    await execute(
-      "DELETE FROM bookings WHERE car_id = ? AND start_date = '2027-06-01'",
-      [carId],
-    );
+    await clearTestBookings();
     await pool.end();
   });
 
@@ -116,9 +120,5 @@ if (!CONFIGURED) {
     assert.ok(first.reference);
     assert.ok(second.reference);
     assert.notEqual(first.reference, second.reference);
-
-    await execute("DELETE FROM bookings WHERE start_date = '2027-06-05' AND car_id = ?", [
-      carId,
-    ]);
   });
 }

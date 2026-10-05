@@ -44,6 +44,11 @@ INSERT INTO branches (name, address, city, latitude, longitude, phone) VALUES
 -- Ten cars across the three branches. Day rates reflect the Indian
 -- self-drive rental market rather than invented round numbers.
 --
+-- image_url is NULL for every car. No photograph of these specific cars has
+-- been sourced, and DESIGN.md bans filling the gap with stock images or CSS
+-- shapes, so the UI renders a labelled placeholder slot instead. To add a
+-- photo, put the file in public/cars/ and set image_url to '/cars/<file>'.
+--
 -- The last entry is deactivated on purpose, so the soft-delete path has real
 -- data to exercise and the catalog's is_active filter is actually tested.
 -- -----------------------------------------------------------------------------
@@ -51,41 +56,41 @@ INSERT INTO cars
   (branch_id, brand, model, year, registration_no, fuel_type, transmission, seats, price_per_day, image_url, description, is_active)
 VALUES
 (1, 'Maruti Suzuki', 'Swift VXi', 2023, 'KA01MJ4417', 'petrol', 'manual', 5, 1650.00,
- 'https://picsum.photos/seed/d4drive-swift-hatchback/1200/1500',
+ NULL,
  'Light, quick through traffic, and easy to park. The default choice for a city weekend.', 1),
 
 (1, 'Hyundai', 'Creta SX', 2024, 'KA01NP8823', 'diesel', 'automatic', 5, 3200.00,
- 'https://picsum.photos/seed/d4drive-creta-suv/1200/1500',
+ NULL,
  'Raised ride height and a torquey diesel. Comfortable on a long highway run.', 1),
 
 (1, 'Tata', 'Nexon EV Max', 2024, 'KA01ND1195', 'electric', 'automatic', 5, 2950.00,
- 'https://picsum.photos/seed/d4drive-nexon-electric/1200/1500',
+ NULL,
  'Roughly 400 km of real-world range. Delivered charged above ninety percent.', 1),
 
 (2, 'Mahindra', 'Thar LX', 2023, 'KA05MR7702', 'diesel', 'manual', 4, 4100.00,
- 'https://picsum.photos/seed/d4drive-thar-offroad/1200/1500',
+ NULL,
  'Four wheel drive, removable roof. Built for the road to Coorg, not the one to the office.', 1),
 
 (2, 'Honda', 'City ZX', 2023, 'KA05MQ3348', 'petrol', 'automatic', 5, 2400.00,
- 'https://picsum.photos/seed/d4drive-city-sedan/1200/1500',
+ NULL,
  'A quiet sedan with a large boot. The airport run car.', 1),
 
 (2, 'Toyota', 'Innova Crysta', 2022, 'KA05LT9061', 'diesel', 'manual', 7, 4600.00,
- 'https://picsum.photos/seed/d4drive-innova-mpv/1200/1500',
+ NULL,
  'Seven full-size seats. Chosen most often for family trips and group travel.', 1),
 
 (3, 'Kia', 'Seltos HTX', 2024, 'KA53NA2274', 'petrol', 'automatic', 5, 3050.00,
- 'https://picsum.photos/seed/d4drive-seltos-crossover/1200/1500',
+ NULL,
  'Well equipped mid-size crossover with a smooth automatic.', 1),
 
 (3, 'MG', 'ZS EV Excite', 2023, 'KA53MW5530', 'electric', 'automatic', 5, 3400.00,
- 'https://picsum.photos/seed/d4drive-zsev-electric/1200/1500',
+ NULL,
  'Silent, spacious, and cheap to run. Fast charging supported at partner points.', 1),
 
 (3, 'Volkswagen', 'Virtus GT', 2024, 'KA53NB6618', 'petrol', 'manual', 5, 2850.00,
- 'https://picsum.photos/seed/d4drive-virtus-sedan/1200/1500',
+ NULL,
  'A turbocharged sedan with a firmer setup. The enthusiast option in the fleet.', 1),
 
 (1, 'Renault', 'Kwid RXT', 2021, 'KA01KH2286', 'petrol', 'manual', 5, 1200.00,
- 'https://picsum.photos/seed/d4drive-kwid-hatchback/1200/1500',
+ NULL,
  'Withdrawn from the fleet pending a service inspection.', 0);

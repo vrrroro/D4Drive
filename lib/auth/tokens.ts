@@ -40,6 +40,9 @@ export async function signToken(
   userId: number,
   role: 'customer' | 'admin',
   type: TokenType,
+  // Supplied for refresh tokens, whose jti is recorded server-side so the
+  // token can be rotated and revoked. Access tokens take a fresh random one.
+  jti: string = crypto.randomUUID(),
 ): Promise<string> {
   return new SignJWT({ role, type })
     .setProtectedHeader({ alg: 'HS256' })
@@ -47,7 +50,7 @@ export async function signToken(
     .setIssuer(ISSUER)
     .setAudience(AUDIENCE)
     .setIssuedAt()
-    .setJti(crypto.randomUUID())
+    .setJti(jti)
     .setExpirationTime(type === 'access' ? ACCESS_TTL : REFRESH_TTL)
     .sign(secretFor(type));
 }

@@ -43,7 +43,7 @@ function splitStatements(sql) {
     const prev = withoutComments[i - 1];
 
     if (inString) {
-      if (ch === inString && prev !== '\') inString = null;
+      if (ch === inString && prev !== '\\') inString = null;
     } else if (ch === "'" || ch === '"') {
       inString = ch;
     } else if (ch === ';') {
