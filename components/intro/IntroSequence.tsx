@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BootLoader } from './BootLoader';
 import { VideoStage } from './VideoStage';
-import { AuthGate } from './AuthGate';
+import { AuthGate, type AuthMode, type AuthPayload } from './AuthGate';
 import { useIntroMachine, isRevealed, type RecoveryReason } from './useIntroMachine';
 import { BOOT_MAX_MS, BOOT_MIN_MS, INTRO_SEEN_KEY, REVEAL_MS } from './constants';
 import { readCsrfToken } from '@/lib/csrf';
@@ -16,15 +16,23 @@ import { readCsrfToken } from '@/lib/csrf';
  * visible and the children report events back. Nothing in this file decides a
  * transition on its own.
  */
-export function IntroSequence() {
+export function IntroSequence({ authenticated = false }: { authenticated?: boolean }) {
   const { context, send } = useIntroMachine();
   const { state, authError, recoveryReason } = context;
 
   const [progress, setProgress] = useState(0);
   const [loaderGone, setLoaderGone] = useState(false);
+  const [gateGone, setGateGone] = useState(false);
+  const [stageReleased, setStageReleased] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const mountedAt = useRef(Date.now());
   const bufferReady = useRef(false);
+
+  const handlePlaybackStarted = useCallback(() => send({ type: 'PLAYBACK_STARTED' }), [send]);
+  const handleEnded = useCallback(() => send({ type: 'VIDEO_ENDED' }), [send]);
+  const handleReleased = useCallback(() => setStageReleased(true), []);
+  const handleGateDissolved = useCallback(() => setGateGone(true), []);
 
   const recover = useCallback(
     (reason: RecoveryReason) => send({ type: 'RECOVER', reason }),
@@ -60,6 +68,13 @@ export function IntroSequence() {
     return () => clearTimeout(timer);
   }, [state, recover]);
 
+  // A visitor with a live session gets the film but not the wall
+  // (docs/VIDEO_STATE_MACHINE.md section 6). READY is the only state that
+  // accepts this from the loader's side, so it is sent the moment we get there.
+  useEffect(() => {
+    if (authenticated && state === 'READY') send({ type: 'ALREADY_AUTHENTICATED' });
+  }, [authenticated, state, send]);
+
   // Record completion so the sequence does not replay within the session.
   useEffect(() => {
     if (!isRevealed(state)) return;
@@ -86,21 +101,26 @@ export function IntroSequence() {
   }, [send]);
 
   const handleSubmit = useCallback(
-    async (email: string, password: string) => {
+    async (mode: AuthMode, payload: AuthPayload) => {
       send({ type: 'SUBMIT' });
+      setFieldErrors({});
 
       try {
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch(`/api/auth/${mode}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-csrf-token': readCsrfToken(),
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify(payload),
         });
 
         if (!response.ok) {
-          const body = (await response.json().catch(() => ({}))) as { error?: string };
+          const body = (await response.json().catch(() => ({}))) as {
+            error?: string;
+            fields?: Record<string, string>;
+          };
+          if (body.fields) setFieldErrors(body.fields);
           send({
             type: 'AUTH_FAILURE',
             message: body.error ?? 'Those details did not match. Try again.',
@@ -119,29 +139,52 @@ export function IntroSequence() {
     [send],
   );
 
-  const showLoader = state === 'BOOT' || (state === 'READY' && !loaderGone);
-  const gateVisible = state === 'GATED' || state === 'AUTHENTICATING';
+  const handleModeChange = useCallback(() => {
+    setFieldErrors({});
+    send({ type: 'CLEAR_ERROR' });
+  }, [send]);
+
   const revealed = isRevealed(state);
+  // The loader fades on its own clock. An authenticated visitor can move past
+  // READY before it finishes, and the fade must still complete, not cut.
+  const showLoader = !loaderGone && state !== 'RECOVERED';
+  const gateVisible = state === 'GATED' || state === 'AUTHENTICATING';
+  // After a successful sign-in the gate stays mounted while its type turns to
+  // sand. Only a gate that was actually shown dissolves.
+  const gateDissolving =
+    (state === 'UNLOCKED' || state === 'PLAYING' || state === 'COMPLETED') && !gateGone;
+  const [gateShown, setGateShown] = useState(false);
+  useEffect(() => {
+    if (gateVisible) setGateShown(true);
+  }, [gateVisible]);
+  // The stage outlives COMPLETED by exactly its scatter. RECOVERED drops it
+  // at once: that path is the one that must never wait on an effect.
+  const showStage = !revealed || (state === 'COMPLETED' && !stageReleased);
 
   return (
     <>
-      {!revealed && (
+      {showStage && (
         <VideoStage
           state={state}
           onProgress={setProgress}
           onBufferReady={handleBufferReady}
-          onPlaybackStarted={() => send({ type: 'PLAYBACK_STARTED' })}
-          onEnded={() => send({ type: 'VIDEO_ENDED' })}
+          onPlaybackStarted={handlePlaybackStarted}
+          onEnded={handleEnded}
           onRecover={recover}
+          onReleased={handleReleased}
         />
       )}
 
-      {!revealed && gateVisible && (
+      {state !== 'RECOVERED' && (gateVisible || (gateShown && gateDissolving)) && (
         <AuthGate
           visible={gateVisible}
           submitting={state === 'AUTHENTICATING'}
+          dissolving={gateDissolving}
           error={authError}
+          fieldErrors={fieldErrors}
           onSubmit={handleSubmit}
+          onModeChange={handleModeChange}
+          onDissolved={handleGateDissolved}
         />
       )}
 

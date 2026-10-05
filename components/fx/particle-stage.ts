@@ -1,23 +1,30 @@
+import { Z } from '@/lib/constants';
+
 /**
- * D4DRIVE — particle stage
+ * Particle stage.
  *
- * One WebGL2 context, one fixed full-viewport canvas, many concurrent jobs.
- * A "job" takes any rasterisable source (image, canvas, paused video) plus a
- * live viewport rect and either scatters it into sand (`dissolve`) or condenses
+ * One WebGL2 context, one fixed full-viewport canvas, many concurrent jobs. A
+ * job takes any rasterisable source (image, canvas, paused video) plus a live
+ * viewport rect, and either scatters it into sand (`dissolve`) or condenses
  * sand back into it (`assemble`).
  *
- * The scatter maths deliberately mirrors the ParticleScroll component this
- * project is built around — same hash, same swirl/gravity/drift vocabulary — so
- * every dissolve on the site shares one motion DNA.
+ * A single shared context matters: browsers cap concurrent WebGL contexts at
+ * roughly 16, and the catalog grid alone would pass that with a canvas per
+ * card.
  *
- * A single shared context matters: browsers cap concurrent WebGL contexts
- * (~16), and the fleet grid alone would blow past that with a canvas per card.
+ * The render loop is a requestAnimationFrame loop, which DESIGN.md allows
+ * here because it never touches React state. It draws to a canvas and reads
+ * layout through each job's `rect()`; nothing in it re-renders the tree. It
+ * stops itself the moment the last job finishes.
+ *
+ * Every caller must handle `runParticles` returning null (no WebGL2, a lost
+ * context, reduced motion) by falling back to a CSS transition. Particles are
+ * an enhancement on top of a sequence that already works without them.
+ *
+ * Ported from the Vite prototype (`reference/vite-intro/src/fx`).
  */
 
-export type ParticleSource =
-  | HTMLImageElement
-  | HTMLCanvasElement
-  | HTMLVideoElement;
+export type ParticleSource = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
 
 export interface ParticleOptions {
   /** Grain spacing in CSS px. Smaller is finer and denser. */
@@ -26,41 +33,41 @@ export interface ParticleOptions {
   size: number;
   /** Max distance a grain travels from home, in CSS px. */
   spread: number;
-  /** Downward bias of the cloud, -1..1. Negative lifts it. */
+  /** Downward bias of the cloud, -1 to 1. Negative lifts it. */
   gravity: number;
-  /** Idle float speed of scattered grains, 0..1. */
+  /** Idle float speed of scattered grains, 0 to 1. */
   drift: number;
   /** Sideways arc in CSS px taken in flight. */
   swirl: number;
-  /** Per-grain timing randomness, 0..0.95. */
+  /** Per-grain timing randomness, 0 to 0.95. */
   stagger: number;
   /** How much of the stagger follows `sweepAngle` rather than pure noise. */
   sweep: number;
   /** Direction the dissolve travels across the plate, in radians. */
   sweepAngle: number;
-  /** Opacity of fully scattered grains, 0..1. */
+  /** Opacity of fully scattered grains, 0 to 1. */
   fade: number;
   /**
-   * Drain colour out of the grains, 0..1. WebGL samples the raw source, not
+   * Drain colour out of the grains, 0 to 1. WebGL samples the raw source, not
    * the CSS-filtered result, so anything rendered under `grayscale()` has to
    * match here or the sand arrives in colour and snaps grey on landing.
    */
   desaturate: number;
   /** How the source maps onto the rect. */
-  fit: "cover" | "fill";
+  fit: 'cover' | 'fill';
 }
 
 export interface ParticleJobSpec extends Partial<ParticleOptions> {
   source: ParticleSource;
   /** Live viewport rect, re-read every frame so the job tracks layout. */
   rect: () => DOMRect | null;
-  mode: "dissolve" | "assemble";
+  mode: 'dissolve' | 'assemble';
   /** Seconds. */
   duration: number;
   onDone?: () => void;
 }
 
-const DEFAULTS: ParticleOptions = {
+export const DEFAULTS: ParticleOptions = {
   density: 2,
   size: 1.25,
   spread: 220,
@@ -72,8 +79,11 @@ const DEFAULTS: ParticleOptions = {
   sweepAngle: 0,
   fade: 0.85,
   desaturate: 0,
-  fit: "fill",
+  fit: 'fill',
 };
+
+/** Points per job beyond which the grid coarsens, to hold one frame budget. */
+const MAX_POINTS_AREA = 900_000;
 
 const VERT = `#version 300 es
 precision highp float;
@@ -82,8 +92,6 @@ uniform vec2  uRes;
 uniform vec2  uOrigin;
 uniform vec2  uRect;
 uniform vec2  uGrid;
-uniform vec2  uUvScale;
-uniform vec2  uUvOffset;
 uniform float uDensity;
 uniform float uProgress;
 uniform float uStagger;
@@ -134,7 +142,7 @@ void main () {
   float delay = mix(h1, sweepT, uSweep) * uStagger;
 
   float t = clamp((uProgress - delay) / max(1.0 - delay, 1e-3), 0.0, 1.0);
-  // Grains hang at home, then let go — and read in reverse as a soft landing.
+  // Grains hang at home, then let go, and read in reverse as a soft landing.
   float e = pow(t, 1.5);
 
   vec2 dir = normalize(vec2(h2 - 0.5, h3 - 0.5) + vec2(1e-4, 0.0));
@@ -230,32 +238,89 @@ let raf = 0;
 let clock = 0;
 let lastFrame = 0;
 
-function compile(gl: WebGL2RenderingContext, type: number, src: string) {
-  const sh = gl.createShader(type)!;
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+
+/**
+ * `object-fit` mapping from a texture of `tw` by `th` onto a rect of `rw` by
+ * `rh`, as a UV scale and offset. Pure, so it is unit tested.
+ */
+export function uvFit(
+  fit: ParticleOptions['fit'],
+  tw: number,
+  th: number,
+  rw: number,
+  rh: number,
+): { s: [number, number]; o: [number, number] } {
+  if (fit === 'fill' || !tw || !th || !rw || !rh) return { s: [1, 1], o: [0, 0] };
+  const texAspect = tw / th;
+  const rectAspect = rw / rh;
+  if (texAspect > rectAspect) {
+    const sx = rectAspect / texAspect;
+    return { s: [sx, 1], o: [(1 - sx) / 2, 0] };
+  }
+  const sy = texAspect / rectAspect;
+  return { s: [1, sy], o: [0, (1 - sy) / 2] };
+}
+
+/**
+ * Grain spacing for a plate. Very large plates (a full-viewport scatter)
+ * coarsen so the point count stays inside one frame budget. Pure.
+ */
+export function effectiveDensity(requested: number, width: number, height: number): number {
+  return Math.max(requested, Math.sqrt((width * height) / MAX_POINTS_AREA));
+}
+
+export function prefersReducedMotion(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
+  const sh = gl.createShader(type);
+  if (!sh) return null;
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
   if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    console.error("[particle-stage]", gl.getShaderInfoLog(sh));
+    console.error('[particle-stage]', gl.getShaderInfoLog(sh));
+    return null;
   }
   return sh;
 }
 
+/**
+ * Finishes every job at once. Used when the context is lost: a job that never
+ * reports done would leave whatever it was revealing hidden forever.
+ */
+function flushJobs(): void {
+  const pending = [...jobs];
+  jobs.clear();
+  if (raf) cancelAnimationFrame(raf);
+  raf = 0;
+  lastFrame = 0;
+  for (const job of pending) {
+    if (!job.cancelled) job.spec.onDone?.();
+  }
+}
+
 function createStage(): Stage | null {
   if (stage) return stage;
-  if (stageFailed || typeof document === "undefined") return null;
+  if (stageFailed || typeof document === 'undefined') return null;
 
-  const canvas = document.createElement("canvas");
-  canvas.setAttribute("aria-hidden", "true");
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.dataset.particleStage = '';
   Object.assign(canvas.style, {
-    position: "fixed",
-    inset: "0",
-    width: "100%",
-    height: "100%",
-    pointerEvents: "none",
-    zIndex: "60",
+    position: 'fixed',
+    inset: '0',
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    zIndex: String(Z.particles),
   } satisfies Partial<CSSStyleDeclaration>);
 
-  const gl = canvas.getContext("webgl2", {
+  const gl = canvas.getContext('webgl2', {
     alpha: true,
     depth: false,
     stencil: false,
@@ -267,70 +332,73 @@ function createStage(): Stage | null {
     return null;
   }
 
-  const program = gl.createProgram()!;
-  gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
-  gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    console.error("[particle-stage]", gl.getProgramInfoLog(program));
+  const vert = compile(gl, gl.VERTEX_SHADER, VERT);
+  const frag = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+  const program = gl.createProgram();
+  const vao = gl.createVertexArray();
+  if (!vert || !frag || !program || !vao) {
     stageFailed = true;
     return null;
   }
 
-  const u: Stage["u"] = {};
-  const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) as number;
-  for (let i = 0; i < count; i++) {
-    const info = gl.getActiveUniform(program, i)!;
-    u[info.name] = gl.getUniformLocation(program, info.name);
+  gl.attachShader(program, vert);
+  gl.attachShader(program, frag);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('[particle-stage]', gl.getProgramInfoLog(program));
+    stageFailed = true;
+    return null;
   }
 
+  const u: Stage['u'] = {};
+  const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) as number;
+  for (let i = 0; i < count; i += 1) {
+    const info = gl.getActiveUniform(program, i);
+    if (info) u[info.name] = gl.getUniformLocation(program, info.name);
+  }
+
+  // The stage lives for the page's lifetime, so this listener never needs
+  // removing. After a loss every later call falls back to CSS.
+  canvas.addEventListener('webglcontextlost', (event) => {
+    event.preventDefault();
+    stageFailed = true;
+    stage = null;
+    flushJobs();
+    canvas.remove();
+  });
+
   document.body.appendChild(canvas);
-  stage = { gl, canvas, program, vao: gl.createVertexArray()!, u };
+  stage = { gl, canvas, program, vao, u };
   return stage;
 }
 
 function sourceSize(src: ParticleSource): [number, number] {
   if (src instanceof HTMLVideoElement) return [src.videoWidth, src.videoHeight];
-  if (src instanceof HTMLImageElement)
+  if (src instanceof HTMLImageElement) {
     return [src.naturalWidth || src.width, src.naturalHeight || src.height];
+  }
   return [src.width, src.height];
 }
 
-function makeTexture(gl: WebGL2RenderingContext, src: ParticleSource) {
-  const tex = gl.createTexture()!;
+function makeTexture(gl: WebGL2RenderingContext, src: ParticleSource): WebGLTexture | null {
+  const tex = gl.createTexture();
+  if (!tex) return null;
   gl.bindTexture(gl.TEXTURE_2D, tex);
   // No FLIP_Y. Sampling is done in the rect's own top-left-origin coordinates,
-  // so the source's first row must stay at v=0; flipping on upload would put it
-  // at v=1 and render every plate upside down.
+  // so the source's first row must stay at v=0; flipping on upload would put
+  // it at v=1 and render every plate upside down.
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(
-    gl.TEXTURE_2D,
-    gl.TEXTURE_MIN_FILTER,
-    gl.LINEAR_MIPMAP_LINEAR,
-  );
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.generateMipmap(gl.TEXTURE_2D);
   return tex;
 }
 
-/** `object-fit` mapping from a texture of `tw×th` onto a rect of `rw×rh`. */
-function uvFit(fit: ParticleOptions["fit"], tw: number, th: number, rw: number, rh: number) {
-  if (fit === "fill" || !tw || !th || !rw || !rh) return { s: [1, 1], o: [0, 0] };
-  const texAspect = tw / th;
-  const rectAspect = rw / rh;
-  if (texAspect > rectAspect) {
-    const sx = rectAspect / texAspect;
-    return { s: [sx, 1], o: [(1 - sx) / 2, 0] };
-  }
-  const sy = texAspect / rectAspect;
-  return { s: [1, sy], o: [0, (1 - sy) / 2] };
-}
-
-function syncSize(s: Stage) {
+function syncSize(s: Stage): number {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(1, Math.round(window.innerWidth * dpr));
   const h = Math.max(1, Math.round(window.innerHeight * dpr));
@@ -341,7 +409,7 @@ function syncSize(s: Stage) {
   return dpr;
 }
 
-function frame(now: number) {
+function frame(now: number): void {
   const s = stage;
   if (!s) return;
   const { gl } = s;
@@ -364,6 +432,8 @@ function frame(now: number) {
   gl.activeTexture(gl.TEXTURE0);
 
   const finished: Job[] = [];
+  const set1 = (name: string, v: number) => gl.uniform1f(s.u[name] ?? null, v);
+  const set2 = (name: string, a: number, b: number) => gl.uniform2f(s.u[name] ?? null, a, b);
 
   for (const job of jobs) {
     if (job.cancelled) {
@@ -375,36 +445,34 @@ function frame(now: number) {
 
     if (rect && rect.width > 0 && rect.height > 0) {
       const o = job.o;
-      // Coarsen the grid on very large plates so a full-viewport dissolve
-      // stays inside one frame budget.
-      const density = Math.max(o.density, Math.sqrt((rect.width * rect.height) / 900000));
+      const density = effectiveDensity(o.density, rect.width, rect.height);
       const gridX = Math.ceil(rect.width / density);
       const gridY = Math.ceil(rect.height / density);
-      const progress = job.spec.mode === "dissolve" ? elapsed : 1 - elapsed;
+      const progress = job.spec.mode === 'dissolve' ? elapsed : 1 - elapsed;
       const uv = uvFit(o.fit, job.texW, job.texH, rect.width, rect.height);
 
       gl.bindTexture(gl.TEXTURE_2D, job.tex);
-      gl.uniform1i(s.u.uContent!, 0);
-      gl.uniform2f(s.u.uRes!, w, h);
-      gl.uniform2f(s.u.uOrigin!, rect.left, rect.top);
-      gl.uniform2f(s.u.uRect!, rect.width, rect.height);
-      gl.uniform2f(s.u.uGrid!, gridX, gridY);
-      gl.uniform2f(s.u.uUvScale!, uv.s[0], uv.s[1]);
-      gl.uniform2f(s.u.uUvOffset!, uv.o[0], uv.o[1]);
-      gl.uniform1f(s.u.uDensity!, density);
-      gl.uniform1f(s.u.uProgress!, progress);
-      gl.uniform1f(s.u.uStagger!, Math.min(Math.max(o.stagger, 0), 0.95));
-      gl.uniform1f(s.u.uSweep!, Math.min(Math.max(o.sweep, 0), 1));
-      gl.uniform2f(s.u.uSweepDir!, Math.cos(o.sweepAngle), Math.sin(o.sweepAngle));
-      gl.uniform1f(s.u.uSpread!, Math.max(o.spread, 0));
-      gl.uniform1f(s.u.uGravity!, Math.min(Math.max(o.gravity, -1), 1));
-      gl.uniform1f(s.u.uDrift!, Math.max(o.drift, 0));
-      gl.uniform1f(s.u.uSwirl!, Math.max(o.swirl, 0));
-      gl.uniform1f(s.u.uTime!, clock);
-      gl.uniform1f(s.u.uFade!, Math.min(Math.max(o.fade, 0), 1));
-      gl.uniform1f(s.u.uSize!, Math.max(o.size, 0.5));
-      gl.uniform1f(s.u.uDesat!, Math.min(Math.max(o.desaturate, 0), 1));
-      gl.uniform1f(s.u.uDpr!, dpr);
+      gl.uniform1i(s.u.uContent ?? null, 0);
+      set2('uRes', w, h);
+      set2('uOrigin', rect.left, rect.top);
+      set2('uRect', rect.width, rect.height);
+      set2('uGrid', gridX, gridY);
+      set2('uUvScale', uv.s[0], uv.s[1]);
+      set2('uUvOffset', uv.o[0], uv.o[1]);
+      set1('uDensity', density);
+      set1('uProgress', progress);
+      set1('uStagger', clamp(o.stagger, 0, 0.95));
+      set1('uSweep', clamp(o.sweep, 0, 1));
+      set2('uSweepDir', Math.cos(o.sweepAngle), Math.sin(o.sweepAngle));
+      set1('uSpread', Math.max(o.spread, 0));
+      set1('uGravity', clamp(o.gravity, -1, 1));
+      set1('uDrift', Math.max(o.drift, 0));
+      set1('uSwirl', Math.max(o.swirl, 0));
+      set1('uTime', clock);
+      set1('uFade', clamp(o.fade, 0, 1));
+      set1('uSize', Math.max(o.size, 0.5));
+      set1('uDesat', clamp(o.desaturate, 0, 1));
+      set1('uDpr', dpr);
       gl.drawArrays(gl.POINTS, 0, gridX * gridY);
     }
 
@@ -415,7 +483,7 @@ function frame(now: number) {
 
   for (const job of finished) {
     jobs.delete(job);
-    s.gl.deleteTexture(job.tex);
+    gl.deleteTexture(job.tex);
     if (!job.cancelled) job.spec.onDone?.();
   }
 
@@ -428,23 +496,28 @@ function frame(now: number) {
   }
 }
 
+/** True when WebGL2 is available and the visitor has not asked for less motion. */
 export function particlesSupported(): boolean {
-  return createStage() !== null;
+  return !prefersReducedMotion() && createStage() !== null;
 }
 
 /**
- * Queue a dissolve/assemble. Returns a cancel function, or `null` if WebGL2 is
- * unavailable — callers must treat `null` as "fall back to a CSS transition".
+ * Queues a dissolve or assemble. Returns a cancel function, or null when the
+ * stage is unavailable, in which case the caller must fall back to CSS.
  */
 export function runParticles(spec: ParticleJobSpec): (() => void) | null {
+  if (prefersReducedMotion()) return null;
   const s = createStage();
   if (!s) return null;
 
   const [texW, texH] = sourceSize(spec.source);
   if (!texW || !texH) return null;
 
+  const tex = makeTexture(s.gl, spec.source);
+  if (!tex) return null;
+
   const job: Job = {
-    tex: makeTexture(s.gl, spec.source),
+    tex,
     texW,
     texH,
     spec,

@@ -2,9 +2,14 @@
 
 import { useEffect, useRef } from 'react';
 import { Z } from '@/lib/constants';
+import { runParticles } from '@/components/fx/particle-stage';
 import {
   BUFFER_THRESHOLD,
+  GATE_SCRIM_OPACITY,
+  LOADER_FADE_MS,
   POSTER_TIME,
+  REVEAL_MS,
+  SCATTER_MS,
   STALL_TIMEOUT_MS,
   VIDEO_SOURCES,
 } from './constants';
@@ -17,6 +22,8 @@ interface VideoStageProps {
   onPlaybackStarted: () => void;
   onEnded: () => void;
   onRecover: (reason: RecoveryReason) => void;
+  /** Fired once the stage has scattered (or faded) away after COMPLETED. */
+  onReleased: () => void;
 }
 
 /**
@@ -33,8 +40,10 @@ export function VideoStage({
   onPlaybackStarted,
   onEnded,
   onRecover,
+  onReleased,
 }: VideoStageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   /**
    * Completion guard.
@@ -149,15 +158,82 @@ export function VideoStage({
       }
     }
 
-    if (state === 'READY' || state === 'GATED' || state === 'AUTHENTICATING') {
+    if (
+      state === 'READY' ||
+      state === 'GATED' ||
+      state === 'AUTHENTICATING' ||
+      state === 'COMPLETED'
+    ) {
       video.pause();
     }
   }, [state, onPlaybackStarted, onRecover]);
+
+  /**
+   * The reveal. The held last frame scatters into sand over the landing that
+   * has been underneath all along. Without WebGL2 (or with a context that
+   * cannot upload the frame) it is a plain opacity fade instead.
+   */
+  const onReleasedRef = useRef(onReleased);
+  onReleasedRef.current = onReleased;
+
+  useEffect(() => {
+    if (state !== 'COMPLETED') return undefined;
+    const video = videoRef.current;
+    const stage = stageRef.current;
+    if (!video || !stage) {
+      onReleasedRef.current();
+      return undefined;
+    }
+
+    let done = false;
+    const release = () => {
+      if (done) return;
+      done = true;
+      onReleasedRef.current();
+    };
+
+    const cancel = runParticles({
+      source: video,
+      rect: () => new DOMRect(0, 0, window.innerWidth, window.innerHeight),
+      mode: 'dissolve',
+      duration: SCATTER_MS / 1000,
+      fit: 'cover',
+      spread: 340,
+      gravity: -0.16,
+      swirl: 92,
+      drift: 0.9,
+      stagger: 0.76,
+      sweep: 0.7,
+      // Left to right, carrying on the direction the car leaves in.
+      sweepAngle: 0,
+      size: 1.2,
+      fade: 0.88,
+      onDone: release,
+    });
+
+    if (cancel) {
+      // The stage queued its frame first, so by now the opening particle
+      // frame (identical to the video) is drawn. No gap, no double image.
+      const raf = requestAnimationFrame(() => {
+        stage.style.visibility = 'hidden';
+      });
+      return () => {
+        cancelAnimationFrame(raf);
+        cancel();
+      };
+    }
+
+    stage.style.transition = `opacity ${REVEAL_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+    stage.style.opacity = '0';
+    const timer = setTimeout(release, REVEAL_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
 
   const dimmed = state === 'GATED' || state === 'AUTHENTICATING';
 
   return (
     <div
+      ref={stageRef}
       style={{ zIndex: Z.videoStage }}
       className="fixed inset-0 overflow-hidden bg-[var(--color-ink)]"
       // Decorative. The sequence is narrated to assistive technology by the
@@ -175,16 +251,23 @@ export function VideoStage({
         poster={VIDEO_SOURCES.poster}
         disablePictureInPicture
         className="h-full w-full object-cover"
-        style={{
-          filter: dimmed ? 'brightness(0.45)' : 'brightness(1)',
-          transition: 'filter 700ms cubic-bezier(0.25,0.46,0.45,0.94)',
-        }}
       >
         <source src={VIDEO_SOURCES.webm720} type="video/webm" media="(max-width: 768px)" />
         <source src={VIDEO_SOURCES.mp4720} type="video/mp4" media="(max-width: 768px)" />
         <source src={VIDEO_SOURCES.webm1080} type="video/webm" />
         <source src={VIDEO_SOURCES.mp41080} type="video/mp4" />
       </video>
+
+      {/* Dims the held frame behind the gate. An opacity transition on a
+          scrim rather than a filter on the video: only transform and opacity
+          animate, and a filter transition repaints the whole film. */}
+      <div
+        className="absolute inset-0 bg-[var(--color-ink)]"
+        style={{
+          opacity: dimmed ? GATE_SCRIM_OPACITY : 0,
+          transition: `opacity ${LOADER_FADE_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`,
+        }}
+      />
     </div>
   );
 }

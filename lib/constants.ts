@@ -11,6 +11,9 @@ export const Z = {
   nav: 20,
   videoStage: 30,
   authGate: 40,
+  // Above the gate and film it dissolves, below the loader. One fixed
+  // full-viewport canvas shared by every particle job (components/fx).
+  particles: 45,
   bootLoader: 50,
   toast: 60,
   grain: 70,

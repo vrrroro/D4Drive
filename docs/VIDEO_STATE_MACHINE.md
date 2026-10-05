@@ -15,11 +15,11 @@ match it exactly.
 |---|---|---|
 | `BOOT` | Alabaster ground, `D4Drive` wordmark, progress rule filling left to right | Created, `preload="auto"`, buffering, not painted |
 | `READY` | Loader fades out over 700ms, revealing frame one | Seeked to `POSTER_TIME`, paused |
-| `GATED` | Auth panel fades up over the frozen frame | Paused, held |
+| `GATED` | Auth panel fades up over the frozen frame, a charcoal scrim dims it | Paused, held |
 | `AUTHENTICATING` | Submit button in loading state, panel locked | Paused, held |
-| `UNLOCKED` | Auth panel fades out over 500ms | `play()` called |
+| `UNLOCKED` | Panel backing fades over 500ms while its type dissolves into sand (section 10) | `play()` called |
 | `PLAYING` | Video running, no chrome, no controls | Playing |
-| `COMPLETED` | Video fades into the landing content | Paused at final frame, then unmounted |
+| `COMPLETED` | Held final frame scatters into the landing content (section 10) | Paused at final frame, unmounted once the scatter ends |
 | `RECOVERED` | Poster still, landing content revealed directly | Never played |
 
 `RECOVERED` is not a failure screen. It is the graceful path for reduced motion,
@@ -66,6 +66,18 @@ product, just without the cinema.
 
 **Only `AUTHENTICATING` can return to a previous state.** Every other edge moves
 forward. The intro never replays within a session.
+
+Two edges are not drawn above:
+
+- `READY` and `GATED` both accept `ALREADY_AUTHENTICATED` and move straight to
+  `UNLOCKED` (section 6). `IntroSequence` sends it on reaching `READY` when the
+  server rendered the page with a session.
+- `GATED` accepts `CLEAR_ERROR` as a self-edge: switching the panel between
+  sign in and register drops the other form's error without leaving the state.
+
+A `LOADER_FADED` that arrives after the machine has left `READY` is ignored. The
+loader fades on its own clock and must not drag an authenticated visitor back to
+the gate.
 
 ---
 
@@ -191,8 +203,13 @@ components/intro/
   useIntroMachine.ts                   reducer, states and guards, zero DOM
   BootLoader.tsx                       wordmark + progress rule
   AuthGate.tsx                         auth panel, form, error surface
-  VideoStage.tsx                       video element, listeners, play commands
+  VideoStage.tsx                       video element, listeners, play commands, scatter
   constants.ts                         timings, thresholds, z-index scale
+
+components/fx/
+  particle-stage.ts                    one shared WebGL2 canvas, dissolve and assemble jobs
+  use-particles.ts                     DOM capture (html-to-image), dissolve and assemble hooks
+  AssembleOnView.tsx                   catalog cards condensing out of sand on first view
 ```
 
 **`useIntroMachine` must be a pure reducer with no DOM access.** That is what makes
@@ -222,11 +239,47 @@ call site.
 | `BUFFER_THRESHOLD` | 0.25 | Enough head start to play through on a typical connection |
 | `LOADER_FADE_MS` | 700 | Loader out, matches the design system colour-transition tier |
 | `GATE_FADE_MS` | 500 | Auth panel in and out, the UI interaction tier |
-| `REVEAL_MS` | 1500 | Video into landing content, the cinematic image tier |
-| `POSTER_TIME` | 0.04 | Seek target for frame one, past t=0 to dodge black leader frames |
+| `REVEAL_MS` | 1500 | Video into landing content when particles are unavailable (CSS fade) |
+| `SCATTER_MS` | 2000 | Held final frame scattering into the landing, top of the cinematic tier |
+| `DISSOLVE_MS` | 1500 | Auth panel type turning to sand on a successful sign-in |
+| `GATE_SCRIM_OPACITY` | 0.55 | Charcoal scrim over the held frame while the gate is up |
+| `POSTER_TIME` | 1.2 | Seek target for the revealed frame, past the film's fade up from black |
 | `STALL_TIMEOUT_MS` | 4000 | No `progress` event for this long means the network gave up |
 
-`POSTER_TIME` is deliberately not zero. Many encodes open on a black or partial
-frame at exactly t=0, and seeking a few hundredths in lands on real picture. The
-exact value is confirmed against the encoded asset during the pipeline task, not
-guessed.
+`POSTER_TIME` is deliberately not zero. This film fades up from black over
+roughly 1.2 seconds (mean luma 8 at t=0.37, legible only from t=1.2), so the
+first frame worth revealing is well past t=0. Measured against the encoded
+asset, not guessed; `npm run build:assets -- --poster-time` must match it.
+
+---
+
+## 10. Particle effects
+
+Two moments use the shared WebGL2 particle stage in `components/fx/`, ported
+from the Vite prototype. Neither adds a state. Both are presentation inside an
+existing state, and both have a CSS fallback that the sequence uses whenever
+particles are unavailable.
+
+| Moment | State | With WebGL2 | Without (or reduced motion) |
+|---|---|---|---|
+| Sign-in succeeds | `UNLOCKED` onward | The panel's type is rasterised (`html-to-image`) and dissolves over `DISSOLVE_MS`; the opaque backing fades over `GATE_FADE_MS` | Type fades over `GATE_FADE_MS` |
+| Film ends | `COMPLETED` | The held final frame is uploaded as a texture and scatters left to right over `SCATTER_MS` | Stage fades over `REVEAL_MS` |
+
+Rules that keep this inside the contract:
+
+- **The machine never waits on an effect.** `COMPLETED` is entered on `ended`
+  as before. `IntroSequence` keeps the gate mounted until its dissolve reports
+  done, and keeps `VideoStage` mounted until its scatter reports done, as
+  local flags. The reducer does not know either exists.
+- **`RECOVERED` never runs an effect.** It drops the stage and the gate at once.
+  Reduced motion lands here at mount, so it never sees a particle.
+- **Nothing is ever stranded invisible.** A lost WebGL context finishes every
+  pending job immediately. Assembling content carries a deadline that reveals
+  it regardless. The real element is hidden only on the frame after the stage
+  draws its first, pixel-identical, particle frame.
+- **The loop never touches React state.** The stage's `requestAnimationFrame`
+  loop draws to its canvas and reads each job's rect; it stops when the last
+  job ends.
+- **Layering.** The canvas is fixed, full viewport, `pointer-events: none`, at
+  `Z.particles` (45): above the gate (40) and film (30) it dissolves, below the
+  boot loader (50).

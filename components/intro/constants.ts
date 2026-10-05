@@ -21,8 +21,21 @@ export const LOADER_FADE_MS = 700;
 /** Auth panel in and out. The UI interaction tier. */
 export const GATE_FADE_MS = 500;
 
-/** Video into landing content. The cinematic tier. */
+/** Video into landing content when particles are unavailable: a CSS fade. */
 export const REVEAL_MS = 1500;
+
+/**
+ * The film's held last frame scattering into the landing, when WebGL2 is
+ * available. The top of the cinematic tier: a full-viewport plate needs the
+ * extra half second to read as sand rather than a glitch.
+ */
+export const SCATTER_MS = 2000;
+
+/** The auth panel's type turning to sand on a successful sign-in. */
+export const DISSOLVE_MS = 1500;
+
+/** Opacity of the charcoal scrim over the held frame while the gate is up. */
+export const GATE_SCRIM_OPACITY = 0.55;
 
 /**
  * Seek target for the revealed frame.

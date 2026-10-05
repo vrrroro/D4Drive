@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
+    "html-to-image": "^1.11.13",
     "jose": "^5.9.6",
     "lucide-react": "^0.469.0",
     "motion": "^11.15.0",

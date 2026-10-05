@@ -167,6 +167,28 @@ body {
   animation: fade-in var(--duration-colour) var(--ease-luxury) both;
 }
 
+/* Particle assembly (components/fx/use-particles.ts). Hidden only when the
+   script that reveals it can run and motion is welcome. The failsafe shows a
+   pending element after 3s if hydration never arrives; once the hook arms it,
+   the hook owns the reveal and the failsafe no longer applies. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-assemble='pending'] {
+    opacity: 0;
+    animation: assemble-failsafe 1ms linear 3s forwards;
+  }
+
+  [data-assemble='armed'],
+  [data-assemble='running'] {
+    opacity: 0;
+  }
+}
+
+@keyframes assemble-failsafe {
+  to {
+    opacity: 1;
+  }
+}
+
 /* ==========================================================================
    Reduced motion
 

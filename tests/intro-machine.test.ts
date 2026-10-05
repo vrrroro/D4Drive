@@ -137,3 +137,37 @@ test('out-of-order events are ignored rather than corrupting state', () => {
   const result = introReducer(initialContext, { type: 'VIDEO_ENDED' });
   assert.equal(result.state, 'BOOT');
 });
+
+test('CLEAR_ERROR drops a failed attempt\'s message without leaving GATED', () => {
+  const failed = drive([
+    { type: 'BUFFER_READY' },
+    { type: 'LOADER_FADED' },
+    { type: 'SUBMIT' },
+    { type: 'AUTH_FAILURE', message: 'Those details did not match. Try again.' },
+  ]);
+  assert.equal(failed.authError, 'Those details did not match. Try again.');
+
+  const cleared = introReducer(failed, { type: 'CLEAR_ERROR' });
+  assert.equal(cleared.state, 'GATED');
+  assert.equal(cleared.authError, null);
+});
+
+test('CLEAR_ERROR is ignored outside GATED', () => {
+  const authenticating = drive([
+    { type: 'BUFFER_READY' },
+    { type: 'LOADER_FADED' },
+    { type: 'SUBMIT' },
+  ]);
+  assert.equal(introReducer(authenticating, { type: 'CLEAR_ERROR' }), authenticating);
+});
+
+test('an authenticated visitor is unlocked from READY while the loader still fades', () => {
+  const result = drive([
+    { type: 'BUFFER_READY' },
+    { type: 'ALREADY_AUTHENTICATED' },
+    // The loader finishes its fade after the machine has moved on. That late
+    // event must not drag the visitor back to the gate.
+    { type: 'LOADER_FADED' },
+  ]);
+  assert.equal(result.state, 'UNLOCKED');
+});

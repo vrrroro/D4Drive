@@ -3,6 +3,7 @@ import { listCars, listBrands } from '@/lib/services/cars';
 import { carFilterSchema } from '@/lib/validation/schemas';
 import { formatCurrency } from '@/lib/services/pricing';
 import { CarFilters } from '@/components/sections/CarFilters';
+import { AssembleOnView } from '@/components/fx/AssembleOnView';
 import { Card } from '@/components/ui/Card';
 import { CarPhoto } from '@/components/ui/CarPhoto';
 
@@ -97,27 +98,29 @@ export default async function CarsPage({
             ) : (
               <section className="mt-16 grid grid-cols-1 gap-x-12 gap-y-20 sm:grid-cols-2 lg:grid-cols-3">
                 {result?.cars.map((car, index) => (
-                  <Card key={car.id} href={`/cars/${car.id}`} padding="flush">
-                    <CarPhoto
-                      src={car.image_url}
-                      name={`${car.brand} ${car.model}`}
-                      hoverReveal
-                      priority={index === 0}
-                    />
+                  <AssembleOnView key={car.id} index={index}>
+                    <Card href={`/cars/${car.id}`} padding="flush">
+                      <CarPhoto
+                        src={car.image_url}
+                        name={`${car.brand} ${car.model}`}
+                        hoverReveal
+                        priority={index === 0}
+                      />
 
-                    <h2 className="font-display mt-6 text-2xl leading-tight text-[var(--ink)] transition-colors duration-500 group-hover:text-[var(--color-carmine)]">
-                      {car.brand} {car.model}
-                    </h2>
+                      <h2 className="font-display mt-6 text-2xl leading-tight text-[var(--ink)] transition-colors duration-500 group-hover:text-[var(--color-carmine)]">
+                        {car.brand} {car.model}
+                      </h2>
 
-                    <p className="mt-2 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-                      {car.fuel_type} / {car.transmission} / {car.seats} seats
-                    </p>
+                      <p className="mt-2 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
+                        {car.fuel_type} / {car.transmission} / {car.seats} seats
+                      </p>
 
-                    <p className="mt-4 font-body text-sm text-[var(--ink)]">
-                      {formatCurrency(Number(car.price_per_day))}
-                      <span className="text-[var(--muted)]"> per day</span>
-                    </p>
-                  </Card>
+                      <p className="mt-4 font-body text-sm text-[var(--ink)]">
+                        {formatCurrency(Number(car.price_per_day))}
+                        <span className="text-[var(--muted)]"> per day</span>
+                      </p>
+                    </Card>
+                  </AssembleOnView>
                 ))}
               </section>
             )}

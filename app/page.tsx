@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { IntroSequence } from '@/components/intro/IntroSequence';
 import { Button } from '@/components/ui/Button';
+import { getSession } from '@/lib/auth/guards';
 
 /**
  * The landing page.
@@ -9,10 +10,14 @@ import { Button } from '@/components/ui/Button';
  * sequence, which is an isolated leaf. Everything below it renders on the
  * server and ships no bundle of its own.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  // Read on the server so a signed-in visitor skips the gate without a
+  // client round trip, and without ever seeing the panel flash up.
+  const session = await getSession();
+
   return (
     <main>
-      <IntroSequence />
+      <IntroSequence authenticated={session !== null} />
 
       {/* Hero. min-h-[100dvh], never h-screen: the iOS Safari address bar
           collapses the viewport unit mid-scroll and shifts the layout on the

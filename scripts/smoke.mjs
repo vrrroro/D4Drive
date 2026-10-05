@@ -66,6 +66,11 @@ function watch(page, label) {
   ok('wrong password keeps the gate open with an inline error', await dialog.isVisible());
   await dialog.getByLabel('Password').fill('DemoRenter!2026');
   await dialog.getByRole('button', { name: 'Sign in' }).click();
+  const webgl2 = await page.evaluate(() => Boolean(document.createElement('canvas').getContext('webgl2')));
+  if (webgl2) {
+    await page.locator('canvas[data-particle-stage]').waitFor({ state: 'attached', timeout: 10000 });
+    ok('sign-in dissolves the gate through the particle stage', true);
+  }
   await dialog.waitFor({ state: 'detached', timeout: 15000 });
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${SHOTS}/02-playing.png` });
@@ -73,6 +78,8 @@ function watch(page, label) {
   await page.waitForTimeout(2000);
   await page.screenshot({ path: `${SHOTS}/03-landing.png` });
   ok('film completes and the landing is revealed', await page.getByRole('heading', { level: 1, name: /Drive easy/ }).isVisible());
+  await page.locator('video').waitFor({ state: 'detached', timeout: 10000 });
+  ok('the film stage is released after its scatter', (await page.locator('video').count()) === 0);
   const cookies = await ctx.cookies();
   ok('session cookies are httpOnly', cookies.filter((c) => c.name !== 'd4d_csrf').every((c) => c.httpOnly), cookies.map((c) => `${c.name}:${c.path}`).join(' '));
   ok('no token in localStorage', (await page.evaluate(() => Object.keys(localStorage).length)) === 0);
@@ -106,6 +113,19 @@ let reference = '';
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
   ok('every car without a photo shows a labelled slot', slots === count, `slots=${slots}`);
   await page.screenshot({ path: `${SHOTS}/04-catalog.png`, fullPage: true });
+
+  // Scroll the way a person does. A card only assembles once it has actually
+  // been in view, so one 4000px jump would leave the middle row armed.
+  for (let i = 0; i < 12; i += 1) {
+    await page.mouse.wheel(0, 350);
+    await page.waitForTimeout(250);
+  }
+  await page.waitForFunction(
+    () => [...document.querySelectorAll('[data-assemble]')].every((el) => el.dataset.assemble === 'done'),
+    null,
+    { timeout: 20000 },
+  );
+  ok('every catalog card assembles once seen', true);
 
   await page.goto(BASE + '/cars?fuel=electric');
   ok('fuel filter narrows the catalog', (await cards.count()) === 2, `electric=${await cards.count()}`);
@@ -195,7 +215,30 @@ let reference = '';
   await ctx.close();
 }
 
-// 4. Hostile inputs
+// 4. Fallbacks: reduced motion and no JavaScript must never hide content
+{
+  const reduced = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1440, height: 900 } });
+  const page = await reduced.newPage();
+  watch(page, 'reduced-motion');
+  await page.goto(BASE + '/');
+  await page.waitForTimeout(1200);
+  ok('reduced motion skips the film to the landing', (await page.getByRole('dialog').count()) === 0 && (await page.locator('video').count()) === 0);
+  await page.goto(BASE + '/cars');
+  await page.waitForTimeout(300);
+  const hidden = await page.locator('[data-assemble]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
+  ok('reduced motion shows catalog cards at once', hidden === 0, `hidden=${hidden}`);
+  ok('reduced motion creates no particle canvas', (await page.locator('canvas[data-particle-stage]').count()) === 0);
+  await reduced.close();
+
+  const noJs = await browser.newContext({ javaScriptEnabled: false });
+  const staticPage = await noJs.newPage();
+  await staticPage.goto(BASE + '/cars');
+  const hiddenNoJs = await staticPage.locator('[data-assemble]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
+  ok('without JavaScript catalog cards are visible', hiddenNoJs === 0, `hidden=${hiddenNoJs}`);
+  await noJs.close();
+}
+
+// 5. Hostile inputs
 {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();

@@ -1,6 +1,6 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 11, Port the Vite intro effects
+**Current phase:** Phase 9, Hardening
 **Status:** In progress
 **Last updated:** 2026-10-05
 
@@ -23,8 +23,8 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 |---|---|---|
 | 1 | 0 to 8: Foundation through Admin | Done in code, see ticks |
 | 2 | 10: Close the gaps | Done |
-| 3 | **11: Port the Vite intro effects** | **Active** |
-| 4 | 9: Hardening | Last |
+| 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
+| 4 | **9: Hardening** | **Active** |
 
 ---
 
@@ -128,20 +128,23 @@ Found and fixed while closing the gaps:
 - [x] Editing a car in admin wiped its photo and description (fields had no default values)
 - [x] `?next=` on `/login` was an open redirect
 
-### Phase 11: Port the Vite intro effects (ACTIVE)
+### Phase 11: Port the Vite intro effects (done 2026-10-05)
 
 Source: `reference/vite-intro/` (read its `REFERENCE.md` first). Target: `components/intro/`.
 Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
 
-- [ ] Port the WebGL2 particle stage into `components/fx/` with the reduced-motion and no-WebGL fallbacks
-- [ ] `AuthGate`: on successful login, dissolve the panel's type into particles instead of a plain fade
-- [ ] Landing reveal: scatter the film's last frame into the landing content
-- [ ] Optional: logo spin loader in `BootLoader`, if a carmine-palette logo clip exists
-- [ ] Catalog cards assemble from particles on first view (data still from the API)
-- [ ] Recolour everything to `DESIGN.md` (carmine accent, gold hairline only), rupees, no em-dashes
-- [ ] Update `docs/VIDEO_STATE_MACHINE.md` and unit tests for any new states
-- [ ] Delete ported files from `reference/vite-intro/`; delete the folder when empty
-- [ ] Fix `AuthGate` register mode: it has no mobile field and submits to the login endpoint, so registering from the gate always fails
+- [x] Port the WebGL2 particle stage into `components/fx/` with the reduced-motion and no-WebGL fallbacks (both verified in a browser)
+- [x] `AuthGate`: on successful login, dissolve the panel's type into particles instead of a plain fade
+- [x] Landing reveal: scatter the film's last frame into the landing content
+- [ ] Optional: logo spin loader in `BootLoader`, if a carmine-palette logo clip exists. **Blocked:** the only clip (`reference/vite-intro/public/media/logo-spin.mp4`) is solid gold metal, which `DESIGN.md` forbids as a fill. Needs a carmine render of the mark from the owner.
+- [x] Catalog cards assemble from particles on first view (data still from the API); CSS failsafe keeps them visible without JS
+- [x] Recolour everything to `DESIGN.md` (carmine accent, gold hairline only), rupees, no em-dashes
+- [x] Update `docs/VIDEO_STATE_MACHINE.md` (section 10, `CLEAR_ERROR`, corrected `POSTER_TIME`) and unit tests (`CLEAR_ERROR`, authenticated skip, particle helpers)
+- [x] Delete ported files from `reference/vite-intro/`. The folder keeps only the blocked logo loader and its media; delete it once that is decided
+- [x] Fix `AuthGate` register mode: it has no mobile field and submits to the login endpoint, so registering from the gate always fails
+- [x] Send `ALREADY_AUTHENTICATED`: the contract's signed-in skip of the gate was never wired up
+- [x] Video dimming animated `filter`; now an opacity scrim
+- [x] VideoStage re-registered every listener on each render (unstable callbacks)
 
 ### Phase 9: Hardening (last)
 
@@ -157,6 +160,9 @@ Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
 - [ ] `Button` link variant animates `width`; must be `scaleX`
 - [ ] `<Link><Button>` nests a button inside an anchor (invalid HTML, two tab stops)
 - [ ] `/favicon.ico` returns 404
+- [ ] Hero headline wraps to four lines at 1440px; `DESIGN.md` caps it at two
+- [ ] Reduced motion: `docs/VIDEO_STATE_MACHINE.md` section 7 promises a manual play control; none exists
+- [ ] Landing links behind the film are reachable by Tab while it plays (make them `inert` until reveal)
 
 ---
 

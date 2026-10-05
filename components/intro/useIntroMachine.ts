@@ -27,6 +27,7 @@ export type IntroEvent =
   | { type: 'SUBMIT' }
   | { type: 'AUTH_SUCCESS' }
   | { type: 'AUTH_FAILURE'; message: string }
+  | { type: 'CLEAR_ERROR' }
   | { type: 'ALREADY_AUTHENTICATED' }
   | { type: 'PLAYBACK_STARTED' }
   | { type: 'VIDEO_ENDED' }
@@ -91,6 +92,10 @@ export function introReducer(context: IntroContext, event: IntroEvent): IntroCon
     case 'GATED': {
       if (event.type === 'SUBMIT') {
         return { ...context, state: 'AUTHENTICATING', authError: null };
+      }
+      // Switching between sign in and register drops the other form's error.
+      if (event.type === 'CLEAR_ERROR') {
+        return context.authError === null ? context : { ...context, authError: null };
       }
       if (event.type === 'ALREADY_AUTHENTICATED') {
         return { ...context, state: 'UNLOCKED', authError: null };

@@ -7,6 +7,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-05: Phase 11, port the Vite intro effects
+
+#### Added
+- `components/fx/particle-stage.ts`: the prototype's WebGL2 particle stage (one
+  shared canvas, dissolve and assemble jobs), with a `Z.particles` layer,
+  WebGL context-loss recovery that finishes pending jobs, and pure `uvFit` and
+  `effectiveDensity` helpers under unit test.
+- `components/fx/use-particles.ts`: DOM capture through `html-to-image` (loaded
+  on demand), `useParticleDissolve`, and `useParticleAssemble`.
+- Sign-in dissolves the gate's type into sand while its backing fades.
+- The film's held last frame scatters into the landing at `COMPLETED`.
+- Catalog cards condense out of sand on first view (`AssembleOnView`), with a
+  CSS failsafe so no-JS, reduced motion, and failed hydration still show them.
+- Intro: `CLEAR_ERROR` event, `SCATTER_MS`, `DISSOLVE_MS`, `GATE_SCRIM_OPACITY`.
+- `docs/VIDEO_STATE_MACHINE.md` section 10 (particle effects); smoke test grows
+  to 34 checks including reduced motion and JavaScript disabled.
+
+#### Fixed
+- Registering from the intro gate always failed: no mobile field, and it
+  posted to the login endpoint.
+- Signed-in visitors still met the gate: `ALREADY_AUTHENTICATED` was never sent.
+- The gate vanished instantly instead of fading; the film vanished instead of
+  revealing the landing.
+- Video dimming animated `filter`; replaced with an opacity scrim.
+- `VideoStage` re-registered its listeners and re-armed its stall timer on
+  every render because its callbacks were recreated each time.
+- `docs/VIDEO_STATE_MACHINE.md` gave `POSTER_TIME` as 0.04; the code's
+  measured value is 1.2.
+
+#### Removed
+- Ported and do-not-port files from `reference/vite-intro/`. Only the gold logo
+  loader remains, blocked on a carmine render of the mark.
+
 ### 2026-10-05: Phase 10, close the gaps
 
 #### Added
