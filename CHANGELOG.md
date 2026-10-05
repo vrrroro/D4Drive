@@ -7,6 +7,52 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-05: Phase 9, hardening
+
+#### Added
+- `npm run check:leaks` (`scripts/leak-check.mjs`): 37 hostile and
+  unauthorised requests across every route, failing on any stack frame, SQL,
+  driver code, or path in a response. Run with the database up and down.
+- `ButtonLink` and shared `button-styles.tsx`; `RouteLoading` and
+  `loading.tsx` on every data route; `FilmOnRequest` (the reduced-motion play
+  control); generated `app/icon` also served at `/favicon.ico`;
+  `lib/validation/id.ts` with tests.
+- Tokens `--accent-text` (carmine text and focus in dark mode, #E66256) and
+  `--muted-on-surface`, with the `.surface-panel` class.
+- Smoke test now 35 checks, including reduced motion's play control.
+
+#### Changed
+- Hero headline is two lines ("Delivered / to your door."); the brand line
+  moved into the subtext. The charcoal band's emphasis is paper italic.
+- Gridlines are drawn by the content's own 12-column grid, from 1024px.
+- CI audit gates on production dependencies (`--omit=dev`); full audit is
+  informational. Next 15.5.27, `overrides` lifts Next's nested PostCSS.
+- Fonts trimmed to the weights used (Playfair 400, Inter 400 and 500).
+- Particle captures run one at a time on idle and embed latin faces only.
+- Boot loader floor and ceiling count from navigation start.
+- Admin status transitions are compare-and-set; conflicts return 409.
+
+#### Fixed
+- Gold used as a text colour (charcoal band) and as a state signal (toast).
+- Dark-mode carmine text at 2.4:1; muted text on taupe panels at 4.42:1;
+  carmine field errors on the dark gate.
+- Motion animations ignored `prefers-reduced-motion`.
+- Landing links reachable by Tab behind the film; boot loader covering the
+  page forever without JavaScript.
+- `<Link><Button>` nesting; link underline animated `width`.
+- Mobile nav overlapping the wordmark at 375px.
+- Route ids accepting `0x10`, `1e3`, `1e20`; unknown branch returning 500.
+- Card photos repeating the car name to screen readers.
+- Checkout silently accepting a return date before pickup.
+
+#### Verified
+- Lighthouse with real throttling: mobile LCP 1.6 to 1.7s, CLS at most 0.002,
+  accessibility 100. INP by Event Timing at 4x CPU: worst 80ms.
+- axe-core clean on every page in light and dark; radius 0 computed on every
+  element; responsive at 320 to 1600; keyboard-only booking; throttled
+  networks never strand the loader. Real devices and real screen readers
+  were not available.
+
 ### 2026-10-05: Phase 11, port the Vite intro effects
 
 #### Added

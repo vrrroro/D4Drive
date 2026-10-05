@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { deliveryStatusSchema } from '@/lib/validation/schemas';
 import { updateDeliveryStatus, InvalidTransitionError } from '@/lib/services/admin';
 import { requireAdmin, verifyCsrf, errors, handleRouteError } from '@/lib/auth/guards';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export async function PATCH(
   request: Request,
@@ -12,8 +13,8 @@ export async function PATCH(
     if ('error' in auth) return auth.error;
     if (!(await verifyCsrf(request))) return errors.forbidden();
 
-    const id = Number((await params).id);
-    if (!Number.isInteger(id) || id <= 0) return errors.badRequest('Invalid booking id.');
+    const id = parsePositiveId((await params).id);
+    if (id === null) return errors.badRequest('Invalid booking id.');
 
     const body: unknown = await request.json().catch(() => null);
     const parsed = deliveryStatusSchema.safeParse(body);
@@ -23,7 +24,7 @@ export async function PATCH(
     if (!updated) return errors.notFound('Delivery not found.');
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if (error instanceof InvalidTransitionError) return errors.badRequest(error.message);
+    if (error instanceof InvalidTransitionError) return errors.conflict(error.message);
     return handleRouteError('admin/deliveries/status', error);
   }
 }

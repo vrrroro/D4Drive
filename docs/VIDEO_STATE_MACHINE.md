@@ -116,6 +116,13 @@ transition is genuinely committed.
 in under 100ms and the loader flashes. Hold `BOOT` for a floor of `BOOT_MIN_MS`
 (900) so the wordmark is legible. A flash of a loader is worse than no loader.
 
+**Both limits count from navigation start** (`performance.now()`), not from the
+moment React mounts. The visitor began waiting when they arrived. On Slow 3G
+the script bundle alone takes about ten seconds; a ceiling that started after
+it would add six more on top. Measured: Slow 3G reaches the recovered landing
+in 11.4s (the bundle's arrival), Fast 3G at the 6s ceiling, Slow 4G reaches the
+gate in 2.2s.
+
 ---
 
 ## 4. Autoplay, audio, and browser policy

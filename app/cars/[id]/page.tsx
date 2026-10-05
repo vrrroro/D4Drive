@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { getCar } from '@/lib/services/cars';
 import { formatCurrency } from '@/lib/services/pricing';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { CarPhoto } from '@/components/ui/CarPhoto';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +15,9 @@ export default async function CarDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const carId = Number(id);
+  const carId = parsePositiveId(id);
 
-  if (!Number.isInteger(carId) || carId <= 0) notFound();
+  if (carId === null) notFound();
 
   let car;
   try {
@@ -33,7 +35,7 @@ export default async function CarDetailPage({
           </p>
           <Link
             href="/cars"
-            className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--color-carmine)] underline underline-offset-8"
+            className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8"
           >
             Back to the fleet
           </Link>
@@ -51,14 +53,14 @@ export default async function CarDetailPage({
       <div className="mx-auto w-full max-w-[1600px]">
         <Link
           href="/cars"
-          className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--color-carmine)]"
+          className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--accent-text)]"
         >
           Back to the fleet
         </Link>
 
         {/* 7/5 split rather than 50/50. Asymmetry is required by DESIGN.md
             section 5, and it gives the image the weight it deserves. */}
-        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-12">
           <div className="lg:col-span-7">
             <CarPhoto
               src={car.image_url}
@@ -71,7 +73,7 @@ export default async function CarDetailPage({
           <div className="lg:col-span-4 lg:col-start-9">
             <h1 className="font-display text-4xl leading-[0.95] text-[var(--ink)] md:text-6xl">
               {car.brand}{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
                 {car.model}
               </span>
             </h1>
@@ -98,11 +100,9 @@ export default async function CarDetailPage({
             </dl>
 
             <div className="mt-12">
-              <Link href={`/booking/${car.id}`}>
-                <Button size="lg" className="w-full">
-                  Reserve this car
-                </Button>
-              </Link>
+              <ButtonLink href={`/booking/${car.id}`} size="lg" className="w-full">
+                Reserve this car
+              </ButtonLink>
             </div>
           </div>
         </div>

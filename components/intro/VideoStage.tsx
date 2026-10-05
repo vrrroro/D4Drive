@@ -234,6 +234,7 @@ export function VideoStage({
   return (
     <div
       ref={stageRef}
+      data-intro-layer
       style={{ zIndex: Z.videoStage }}
       className="fixed inset-0 overflow-hidden bg-[var(--color-ink)]"
       // Decorative. The sequence is narrated to assistive technology by the

@@ -32,11 +32,11 @@ export default async function AdminDashboard() {
           Operations
         </h1>
 
-        <nav className="mt-10 flex flex-wrap gap-8">
-          <Link href="/admin/fleet" className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--color-carmine)]">
+        <nav aria-label="Admin sections" className="mt-10 flex flex-wrap gap-8">
+          <Link href="/admin/fleet" className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--accent-text)]">
             Fleet
           </Link>
-          <Link href="/admin/bookings" className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--color-carmine)]">
+          <Link href="/admin/bookings" className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--accent-text)]">
             Bookings and deliveries
           </Link>
         </nav>
@@ -55,7 +55,7 @@ export default async function AdminDashboard() {
               <p className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
                 {tile.label}
               </p>
-              <p className={`font-display mt-4 ${tile.lead ? 'text-6xl text-[var(--color-carmine)] md:text-7xl' : 'text-4xl text-[var(--ink)] md:text-5xl'}`}>
+              <p className={`font-display mt-4 ${tile.lead ? 'text-6xl text-[var(--accent-text)] md:text-7xl' : 'text-4xl text-[var(--ink)] md:text-5xl'}`}>
                 {tile.value}
               </p>
             </Card>

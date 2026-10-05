@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCar } from '@/lib/services/cars';
 import { errors, handleRouteError } from '@/lib/auth/guards';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export async function GET(
   _request: Request,
@@ -8,10 +9,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const carId = Number(id);
+    const carId = parsePositiveId(id);
 
     // A non-numeric id is a bad request, not a 500 from the query layer.
-    if (!Number.isInteger(carId) || carId <= 0) {
+    if (carId === null) {
       return errors.badRequest('Invalid car id.');
     }
 

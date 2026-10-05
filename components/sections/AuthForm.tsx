@@ -100,7 +100,7 @@ export function AuthForm() {
         {mode === 'login' ? (
           <>
             Sign{' '}
-            <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+            <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
               in
             </span>
           </>
@@ -154,7 +154,7 @@ export function AuthForm() {
         />
 
         {formError && (
-          <p role="alert" className="font-body text-sm text-[var(--color-carmine)]">
+          <p role="alert" className="font-body text-sm text-[var(--accent-text)]">
             {formError}
           </p>
         )}
@@ -173,7 +173,7 @@ export function AuthForm() {
             setFormError(null);
             setFields({});
           }}
-          className="text-[var(--color-carmine)] underline underline-offset-4 transition-colors duration-500 hover:text-[var(--ink)]"
+          className="text-[var(--accent-text)] underline underline-offset-4 transition-colors duration-500 hover:text-[var(--ink)]"
         >
           {mode === 'login' ? 'Create one' : 'Sign in'}
         </button>

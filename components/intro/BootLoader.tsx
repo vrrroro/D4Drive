@@ -52,6 +52,7 @@ export function BootLoader({ progress, dismissed, onFaded }: BootLoaderProps) {
       onAnimationComplete={() => {
         if (dismissed) onFaded();
       }}
+      data-intro-layer
       style={{ zIndex: Z.bootLoader }}
       className="fixed inset-0 flex flex-col justify-end bg-[var(--ground)] px-8 pb-16 md:px-16 md:pb-24"
     >

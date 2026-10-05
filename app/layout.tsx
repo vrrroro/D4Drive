@@ -15,8 +15,9 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-playfair',
   display: 'swap',
-  // Playfair Display has no 300 weight. 400 is its lightest.
-  weight: ['400', '500'],
+  // 400 only: the type scale in DESIGN.md sets every display size at 400.
+  // Each extra weight is another file racing the LCP headline for bandwidth.
+  weight: ['400'],
   style: ['normal', 'italic'],
 });
 
@@ -24,7 +25,8 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
-  weight: ['300', '400', '500'],
+  // Body at 400, UI labels and buttons at 500. Nothing uses 300.
+  weight: ['400', '500'],
 });
 
 export const metadata: Metadata = {

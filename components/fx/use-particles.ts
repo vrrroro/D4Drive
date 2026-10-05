@@ -9,19 +9,60 @@ const PIXEL_RATIO = () => Math.min(window.devicePixelRatio || 1, 2);
 
 /**
  * Embedding the webfonts is almost the entire cost of a capture: every face
- * is fetched and inlined as a data URI. It is identical for every capture on
- * the page, so it is resolved once and reused. next/font self-hosts the
- * faces, which keeps the fetch same-origin and inside the CSP.
+ * has to be inlined as a data URI. html-to-image's own embedder fetches every
+ * @font-face in the stylesheet, which with next/font means the latin-ext,
+ * cyrillic, and vietnamese subsets too, a dozen files the page never uses.
+ * This keeps only faces with no unicode-range or one covering basic latin,
+ * which are the files already loaded and cached. Resolved once per page.
  */
 let fontEmbedCache: Promise<string> | null = null;
 
-async function embeddedFonts(el: HTMLElement): Promise<string> {
-  fontEmbedCache ??= import('html-to-image')
-    .then(({ getFontEmbedCSS }) => getFontEmbedCSS(el))
-    .catch((error: unknown) => {
-      console.warn('[particles] font embed failed; capture uses fallback fonts', error);
-      return '';
-    });
+const LATIN = /U\+0+-0*FF\b/i;
+
+function readAsDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function buildFontEmbedCss(): Promise<string> {
+  const faces: CSSFontFaceRule[] = [];
+  for (const sheet of Array.from(document.styleSheets)) {
+    let rules: CSSRuleList;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      continue; // A cross-origin sheet. There are none today; skip if added.
+    }
+    for (const rule of Array.from(rules)) {
+      if (!(rule instanceof CSSFontFaceRule)) continue;
+      const range = rule.style.getPropertyValue('unicode-range');
+      if (!range || LATIN.test(range)) faces.push(rule);
+    }
+  }
+
+  const inlined = await Promise.all(
+    faces.map(async (face) => {
+      let css = face.cssText;
+      for (const [, url] of css.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
+        if (!url || url.startsWith('data:')) continue;
+        const response = await fetch(new URL(url, window.location.href));
+        css = css.replace(url, await readAsDataUrl(await response.blob()));
+      }
+      return css;
+    }),
+  );
+  return inlined.join('\n');
+}
+
+function embeddedFonts(): Promise<string> {
+  fontEmbedCache ??= buildFontEmbedCss().catch((error: unknown) => {
+    console.warn('[particles] font embed failed; capture uses fallback fonts', error);
+    return '';
+  });
   return fontEmbedCache;
 }
 
@@ -42,7 +83,7 @@ export async function captureElement(
   try {
     const [{ toCanvas }, fontEmbedCSS] = await Promise.all([
       import('html-to-image'),
-      embeddedFonts(el),
+      embeddedFonts(),
     ]);
     const canvas = await toCanvas(el, {
       pixelRatio: PIXEL_RATIO(),
@@ -60,6 +101,35 @@ export async function captureElement(
 }
 
 /**
+ * Captures run one at a time, each started when the main thread is idle.
+ *
+ * A capture clones and serialises a DOM subtree, which is real main-thread
+ * work. Nine catalog cards intersecting at once would otherwise stack into a
+ * single long task right after load, exactly when a visitor first reaches
+ * for a filter, and that shows up directly in INP.
+ */
+let captureQueue: Promise<unknown> = Promise.resolve();
+
+function whenIdle(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(() => resolve(), { timeout: 500 });
+    } else {
+      window.setTimeout(resolve, 50);
+    }
+  });
+}
+
+function queueCapture(
+  el: HTMLElement,
+  style?: Partial<CSSStyleDeclaration>,
+): Promise<HTMLCanvasElement | null> {
+  const run = captureQueue.then(whenIdle).then(() => captureElement(el, style));
+  captureQueue = run.catch(() => null);
+  return run;
+}
+
+/**
  * Resolves the font embed on idle while the visitor is still reading, so the
  * capture at the moment of success is not what stalls the frame.
  */
@@ -67,7 +137,7 @@ export function usePrewarmCapture(ref: RefObject<HTMLElement | null>, when = tru
   useEffect(() => {
     const el = ref.current;
     if (!when || !el || !particlesSupported()) return undefined;
-    const run = () => void embeddedFonts(el);
+    const run = () => void embeddedFonts();
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(run);
       return () => window.cancelIdleCallback(id);
@@ -179,7 +249,7 @@ export function useParticleAssemble(
 
     const start = async () => {
       el.dataset.assemble = 'running';
-      const plate = await captureElement(el, { opacity: '1', animation: 'none' });
+      const plate = await queueCapture(el, { opacity: '1', animation: 'none' });
       if (disposed) return;
       if (!plate) return settle();
 

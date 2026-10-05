@@ -29,7 +29,7 @@ export function SignOutButton() {
       type="button"
       onClick={signOut}
       disabled={busy}
-      className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--color-carmine)] disabled:opacity-50"
+      className="whitespace-nowrap font-body text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] sm:tracking-[0.25em] transition-colors duration-500 hover:text-[var(--accent-text)] disabled:opacity-50"
     >
       Sign out
     </button>

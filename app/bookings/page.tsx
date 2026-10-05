@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth/guards';
 import { listUserBookings } from '@/lib/services/bookings';
 import { formatCurrency } from '@/lib/services/pricing';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Card } from '@/components/ui/Card';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +45,7 @@ export default async function BookingsPage() {
         <div className="h-px w-8 bg-[var(--ink)] md:w-12" />
         <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-7xl">
           Your{' '}
-          <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+          <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
             journeys
           </span>
         </h1>
@@ -57,9 +57,9 @@ export default async function BookingsPage() {
               When you reserve a car it appears here, with its delivery status
               and a downloadable invoice.
             </p>
-            <Link href="/cars" className="mt-8 inline-block">
-              <Button>Browse the fleet</Button>
-            </Link>
+            <ButtonLink href="/cars" className="mt-8">
+              Browse the fleet
+            </ButtonLink>
           </section>
         ) : (
           <section className="mt-20 flex flex-col">
@@ -104,7 +104,7 @@ export default async function BookingsPage() {
                 <div className="md:col-span-2 md:text-right">
                   <a
                     href={`/api/bookings/${b.id}/invoice`}
-                    className="font-body text-xs uppercase tracking-[0.2em] text-[var(--color-carmine)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--ink)]"
+                    className="font-body text-xs uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--ink)]"
                   >
                     Invoice
                   </a>

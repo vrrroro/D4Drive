@@ -33,8 +33,13 @@ export async function POST(request: Request) {
     const id = await createCar(parsed.data);
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && 'code' in error && error.code === 'ER_DUP_ENTRY') {
+    const code = error instanceof Error && 'code' in error ? error.code : undefined;
+    if (code === 'ER_DUP_ENTRY') {
       return errors.conflict('A car with that registration number already exists.');
+    }
+    // The branch id passed validation as a number but names no branch.
+    if (code === 'ER_NO_REFERENCED_ROW_2') {
+      return errors.badRequest('That branch does not exist.');
     }
     return handleRouteError('admin/cars/create', error);
   }

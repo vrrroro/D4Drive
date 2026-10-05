@@ -130,10 +130,10 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
 
   const labelClass = 'font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]';
   const selectClass =
-    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--color-carmine)] focus:outline-none';
+    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--accent-text)] focus:outline-none';
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-16 lg:grid-cols-12" noValidate>
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-x-12 gap-y-16 lg:grid-cols-12" noValidate>
       <div className="flex flex-col gap-12 lg:col-span-7">
         <fieldset className="border-t border-[var(--ink)] pt-8">
           <legend className="sr-only">Rental dates</legend>
@@ -156,7 +156,12 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
               min={startDate || today()}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              error={errors.endDate}
+              error={
+                errors.endDate ??
+                (startDate && endDate && endDate <= startDate
+                  ? 'The return date must be after the pickup date.'
+                  : undefined)
+              }
               required
             />
           </div>
@@ -292,7 +297,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
           scrolls, which is the whole reason a checkout summary exists. */}
       <aside className="lg:col-span-4 lg:col-start-9">
         <div className="lg:sticky lg:top-24">
-          <div className="border-t-4 border-t-[var(--color-carmine)] bg-[var(--surface)] p-8">
+          <div className="surface-panel border-t-4 border-t-[var(--color-carmine)] p-8">
             <h2 className="font-display text-2xl text-[var(--ink)]">Summary</h2>
 
             {quote && !quote.pending && quote.price ? (
@@ -325,7 +330,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                 </div>
 
                 {quote.deliveryError && (
-                  <p role="alert" className="mt-6 font-body text-xs text-[var(--color-carmine)]">
+                  <p role="alert" className="mt-6 font-body text-xs text-[var(--accent-text)]">
                     {quote.deliveryError}
                   </p>
                 )}
@@ -377,7 +382,7 @@ function Row({
       <dd
         className={
           emphasis
-            ? 'font-display text-2xl text-[var(--color-carmine)]'
+            ? 'font-display text-2xl text-[var(--accent-text)]'
             : 'font-body text-sm text-[var(--ink)]'
         }
       >

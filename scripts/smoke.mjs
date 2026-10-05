@@ -39,7 +39,7 @@ const browser = await chromium.launch({
 
 function watch(page, label) {
   page.on('console', (m) => {
-    if (m.type() === 'error') problems.push(`[${label}] console: ${m.text()}`);
+    if (m.type() === 'error') problems.push(`[${label}] console: ${m.text()} ${m.location().url ?? ''}`);
   });
   page.on('response', (r) => { if (r.status() === 404) problems.push(`[${label}] 404: ${r.url()}`); });
   page.on('pageerror', (e) => problems.push(`[${label}] pageerror: ${e.message}`));
@@ -77,7 +77,7 @@ function watch(page, label) {
   await page.waitForFunction(() => sessionStorage.getItem('d4drive:intro-seen') === '1', null, { timeout: 30000 });
   await page.waitForTimeout(2000);
   await page.screenshot({ path: `${SHOTS}/03-landing.png` });
-  ok('film completes and the landing is revealed', await page.getByRole('heading', { level: 1, name: /Drive easy/ }).isVisible());
+  ok('film completes and the landing is revealed', await page.getByRole('heading', { level: 1, name: /Delivered/ }).isVisible());
   await page.locator('video').waitFor({ state: 'detached', timeout: 10000 });
   ok('the film stage is released after its scatter', (await page.locator('video').count()) === 0);
   const cookies = await ctx.cookies();
@@ -211,6 +211,8 @@ let reference = '';
   ok('replay revoked the legitimate session too', legit.status() === 401);
 
   await page.goto(BASE + '/admin');
+  // /admin streams behind a loading state, so the redirect lands client-side.
+  await page.waitForURL(/\/login/, { timeout: 10000 }).catch(() => {});
   ok('signed-out admin is sent to login', page.url().includes('/login'));
   await ctx.close();
 }
@@ -222,7 +224,8 @@ let reference = '';
   watch(page, 'reduced-motion');
   await page.goto(BASE + '/');
   await page.waitForTimeout(1200);
-  ok('reduced motion skips the film to the landing', (await page.getByRole('dialog').count()) === 0 && (await page.locator('video').count()) === 0);
+  ok('reduced motion skips the film to the landing', (await page.getByRole('dialog').count()) === 0 && (await page.locator('[data-intro-layer]').count()) === 0);
+  ok('reduced motion offers the film on request', await page.getByRole('button', { name: 'Play the film' }).isVisible());
   await page.goto(BASE + '/cars');
   await page.waitForTimeout(300);
   const hidden = await page.locator('[data-assemble]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);

@@ -22,6 +22,9 @@ export function AssembleOnView({
 
   useParticleAssemble(ref, {
     delay: (index % 3) * 0.12,
+    // Slightly coarser than the stage default: three cards land at once, and
+    // low-end mobile GPUs pay per point.
+    density: 2.5,
     duration: 1.6,
     spread: 190,
     gravity: -0.22,

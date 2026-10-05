@@ -26,7 +26,6 @@ export function IntroSequence({ authenticated = false }: { authenticated?: boole
   const [stageReleased, setStageReleased] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const mountedAt = useRef(Date.now());
   const bufferReady = useRef(false);
 
   const handlePlaybackStarted = useCallback(() => send({ type: 'PLAYBACK_STARTED' }), [send]);
@@ -59,12 +58,19 @@ export function IntroSequence({ authenticated = false }: { authenticated?: boole
     }
   }, [recover]);
 
-  // Hard ceiling on how long anyone waits at the loader.
+  // Hard ceiling on how long anyone waits at the loader, counted from
+  // navigation start (performance.now()), not from hydration. The visitor
+  // started waiting when they arrived: on Slow 3G the script bundle alone
+  // takes ten seconds, and a ceiling that only starts after it would double
+  // the wait.
   useEffect(() => {
     if (state !== 'BOOT') return undefined;
-    const timer = setTimeout(() => {
-      if (!bufferReady.current) recover('timeout');
-    }, BOOT_MAX_MS);
+    const timer = setTimeout(
+      () => {
+        if (!bufferReady.current) recover('timeout');
+      },
+      Math.max(0, BOOT_MAX_MS - performance.now()),
+    );
     return () => clearTimeout(timer);
   }, [state, recover]);
 
@@ -74,6 +80,21 @@ export function IntroSequence({ authenticated = false }: { authenticated?: boole
   useEffect(() => {
     if (authenticated && state === 'READY') send({ type: 'ALREADY_AUTHENTICATED' });
   }, [authenticated, state, send]);
+
+  // While any intro layer covers the page, everything behind it is inert:
+  // no Tab stops, no screen reader cursor, no clicks. Imperative because the
+  // nav and the landing are Server Components outside this tree.
+  const covered = !isRevealed(state) || (state === 'COMPLETED' && !stageReleased);
+  useEffect(() => {
+    const targets = document.querySelectorAll<HTMLElement>('[data-intro-cover]');
+    targets.forEach((el) => {
+      el.inert = covered;
+    });
+    return () =>
+      targets.forEach((el) => {
+        el.inert = false;
+      });
+  }, [covered]);
 
   // Record completion so the sequence does not replay within the session.
   useEffect(() => {
@@ -95,8 +116,9 @@ export function IntroSequence({ authenticated = false }: { authenticated?: boole
     if (bufferReady.current) return;
     bufferReady.current = true;
 
-    const elapsed = Date.now() - mountedAt.current;
-    const remaining = Math.max(0, BOOT_MIN_MS - elapsed);
+    // Since navigation start, like the ceiling: a slow arrival has already
+    // shown the wordmark for longer than the floor.
+    const remaining = Math.max(0, BOOT_MIN_MS - performance.now());
     setTimeout(() => send({ type: 'BUFFER_READY' }), remaining);
   }, [send]);
 

@@ -53,7 +53,7 @@ export default async function CarsPage({
             <div className="h-px w-8 bg-[var(--ink)] md:w-12" />
             <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-7xl">
               The{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
                 fleet
               </span>
             </h1>
@@ -70,7 +70,7 @@ export default async function CarsPage({
             </p>
             <Link
               href="/cars"
-              className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--color-carmine)] underline underline-offset-8"
+              className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8"
             >
               Try again
             </Link>
@@ -90,7 +90,7 @@ export default async function CarsPage({
                 </p>
                 <Link
                   href="/cars"
-                  className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--color-carmine)] underline underline-offset-8"
+                  className="mt-8 inline-block font-body text-xs uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8"
                 >
                   Clear all filters
                 </Link>
@@ -104,10 +104,11 @@ export default async function CarsPage({
                         src={car.image_url}
                         name={`${car.brand} ${car.model}`}
                         hoverReveal
+                        decorative
                         priority={index === 0}
                       />
 
-                      <h2 className="font-display mt-6 text-2xl leading-tight text-[var(--ink)] transition-colors duration-500 group-hover:text-[var(--color-carmine)]">
+                      <h2 className="font-display mt-6 text-2xl leading-tight text-[var(--ink)] transition-colors duration-500 group-hover:text-[var(--accent-text)]">
                         {car.brand} {car.model}
                       </h2>
 
@@ -179,7 +180,7 @@ function PageLink({
   return (
     <Link
       href={`/cars?${params.toString()}`}
-      className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] transition-colors duration-500 hover:text-[var(--color-carmine)]"
+      className="font-body text-xs uppercase tracking-[0.2em] text-[var(--ink)] transition-colors duration-500 hover:text-[var(--accent-text)]"
     >
       {label}
     </Link>

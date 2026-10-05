@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 
 export default function NotFound() {
   return (
@@ -10,16 +10,16 @@ export default function NotFound() {
             <div className="h-px w-8 bg-[var(--color-carmine)] md:w-12" />
             <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-8xl">
               Wrong{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
                 turn
               </span>
             </h1>
             <p className="mt-8 max-w-[48ch] font-body text-[var(--muted)]">
               That page does not exist. The fleet is still where you left it.
             </p>
-            <Link href="/cars" className="mt-12 inline-block">
-              <Button size="lg">Browse the fleet</Button>
-            </Link>
+            <ButtonLink href="/cars" size="lg" className="mt-12">
+              Browse the fleet
+            </ButtonLink>
           </div>
         </div>
       </div>

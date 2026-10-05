@@ -36,7 +36,7 @@ export function CarFilters({ brands, current }: CarFiltersProps) {
   );
 
   const selectClass =
-    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--color-carmine)] focus:outline-none';
+    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--accent-text)] focus:outline-none';
 
   const labelClass =
     'font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]';

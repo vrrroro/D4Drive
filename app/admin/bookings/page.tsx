@@ -18,13 +18,13 @@ export default async function AdminBookingsPage() {
   return (
     <main className="px-8 pt-24 pb-20 md:px-16 md:pb-32">
       <div className="mx-auto w-full max-w-[1600px]">
-        <Link href="/admin" className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--color-carmine)]">
+        <Link href="/admin" className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--accent-text)]">
           Operations
         </Link>
 
         <h1 className="font-display mt-8 text-4xl leading-[0.95] text-[var(--ink)] md:text-6xl">
           Bookings and{' '}
-          <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+          <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
             deliveries
           </span>
         </h1>

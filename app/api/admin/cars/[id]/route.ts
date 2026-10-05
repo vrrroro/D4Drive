@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 import { carInputSchema, fieldErrors } from '@/lib/validation/schemas';
 import { updateCar, deactivateCar } from '@/lib/services/admin';
 import { requireAdmin, verifyCsrf, errors, handleRouteError } from '@/lib/auth/guards';
-
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
-}
+import { parsePositiveId } from '@/lib/validation/id';
 
 export async function PUT(
   request: Request,
@@ -17,7 +13,7 @@ export async function PUT(
     if ('error' in auth) return auth.error;
     if (!(await verifyCsrf(request))) return errors.forbidden();
 
-    const id = parseId((await params).id);
+    const id = parsePositiveId((await params).id);
     if (id === null) return errors.badRequest('Invalid car id.');
 
     const body: unknown = await request.json().catch(() => null);
@@ -35,6 +31,14 @@ export async function PUT(
     if (!updated) return errors.notFound('Car not found.');
     return NextResponse.json({ ok: true });
   } catch (error) {
+    const code = error instanceof Error && 'code' in error ? error.code : undefined;
+    if (code === 'ER_DUP_ENTRY') {
+      return errors.conflict('A car with that registration number already exists.');
+    }
+    // The branch id passed validation as a number but names no branch.
+    if (code === 'ER_NO_REFERENCED_ROW_2') {
+      return errors.badRequest('That branch does not exist.');
+    }
     return handleRouteError('admin/cars/update', error);
   }
 }
@@ -48,7 +52,7 @@ export async function DELETE(
     if ('error' in auth) return auth.error;
     if (!(await verifyCsrf(request))) return errors.forbidden();
 
-    const id = parseId((await params).id);
+    const id = parsePositiveId((await params).id);
     if (id === null) return errors.badRequest('Invalid car id.');
 
     // Soft delete. Booking history depends on the row surviving.

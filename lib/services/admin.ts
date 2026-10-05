@@ -178,8 +178,16 @@ export async function updateBookingStatus(
     throw new InvalidTransitionError(current.status, next);
   }
 
-  const result = await execute('UPDATE bookings SET status = ? WHERE id = ?', [next, id]);
-  return result.affectedRows > 0;
+  // Compare-and-set: the update only lands if the status is still the one
+  // the transition was checked against. Two admins acting on one booking at
+  // once cannot both pass the graph check and race each other's write.
+  const result = await execute('UPDATE bookings SET status = ? WHERE id = ? AND status = ?', [
+    next,
+    id,
+    current.status,
+  ]);
+  if (result.affectedRows === 0) throw new InvalidTransitionError(current.status, next);
+  return true;
 }
 
 const DELIVERY_TRANSITIONS: Record<DeliveryStatus, readonly DeliveryStatus[]> = {
@@ -210,13 +218,15 @@ export async function updateDeliveryStatus(
 
   // delivered_at is stamped by the transition rather than supplied by the
   // client, so the timestamp reflects when it actually happened.
+  // Compare-and-set, for the same reason as updateBookingStatus.
   const result = await execute(
     `UPDATE deliveries
         SET status = ?, delivered_at = IF(? = 'delivered', NOW(), delivered_at)
-      WHERE booking_id = ?`,
-    [next, next, bookingId],
+      WHERE booking_id = ? AND status = ?`,
+    [next, next, bookingId, current.status],
   );
-  return result.affectedRows > 0;
+  if (result.affectedRows === 0) throw new InvalidTransitionError(current.status, next);
+  return true;
 }
 
 interface BranchRow extends RowDataPacket {

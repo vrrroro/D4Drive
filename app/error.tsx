@@ -24,7 +24,7 @@ export default function GlobalError({
             <div className="h-px w-8 bg-[var(--color-carmine)] md:w-12" />
             <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-7xl">
               Something{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
                 stalled
               </span>
             </h1>

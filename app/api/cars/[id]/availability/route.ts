@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { availabilityQuerySchema } from '@/lib/validation/schemas';
 import { isCarAvailable, bookedRanges } from '@/lib/services/availability';
 import { errors, handleRouteError } from '@/lib/auth/guards';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export async function GET(
   request: Request,
@@ -9,8 +10,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const carId = Number(id);
-    if (!Number.isInteger(carId) || carId <= 0) {
+    const carId = parsePositiveId(id);
+    if (carId === null) {
       return errors.badRequest('Invalid car id.');
     }
 

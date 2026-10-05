@@ -3,31 +3,29 @@ import { Z } from '@/lib/constants';
 /**
  * Editorial gridlines.
  *
- * These sit at real 12-column boundaries that page content aligns to. The
- * design skill bans hairline grids drawn purely to make a page feel designed,
- * and DESIGN.md section 7 keeps them only on that condition. If a future
- * layout stops aligning to them, they become decoration and should be cut.
+ * DESIGN.md section 7 keeps these only if they land on real 12-column
+ * boundaries that content aligns to. So they are not positioned by
+ * percentage: they are drawn by the same grid the pages use (the same
+ * padding, `max-w-[1600px]`, 12 columns, `gap-x-12`), as the edges of three
+ * four-column spans. That puts them at column 1 start, column 5 start,
+ * column 9 start, and column 12 end at every width, which is where the
+ * catalog's three-up cards, the admin tiles, and the detail page's text
+ * column (`col-start-9`) sit.
  *
- * Hidden below 768px, where four vertical rules on a narrow viewport are
- * clutter rather than structure.
+ * Shown from 1024px, where those three-up grids exist. Below that the pages
+ * reflow to one or two columns and the lines would be decoration.
  */
 export function Gridlines() {
-  const positions = ['16.666%', '33.333%', '66.666%', '83.333%'];
-
   return (
     <div
       aria-hidden="true"
       style={{ zIndex: Z.gridlines }}
-      className="pointer-events-none fixed inset-0 hidden md:block"
+      className="pointer-events-none fixed inset-0 hidden px-16 lg:block"
     >
-      <div className="relative mx-auto h-full w-full max-w-[1600px]">
-        {positions.map((left) => (
-          <div
-            key={left}
-            style={{ left }}
-            className="absolute top-0 h-full w-px bg-[var(--ink)]/20"
-          />
-        ))}
+      <div className="mx-auto grid h-full w-full max-w-[1600px] grid-cols-12 gap-x-12">
+        <div className="col-span-4 border-l border-[var(--ink)]/20" />
+        <div className="col-span-4 border-l border-[var(--ink)]/20" />
+        <div className="col-span-4 border-x border-[var(--ink)]/20" />
       </div>
     </div>
   );

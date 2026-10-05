@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Z } from '@/lib/constants';
 
@@ -72,47 +72,52 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider value={api}>
-      {children}
+      {/* Every Motion animation in the tree honours prefers-reduced-motion:
+          transforms are dropped and only opacity and colour remain. The CSS
+          rule in globals.css covers CSS transitions; this covers Motion. */}
+      <MotionConfig reducedMotion="user">
+        {children}
 
-      {/* aria-live so a toast is announced without stealing focus. An alert
-          role would interrupt, which is wrong for a transient confirmation. */}
-      <div
-        aria-live="polite"
-        aria-atomic="false"
-        style={{ zIndex: Z.toast }}
-        className="pointer-events-none fixed bottom-8 right-8 flex w-full max-w-sm flex-col gap-3"
-      >
-        <AnimatePresence initial={false}>
-          {toasts.map((toast) => (
-            <motion.div
-              key={toast.id}
-              layout
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className={[
-                'pointer-events-auto flex items-start justify-between gap-4 border-l-2 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]',
-                toast.kind === 'error'
-                  ? 'border-l-[var(--color-carmine)] bg-[var(--color-ink)]'
-                  : 'border-l-[var(--color-foil)] bg-[var(--color-ink)]',
-              ].join(' ')}
-            >
-              <p className="font-body text-sm leading-relaxed text-[var(--color-paper)]">
-                {toast.message}
-              </p>
-              <button
-                type="button"
-                onClick={() => dismiss(toast.id)}
-                aria-label="Dismiss notification"
-                className="shrink-0 text-[var(--color-paper)]/60 transition-colors duration-500 hover:text-[var(--color-paper)]"
+        {/* aria-live so a toast is announced without stealing focus. An alert
+            role would interrupt, which is wrong for a transient confirmation. */}
+        <div
+          aria-live="polite"
+          aria-atomic="false"
+          style={{ zIndex: Z.toast }}
+          className="pointer-events-none fixed inset-x-4 bottom-4 flex flex-col gap-3 sm:inset-x-auto sm:bottom-8 sm:right-8 sm:w-full sm:max-w-sm"
+        >
+          <AnimatePresence initial={false}>
+            {toasts.map((toast) => (
+              <motion.div
+                key={toast.id}
+                layout
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className={[
+                  'pointer-events-auto flex items-start justify-between gap-4 border-l-2 p-5 shadow-[0_8px_24px_rgba(0,0,0,0.12)]',
+                  toast.kind === 'error'
+                    ? 'border-l-[var(--color-carmine)] bg-[var(--color-ink)]'
+                    : 'border-l-[var(--color-paper)]/40 bg-[var(--color-ink)]',
+                ].join(' ')}
               >
-                <X className="h-4 w-4" strokeWidth={1.5} />
-              </button>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+                <p className="font-body text-sm leading-relaxed text-[var(--color-paper)]">
+                  {toast.message}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => dismiss(toast.id)}
+                  aria-label="Dismiss notification"
+                  className="shrink-0 text-[var(--color-paper)]/60 transition-colors duration-500 hover:text-[var(--color-paper)]"
+                >
+                  <X className="h-4 w-4" strokeWidth={1.5} />
+                </button>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </MotionConfig>
     </ToastContext.Provider>
   );
 }

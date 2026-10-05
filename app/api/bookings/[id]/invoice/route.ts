@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import { getBookingForUser } from '@/lib/services/bookings';
 import { requireSession, errors, handleRouteError } from '@/lib/auth/guards';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export const runtime = 'nodejs';
 
@@ -31,8 +32,8 @@ export async function GET(
     if ('error' in auth) return auth.error;
 
     const { id } = await params;
-    const bookingId = Number(id);
-    if (!Number.isInteger(bookingId) || bookingId <= 0) {
+    const bookingId = parsePositiveId(id);
+    if (bookingId === null) {
       return errors.badRequest('Invalid booking id.');
     }
 

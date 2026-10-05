@@ -147,7 +147,7 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
             type="button"
             disabled={disabled}
             onClick={() => patch('deliveries', status)}
-            className="border border-[var(--color-carmine)] px-4 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-[var(--color-carmine)] transition-colors duration-500 hover:bg-[var(--color-carmine)] hover:text-[var(--color-paper)] disabled:opacity-40"
+            className="border border-[var(--color-carmine)] px-4 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-[var(--accent-text)] transition-colors duration-500 hover:bg-[var(--color-carmine)] hover:text-[var(--color-paper)] disabled:opacity-40"
           >
             {LABELS[status] ?? status}
           </button>

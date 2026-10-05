@@ -124,7 +124,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
   }
 
   const selectClass =
-    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--color-carmine)] focus:outline-none';
+    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--accent-text)] focus:outline-none';
   const labelClass = 'font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]';
 
   return (
@@ -137,7 +137,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
       </div>
 
       {open && (
-        <section className="mt-12 border-t-4 border-t-[var(--color-carmine)] bg-[var(--surface)] p-8 md:p-12">
+        <section className="mt-12 surface-panel border-t-4 border-t-[var(--color-carmine)] p-8 md:p-12">
           <h2 className="font-display text-2xl text-[var(--ink)]">
             {editing ? `${editing.brand} ${editing.model}` : 'New car'}
           </h2>
@@ -227,7 +227,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
                 {formatCurrency(Number(car.pricePerDay))}
               </p>
               {!car.isActive && (
-                <p className="mt-1 font-body text-xs text-[var(--color-carmine)]">Withdrawn</p>
+                <p className="mt-1 font-body text-xs text-[var(--accent-text)]">Withdrawn</p>
               )}
             </div>
 
@@ -235,7 +235,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
               <button
                 type="button"
                 onClick={() => { setEditing(car); setCreating(false); }}
-                className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--color-carmine)]"
+                className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--accent-text)]"
               >
                 Edit
               </button>
@@ -243,7 +243,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
                 <button
                   type="button"
                   onClick={() => deactivate(car)}
-                  className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--color-carmine)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--ink)]"
+                  className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--ink)]"
                 >
                   Withdraw
                 </button>

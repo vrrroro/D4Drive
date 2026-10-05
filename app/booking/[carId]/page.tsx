@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCar } from '@/lib/services/cars';
 import { getSession } from '@/lib/auth/guards';
 import { CheckoutForm } from '@/components/sections/CheckoutForm';
+import { parsePositiveId } from '@/lib/validation/id';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +14,9 @@ export default async function BookingPage({
 }) {
   const session = await getSession();
   const { carId: raw } = await params;
-  const carId = Number(raw);
+  const carId = parsePositiveId(raw);
 
-  if (!Number.isInteger(carId) || carId <= 0) notFound();
+  if (carId === null) notFound();
 
   // Checked on the server. Hiding the form client-side would not stop a direct
   // POST, which is why the API re-checks too.
@@ -29,14 +30,14 @@ export default async function BookingPage({
       <div className="mx-auto w-full max-w-[1600px]">
         <Link
           href={`/cars/${car.id}`}
-          className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--color-carmine)]"
+          className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--accent-text)]"
         >
           Back to the car
         </Link>
 
         <h1 className="font-display mt-8 text-4xl leading-[0.95] text-[var(--ink)] md:text-6xl">
           {car.brand}{' '}
-          <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+          <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
             {car.model}
           </span>
         </h1>

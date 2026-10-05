@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { queryOne } from '@/lib/db';
 import { getSession } from '@/lib/auth/guards';
 import { formatCurrency } from '@/lib/services/pricing';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import type { RowDataPacket } from 'mysql2/promise';
 
 export const dynamic = 'force-dynamic';
@@ -56,7 +56,7 @@ export default async function ConfirmationPage({
 
             <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-7xl">
               You are{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--color-carmine)]">
+              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
                 booked
               </span>
             </h1>
@@ -89,9 +89,9 @@ export default async function ConfirmationPage({
               <a href={`/api/bookings/${booking.id}/invoice`}>
                 <Button size="lg">Download invoice</Button>
               </a>
-              <Link href="/bookings">
-                <Button variant="secondary" size="lg">My bookings</Button>
-              </Link>
+              <ButtonLink href="/bookings" variant="secondary" size="lg">
+                My bookings
+              </ButtonLink>
             </div>
           </div>
         </div>

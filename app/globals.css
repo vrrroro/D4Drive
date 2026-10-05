@@ -58,6 +58,17 @@
      Button Contrast Check in DESIGN.md failing in the one mode nobody tests. */
   --btn-bg: var(--color-ink);
   --btn-fg: var(--color-paper);
+  /* --muted measures 5.21:1 on ground but only 4.42:1 on the taupe surface,
+     under the 4.5:1 DESIGN.md requires for labels and helper text on any
+     panel. Surface panels remap --muted to this (4.91:1). */
+  --muted-on-surface: #65615c;
+  /* Carmine used as text, focus ring, or focus underline. Identical to
+     carmine in light. In dark, carmine fills and rules stay #A82519 (white on
+     it is still 7.13:1) but carmine text on #141414 is 2.4:1, so text moves
+     to a lighter tint of the same hue 5 (5.48:1 on ground, 4.95:1 on
+     surface). DESIGN.md holds carmine constant in dark; this is the one
+     place it cannot, and only for legibility. */
+  --accent-text: var(--color-carmine);
   color-scheme: light;
 }
 
@@ -72,6 +83,8 @@
     --muted: #9b968f;
     --btn-bg: var(--color-paper);
     --btn-fg: var(--color-ink);
+    --muted-on-surface: #a8a39c;
+    --accent-text: #e66256;
     color-scheme: dark;
   }
 }
@@ -83,6 +96,8 @@
   --muted: #9b968f;
   --btn-bg: var(--color-paper);
   --btn-fg: var(--color-ink);
+  --muted-on-surface: #a8a39c;
+  --accent-text: #e66256;
   color-scheme: dark;
 }
 
@@ -114,13 +129,20 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-carmine);
+  outline: 2px solid var(--accent-text);
   outline-offset: 3px;
 }
 
 /* ==========================================================================
    Utilities
    ========================================================================== */
+
+/* A taupe panel (checkout summary, admin car form). Remaps --muted so every
+   label and helper inside it clears 4.5:1 against the panel itself. */
+.surface-panel {
+  background-color: var(--surface);
+  --muted: var(--muted-on-surface);
+}
 
 .font-display {
   font-family: var(--font-display);
@@ -142,7 +164,12 @@ body {
   float: left;
   margin-right: 0.75rem;
   margin-top: 0.25rem;
-  color: var(--color-carmine);
+  color: var(--accent-text);
+}
+
+/* On the charcoal band carmine fails contrast, so the drop cap goes paper. */
+.drop-cap-on-dark::first-letter {
+  color: var(--color-paper);
 }
 
 /* Any italic display word containing a descender clips at leading-[0.9].

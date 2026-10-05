@@ -34,6 +34,12 @@ const nextConfig: NextConfig = {
   // in a production build while working fine under `next dev`.
   serverExternalPackages: ['pdfkit'],
 
+  // Browsers still ask for /favicon.ico directly, whatever the page head
+  // declares. Serve the generated app/icon there rather than a 404.
+  async rewrites() {
+    return [{ source: '/favicon.ico', destination: '/icon' }];
+  },
+
   async headers() {
     return [
       {

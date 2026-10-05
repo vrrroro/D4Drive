@@ -42,7 +42,7 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
       >
         {label}
         {required && (
-          <span aria-hidden className="ml-1 text-[var(--color-carmine)]">
+          <span aria-hidden className="ml-1 text-[var(--accent-text)]">
             *
           </span>
         )}
@@ -59,8 +59,8 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
           'font-body text-sm',
           'placeholder:font-display placeholder:italic',
           'transition-colors duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]',
-          'focus:border-[var(--color-carmine)] focus:outline-none',
-          error ? 'border-[var(--color-carmine)]' : inputColour,
+          'focus:border-[var(--accent-text)] focus:outline-none',
+          error ? 'border-[var(--accent-text)]' : inputColour,
           className,
         ].join(' ')}
         {...props}
@@ -72,7 +72,9 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
           <p
             id={errorId}
             role="alert"
-            className="font-body text-xs text-[var(--color-carmine)]"
+            // Carmine on the charcoal gate measures about 2.5:1. On dark the
+            // carmine underline carries the signal and the words stay legible.
+            className={`font-body text-xs ${onDark ? 'text-[var(--color-paper)]' : 'text-[var(--accent-text)]'}`}
           >
             {error}
           </p>

@@ -84,6 +84,7 @@ npm run dev
 | `npm run test` | Unit tests; the MySQL tests skip unless `DB_HOST` and `DB_NAME` are set |
 | `npm run test:db` | Same, with `.env` loaded, so the double-booking and refresh-rotation tests run |
 | `npm run smoke` | Browser smoke test against a running server (see `scripts/smoke.mjs`) |
+| `npm run check:leaks` | Hostile requests against a running server; fails if any response leaks internals |
 
 ## Documentation
 
