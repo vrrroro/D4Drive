@@ -7,6 +7,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-07: Pushed
+
+#### Changed
+- `integrate/combine-frontends` pushed; PR #23 now carries Phases 10, 11, and 9.
+  `CLAUDE.md` and `PROJECT_STATUS.md` record it.
+
 ### 2026-10-05: Phase 9, hardening
 
 #### Added

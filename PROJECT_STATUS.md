@@ -234,7 +234,7 @@ Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
 
 | Item | Why it is not done | Who |
 |---|---|---|
-| Push and PR | No `origin` remote in this checkout and the session's GitHub token was invalid; adding the remote was refused by the sandbox's permission policy | Owner: push `integrate/combine-frontends` |
+| Review and merge PR #23 | Pushed 2026-10-07; agents do not merge their own work to `main` | Owner |
 | Real car photography | Needs photos of these ten models; stock images are banned | Owner |
 | Logo spin loader | Only a gold render of the mark exists | Owner |
 | iOS Safari, Android Chrome | Needs physical devices | Owner or a device cloud |
