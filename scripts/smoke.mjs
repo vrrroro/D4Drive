@@ -135,16 +135,21 @@ let reference = '';
   await page.waitForURL(/\/cars\/\d+$/);
   await page.getByRole('link', { name: /Reserve this car/ }).click();
   await page.waitForURL(/\/booking\/\d+$/);
-  const offset = 60 + Math.floor(Math.random() * 600);
-  const start = new Date(Date.now() + offset * 864e5).toISOString().slice(0, 10);
-  const end = new Date(Date.now() + (offset + 3) * 864e5).toISOString().slice(0, 10);
-  await page.getByLabel('Pickup').fill(start);
-  await page.getByLabel('Return').fill(end);
+  // Every run books the same car, so a random window can overlap a booking
+  // left by an earlier run, which the engine rightly refuses (409). Pick
+  // fresh dates and retry rather than reporting a working refusal as a failure.
   await page.locator('#payment-method').selectOption('upi');
   await page.getByLabel('UPI ID').fill('karthik@okhdfcbank');
-  await page.screenshot({ path: `${SHOTS}/05-checkout.png`, fullPage: true });
-  await page.getByRole('button', { name: 'Confirm booking' }).click();
-  await page.waitForURL(/\/confirmation\//, { timeout: 15000 });
+  for (let attempt = 0; attempt < 5 && !/\/confirmation\//.test(page.url()); attempt += 1) {
+    const offset = 60 + Math.floor(Math.random() * 3000);
+    const start = new Date(Date.now() + offset * 864e5).toISOString().slice(0, 10);
+    const end = new Date(Date.now() + (offset + 3) * 864e5).toISOString().slice(0, 10);
+    await page.getByLabel('Pickup').fill(start);
+    await page.getByLabel('Return').fill(end);
+    if (attempt === 0) await page.screenshot({ path: `${SHOTS}/05-checkout.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Confirm booking' }).click();
+    await page.waitForURL(/\/confirmation\//, { timeout: 8000, waitUntil: 'commit' }).catch(() => {});
+  }
   reference = page.url().split('/').pop();
   ok('booking confirms with a reference', /^D4[A-Z0-9]{8}$/.test(reference), reference);
   await page.screenshot({ path: `${SHOTS}/06-confirmation.png`, fullPage: true });

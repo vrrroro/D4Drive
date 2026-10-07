@@ -7,9 +7,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
-### 2026-10-07: Pushed
+### 2026-10-07: ESLint CLI, pushed
 
 #### Changed
+- `npm run lint` is `eslint . --max-warnings=0` with a flat `eslint.config.mjs`
+  (`next/core-web-vitals` through FlatCompat), replacing `.eslintrc.json` and
+  the deprecated `next lint`. CI now runs it.
+- Removed an `eslint-disable no-var` directive in `lib/db.ts` that disabled a
+  rule the config never enables.
+- `source-map-js` 1.2.2 (via PostCSS) for GHSA-68fv-2mgg-jv7q, a high
+  advisory published after Phase 9; production audit back to 0.
+- `npm run smoke` retries the booking step with fresh dates when an earlier
+  run's booking holds the window (a correct 409), which made it flaky as
+  bookings accumulated. Three consecutive runs: 35/35.
 - `integrate/combine-frontends` pushed; PR #23 now carries Phases 10, 11, and 9.
   `CLAUDE.md` and `PROJECT_STATUS.md` record it.
 

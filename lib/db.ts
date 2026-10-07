@@ -9,7 +9,7 @@ import type { Pool, PoolConnection, RowDataPacket, ResultSetHeader } from 'mysql
  * after a few dozen saves.
  */
 declare global {
-  // eslint-disable-next-line no-var
+  // `var`, not `let`: only `var` declares a property on globalThis here.
   var __d4drivePool: Pool | undefined;
 }
 

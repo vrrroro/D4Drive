@@ -2,7 +2,7 @@
 
 **Current phase:** All phases done. Remaining items need real devices, a real screen reader, or the owner (see Summary)
 **Status:** Complete in code
-**Last updated:** 2026-10-05 (end of session)
+**Last updated:** 2026-10-07
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here and in the
@@ -167,6 +167,8 @@ described in the CHANGELOG entry for this date.
 
 Found and fixed in this phase:
 
+- [x] `next lint` (deprecated, removed in Next 16) replaced by the ESLint CLI with a flat `eslint.config.mjs`; ESLint now runs in CI (2026-10-07)
+
 - [x] `npm audit --audit-level=high` failed (9 high). Production now has 0: Next 15.5.27, `sharp` and friends updated, nested PostCSS lifted by an `overrides` entry. The 5 left are dev-only (`braces` under `eslint-config-next`, no patched release), so CI gates on `--omit=dev` and prints the full audit as information
 - [x] Gridlines sat at sixths of an unpadded box; now drawn by the content's own 12-column grid at column 1, 5, 9 starts and column 12 end, shown from 1024px
 - [x] `Button` link variant animated `width`; now `scaleX`. Named transition properties replace `transition-all`
@@ -242,5 +244,4 @@ Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
 | Particle cost on a real GPU | Sandbox WebGL is CPU-rendered | Owner, on any laptop |
 | Express tier | Course-rubric decision | Owner (Open decisions) |
 | Confirm dark accent tint and hero copy | Design decisions taken under stated assumptions | Owner (Open decisions) |
-| Migrate `next lint` to the ESLint CLI | Deprecated, removed in Next 16; works today | Next session |
 | Dev-only `braces` advisory | No patched release exists | Watch the informational CI audit |

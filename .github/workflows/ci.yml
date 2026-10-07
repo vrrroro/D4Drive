@@ -23,6 +23,9 @@ jobs:
       - name: Copy lint
         run: npm run lint:copy
 
+      - name: ESLint
+        run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
 
