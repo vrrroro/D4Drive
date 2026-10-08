@@ -25,7 +25,7 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 2 | 10: Close the gaps | Done |
 | 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
-| 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, on `feature/scroll-film-redesign` |
+| 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
 
 ---
 
@@ -265,7 +265,7 @@ Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
 | Item | Why it is not done | Who |
 |---|---|---|
 | Review and merge PR #23 | Pushed 2026-10-07; agents do not merge their own work to `main` | Owner |
-| Review and merge Phase 12 | Branch `feature/scroll-film-redesign`, stacked on PR #23 | Owner |
+| Review and merge PR #24 (Phase 12) | Stacked on PR #23; merge #23 first | Owner |
 | Own photos of the fleet | The current ones are Commons photos of the same models | Owner, optional |
 | Film scrubbing on real phones | Needs devices | Owner or a device cloud |
 | Logo spin loader | Only a gold render of the mark exists | Owner |
