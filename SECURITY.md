@@ -100,8 +100,11 @@ and it is not PCI compliant.
 
 ## Content Security Policy
 
-The intro sequence needs an explicitly authored CSP, because the video and the
-grain layer both need permissions a default policy would deny.
+The site needs an explicitly authored CSP, because the landing film (stills drawn
+into a canvas, an engine clip, the film as video for reduced motion) and the
+grain layer need permissions a default policy would deny. Everything they load
+is same-origin: fleet photographs live in `public/cars/`, never hotlinked, and
+the credits link out to Wikimedia without embedding anything from it.
 
 ```
 default-src 'self';
@@ -118,5 +121,5 @@ form-action 'self';
 
 `style-src 'unsafe-inline'` is present because Next.js injects inline styles.
 Narrow it to a nonce before any real deployment. `frame-ancestors 'none'`
-prevents clickjacking of the auth gate, which is the highest-value target on the
-page.
+prevents clickjacking of the sign-in panel, which is the highest-value target on
+the page.

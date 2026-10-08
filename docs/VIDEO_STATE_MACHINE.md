@@ -1,292 +1,199 @@
-# Intro Sequence: Video Playback State Machine
+# The Landing Film: Scroll-Scrub Contract
 
-The D4Drive entry experience is one continuous moment: a branded loader that fades
-into the first frame of `D4Drive.mp4`, an auth gate held over that frozen frame,
-and a cinematic release into the landing page once the video ends.
+The landing page is the film. A red 911 on a white studio cyclorama: a close-up
+of the door, the camera pulling back along the flank, the car turning to face
+you and away, then a burnout and a take-off through its own smoke. The visitor's
+scroll is the playhead. Forward plays it, back rewinds it, stopping holds the
+frame. The company's story is told in the spaces the film leaves, and when the
+car takes off the smoke fades into the sign-in panel.
 
-This document is the contract. The implementation in `components/intro/` must
-match it exactly.
+This document is the contract for `components/film/`. It replaces the earlier
+autoplaying intro (loader, frozen frame, sign-in gate, film, landing), which is
+in the git history before 2026-10-08.
 
 ---
 
-## 1. States
+## 1. Why stills, not a video element
 
-| State | What the user sees | Video element |
+Setting `video.currentTime` on every scroll tick decodes from the previous
+keyframe, which stutters in Safari and Firefox and depends on the encode. The
+film ships instead as a numbered sequence of stills drawn into a canvas:
+
+- `scripts/build-film-frames.mjs` cuts every frame from 1.25s (past the fade up
+  from black) to the end: 264 stills, 1600x900 WebP at quality 70, about 22 KB
+  each, 5.6 MB in all. A studio shot on a white backdrop compresses very well;
+  the set is smaller than the 1080p MP4 it replaces.
+- It also measures where the car is in each frame (it is the only saturated red
+  on a grey set) and writes that, smoothed, to `lib/film-manifest.ts`, along
+  with the count and sizes.
+- It cuts the engine rev and burnout from the soundtrack (6.6s to 10s, where
+  the RMS climbs from -23 dB to -12 dB) for the easter egg.
+
+The output folder is versioned (`public/film/v1`) and served immutable. Change
+the film, bump `VERSION` in the script.
+
+---
+
+## 2. Geometry
+
+The film is pinned (`position: sticky`) inside a track 700vh tall (600vh on
+portrait), so the 264 stills spread over about 540vh: roughly 18px of wheel per
+still on a 900px screen.
+
+Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
+
+| Mode | When | Placement |
 |---|---|---|
-| `BOOT` | Alabaster ground, `D4Drive` wordmark, progress rule filling left to right | Created, `preload="auto"`, buffering, not painted |
-| `READY` | Loader fades out over 700ms, revealing frame one | Seeked to `POSTER_TIME`, paused |
-| `GATED` | Auth panel fades up over the frozen frame, a charcoal scrim dims it | Paused, held |
-| `AUTHENTICATING` | Submit button in loading state, panel locked | Paused, held |
-| `UNLOCKED` | Panel backing fades over 500ms while its type dissolves into sand (section 10) | `play()` called |
-| `PLAYING` | Video running, no chrome, no controls | Playing |
-| `COMPLETED` | Held final frame scatters into the landing content (section 10) | Paused at final frame, unmounted once the scatter ends |
-| `RECOVERED` | Poster still, landing content revealed directly | Never played |
+| `cover` | aspect at least 1.1 | Fills the viewport, crops symmetrically |
+| `band` | portrait | A horizontal band (46% of the height), cropped to keep the car centred using the manifest's per-frame focus, never past the frame's own edges. The band's top and bottom dissolve into the page. |
 
-`RECOVERED` is not a failure screen. It is the graceful path for reduced motion,
-media errors, stalled networks, and returning visitors. The user still gets the
-product, just without the cinema.
+The hero opens on a **window**: a slab about 60vw by 23.5vh into which the film
+is drawn, framed on the door just under the glass at 1.12x. The tagline overlaps
+it. As the visitor starts to scroll the window opens to the full film rectangle
+while the framing eases back to the film's own, which plays as a short dolly
+out. FilmStage publishes the closed window and film rectangle as CSS variables
+(`--win-*`, `--film-*`) on the stage, so the type lines up with the canvas at any
+size; `globals.css` holds matching fallbacks for the server render.
 
 ---
 
-## 2. Transitions
+## 3. The timeline
 
-```
-   mount
-     │
-     ▼
-┌──────────┐   buffer >= THRESHOLD    ┌─────────────┐
-│   BOOT   │─────────────────────────▶│    READY    │
-└────┬─────┘                          └──────┬──────┘
-     │                                       │ 700ms fade
-     │                                       ▼
-     │                                ┌─────────────┐
-     │                                │    GATED    │◀────────┐
-     │                                └──────┬──────┘         │
-     │                                       │ submit         │ 401 / 422
-     │                                       ▼                │
-     │                             ┌──────────────────┐       │
-     │                             │  AUTHENTICATING  │───────┘
-     │                             └────────┬─────────┘
-     │                                      │ 200
-     │                                      ▼
-     │                               ┌────────────┐
-     │                               │  UNLOCKED  │
-     │                               └──────┬─────┘
-     │  error                               │ play()
-     │  stall > STALL_TIMEOUT                ▼
-     │  prefers-reduced-motion        ┌─────────────┐
-     │  session.introSeen             │   PLAYING   │
-     │                                └──────┬──────┘
-     ▼                                       │ ended
-┌─────────────┐                              ▼
-│  RECOVERED  │──────────────────────▶┌─────────────┐
-└─────────────┘  both reveal landing  │  COMPLETED  │
-                                      └─────────────┘
-```
+All of it in `components/film/timeline.ts`, pure, unit tested.
 
-**Only `AUTHENTICATING` can return to a previous state.** Every other edge moves
-forward. The intro never replays within a session.
+Scroll progress `p` (0 to 1 across the track) maps to film frames in segments,
+one beat each:
 
-Two edges are not drawn above:
+| p | Frames | Beat |
+|---|---|---|
+| 0 to 0.09 | 0 to 24 | Door close-up; the window opens |
+| 0.09 to 0.25 | 24 to 80 | Pull back along the flank |
+| 0.25 to 0.45 | 80 to 136 | The car turns to face you (head-on at 120) |
+| 0.45 to 0.66 | 136 to 205 | It keeps turning: front three-quarter, right flank |
+| 0.66 to 0.90 | 205 to 263 | Burnout and take-off |
+| 0.90 to 1 | 263 | Smoke; fades into the page by 0.985 |
 
-- `READY` and `GATED` both accept `ALREADY_AUTHENTICATED` and move straight to
-  `UNLOCKED` (section 6). `IntroSequence` sends it on reaching `READY` when the
-  server rendered the page with a session.
-- `GATED` accepts `CLEAR_ERROR` as a self-edge: switching the panel between
-  sign in and register drops the other form's error without leaving the state.
+The mapping is monotonic: scrolling forward never plays the film backward.
 
-A `LOADER_FADED` that arrives after the machine has left `READY` is ignored. The
-loader fades on its own clock and must not drag an authenticated visitor back to
-the gate.
+Copy (`CHAPTERS`, as fade-in-from, fully-in, start-out, gone):
+
+| Chapter | Window | Space it uses |
+|---|---|---|
+| Hero | until 0.032 | The page around the window; gone before the window opens under it |
+| Flank | 0.10 to 0.255 | The band above the car; body in the top right |
+| Roast | 0.275 to 0.46 | The flanks while the car faces the camera; body on the floor |
+| Delivery | 0.475 to 0.66 | The band above; tiers top right; body on the floor |
+| Take-off | 0.72 to 0.985 | The smoke |
+
+No two chapters are ever on screen at once (tested). Opacity follows the scroll
+exactly; each chapter's drift is on a spring, so copy keeps settling for a
+moment after the wheel stops. That trailing settle is the system's heading lag.
+
+On portrait, copy stacks above and below the band; the delivery tiers and the
+roast body drop out there (`.ch-landscape-only`).
 
 ---
 
-## 3. The loader is real, not theatrical
+## 4. Drawing
 
-A progress bar that animates to 100% on a timer is the laziest thing this screen
-could do, and it becomes visible as a lie the moment the network is slow. The bar
-reports actual buffer state.
+`FilmStage` owns a canvas and a `FrameLoader`. Drawing is driven by events, not
+a loop: a change in the (lightly sprung) scroll progress, a frame arriving, or a
+resize each request one animation frame, and that frame draws once. Nothing in
+the draw path touches React state.
 
-```ts
-// Drive the bar from TimeRanges, not from a setInterval.
-function bufferedFraction(video: HTMLVideoElement): number {
-  const { buffered, duration } = video;
-  if (!duration || buffered.length === 0) return 0;
-  // The contiguous range from t=0 is what matters. A gap means we cannot play through.
-  return Math.min(buffered.end(0) / duration, 1);
-}
-```
+Each draw:
 
-Bind to the `progress` event, not `timeupdate`. `progress` fires as bytes arrive.
+1. Sets the canvas opacity from the fade (`FADE_OUT`, 0.9 to 0.985). Always, even
+   when the frame has not changed: the last still holds while it fades.
+2. Works out the fractional frame. Skips if neither the frame nor the window
+   moved.
+3. Draws the exact still, or the nearest loaded one, clipped to the window. If
+   the playhead sits between two stills, blends the next one in by the fraction,
+   which reads as continuous motion rather than steps.
+4. In band mode, fades the band's edges into the page ground (to the ground
+   colour at zero alpha, not to transparent black, which draws a grey bar).
 
-**`THRESHOLD` is not 100%.** Waiting for the full asset before showing frame one
-would strand the user on a loader for the entire download. Advance to `READY` at
-whichever comes first:
-
-- `canplaythrough` fires, or
-- `bufferedFraction >= 0.25` and the observed download rate projects completion
-  before playback would catch up, or
-- `BOOT_MAX_MS` (6000) elapses, in which case go to `RECOVERED`.
-
-The bar eases toward its target rather than snapping, so a burst of buffering does
-not cause a jolt. It never moves backward, and it never reaches 100% until the
-transition is genuinely committed.
-
-**Minimum display time.** If the asset is warm in cache, `canplaythrough` can fire
-in under 100ms and the loader flashes. Hold `BOOT` for a floor of `BOOT_MIN_MS`
-(900) so the wordmark is legible. A flash of a loader is worse than no loader.
-
-**Both limits count from navigation start** (`performance.now()`), not from the
-moment React mounts. The visitor began waiting when they arrived. On Slow 3G
-the script bundle alone takes about ten seconds; a ceiling that started after
-it would add six more on top. Measured: Slow 3G reaches the recovered landing
-in 11.4s (the bundle's arrival), Fast 3G at the 6s ceiling, Slow 4G reaches the
-gate in 2.2s.
+`data-frame` on the canvas reports the frame for the smoke test.
 
 ---
 
-## 4. Autoplay, audio, and browser policy
+## 5. Loading
 
-Chrome, Safari, and Firefox all block audible autoplay without a user gesture. The
-architecture sidesteps this rather than fighting it:
+`FrameLoader` fetches stills six at a time in coarse-to-fine order
+(`timeline.loadOrder`): frame 0, then every 16th across the whole film, then
+every 8th, 4th, 2nd, and finally the rest. Scrubbing works from the first moment
+on a slow connection, at a lower frame rate, and sharpens as stills land. Phones
+(coarse pointer, short side under 820px) load even frames only: half the bytes,
+and at a thumb's speed it does not show.
 
-- The element is `muted` and `playsInline` from first paint, so any programmatic
-  `play()` is permitted.
-- The transition out of `GATED` is triggered by a **form submit**, which is a
-  genuine user gesture. That gesture is what authorises playback.
-- Because a gesture is in hand at `UNLOCKED`, audio may be unmuted at that exact
-  moment if the video carries a soundtrack. Unmute inside the same call stack as
-  the submit handler. Deferring it past an `await` loses the gesture in Safari.
-- `play()` returns a Promise and it can reject. A rejected `play()` routes to
-  `RECOVERED`, never to an unhandled rejection.
-
-```ts
-const attempt = video.play();
-if (attempt !== undefined) {
-  attempt.catch(() => transition('RECOVERED'));
-}
-```
-
-`playsInline` is mandatory. Without it, iOS Safari hijacks the video into its
-native fullscreen player and the composition is lost.
+Stills stay as `HTMLImageElement`s, decoded by the browser on first draw. They
+are not pre-decoded into ImageBitmaps: 264 decoded frames would pin about 1.5 GB.
 
 ---
 
-## 5. Detecting the end
+## 6. The boot loader
 
-`ended` is the primary signal, but it does not fire reliably across every browser
-and codec combination, particularly when the final frame sits on a keyframe
-boundary. Belt and braces:
-
-```ts
-// Primary
-video.addEventListener('ended', complete, { once: true });
-
-// Fallback: some browsers stall a few milliseconds short of duration.
-video.addEventListener('timeupdate', () => {
-  if (video.duration && video.duration - video.currentTime < 0.25) complete();
-});
-```
-
-`complete()` must be idempotent. Guard it with a ref, not with component state,
-because state updates are asynchronous and both listeners can fire in the same tick.
-
----
-
-## 6. Returning visitors
-
-Forcing a returning user through the intro on every navigation is hostile. Persist
-a session flag on first completion:
-
-```ts
-sessionStorage.setItem('d4drive:intro-seen', '1');
-```
-
-`sessionStorage`, not `localStorage`. The intro should return on a genuinely new
-visit but not on an in-session reload. Read it during `BOOT` and route straight to
-`RECOVERED` if set. Wrap both the read and the write in `try/catch`, because Safari
-private mode throws on access.
-
-An authenticated user with a valid session cookie skips `GATED` entirely and moves
-from `READY` to `UNLOCKED` directly. They still get the video, just not the wall.
-
----
-
-## 7. Reduced motion
-
-`prefers-reduced-motion: reduce` sends the sequence to `RECOVERED` at mount. The
-user sees the poster frame and the landing content, with the auth panel rendered
-inline rather than as an overlay. A manual play control is offered for anyone who
-wants the video anyway. That preference is a stated preference, not a permanent
-prohibition, so the door stays open.
-
----
-
-## 8. Implementation shape
-
-```
-components/intro/
-  IntroSequence.tsx      'use client'  orchestrator, owns the machine
-  useIntroMachine.ts                   reducer, states and guards, zero DOM
-  BootLoader.tsx                       wordmark + progress rule
-  AuthGate.tsx                         auth panel, form, error surface
-  VideoStage.tsx                       video element, listeners, play commands, scatter
-  constants.ts                         timings, thresholds, z-index scale
-
-components/fx/
-  particle-stage.ts                    one shared WebGL2 canvas, dissolve and assemble jobs
-  use-particles.ts                     DOM capture (html-to-image), dissolve and assemble hooks
-  AssembleOnView.tsx                   catalog cards condensing out of sand on first view
-```
-
-**`useIntroMachine` must be a pure reducer with no DOM access.** That is what makes
-the sequence testable without a browser: feed it events, assert on states. The
-imperative video commands live in `VideoStage` and are issued as effects of state,
-never the reverse.
-
-**Do not track buffer progress in `useState`.** `progress` fires many times per
-second and every update would re-render the tree. Use a Motion `useMotionValue` for
-the bar and let it drive `transform: scaleX()` outside React's render cycle. React
-state holds the discrete machine state only.
-
-Animate `transform` and `opacity` only. The loader bar is `scaleX` on a
-`transform-origin: left` element, never an animated `width`.
-
----
-
-## 9. Timing constants
-
-All values live in `components/intro/constants.ts`. Nothing below is inlined at a
-call site.
+The loader (wordmark, real progress rule) covers the landing until the coarse
+pass is in: frame 0, every 8th frame, and the first few (`timeline.bootSet`,
+about 40 stills, under 1 MB). Its progress is the share of that set that has
+actually arrived. It never moves backward.
 
 | Constant | Value | Why |
 |---|---|---|
-| `BOOT_MIN_MS` | 900 | Floor so a cached load does not flash the wordmark |
-| `BOOT_MAX_MS` | 6000 | Ceiling before giving up and taking the recovered path |
-| `BUFFER_THRESHOLD` | 0.25 | Enough head start to play through on a typical connection |
-| `LOADER_FADE_MS` | 700 | Loader out, matches the design system colour-transition tier |
-| `GATE_FADE_MS` | 500 | Auth panel in and out, the UI interaction tier |
-| `REVEAL_MS` | 1500 | Video into landing content when particles are unavailable (CSS fade) |
-| `SCATTER_MS` | 2000 | Held final frame scattering into the landing, top of the cinematic tier |
-| `DISSOLVE_MS` | 1500 | Auth panel type turning to sand on a successful sign-in |
-| `GATE_SCRIM_OPACITY` | 0.55 | Charcoal scrim over the held frame while the gate is up |
-| `POSTER_TIME` | 1.2 | Seek target for the revealed frame, past the film's fade up from black |
-| `STALL_TIMEOUT_MS` | 4000 | No `progress` event for this long means the network gave up |
+| `BOOT_MIN_MS` | 900 | First visit only: a cached load must not flash the wordmark |
+| `BOOT_MAX_MS` | 6000 | Let go regardless; the scrub draws the nearest loaded still |
+| `LOADER_FADE_MS` | 700 | Colour-transition tier |
 
-`POSTER_TIME` is deliberately not zero. This film fades up from black over
-roughly 1.2 seconds (mean luma 8 at t=0.37, legible only from t=1.2), so the
-first frame worth revealing is well past t=0. Measured against the encoded
-asset, not guessed; `npm run build:assets -- --poster-time` must match it.
+Both limits count from navigation start, not hydration. A failed still counts
+toward boot (its neighbour covers it), so a missing file can never strand the
+loader. After the first visit in a session (`sessionStorage`), the floor is
+dropped.
+
+The loader is server-rendered so it covers the first paint. Without JavaScript,
+or with reduced motion, CSS hides it.
 
 ---
 
-## 10. Particle effects
+## 7. The hand-over to sign-in
 
-Two moments use the shared WebGL2 particle stage in `components/fx/`, ported
-from the Vite prototype. Neither adds a state. Both are presentation inside an
-existing state, and both have a CSS fallback that the sequence uses whenever
-particles are unavailable.
+The take-off chapter ("Your turn.") sits in the smoke. From 0.9 the canvas
+fades and the smoke becomes the page ground; at the end of the track the stage
+scrolls away, already the same colour as the page, and the sign-in panel
+(`AuthPanel`, light) follows straight on. A signed-in visitor gets
+`WelcomePanel` there instead: no form, the fleet and their bookings.
 
-| Moment | State | With WebGL2 | Without (or reduced motion) |
-|---|---|---|---|
-| Sign-in succeeds | `UNLOCKED` onward | The panel's type is rasterised (`html-to-image`) and dissolves over `DISSOLVE_MS`; the opaque backing fades over `GATE_FADE_MS` | Type fades over `GATE_FADE_MS` |
-| Film ends | `COMPLETED` | The held final frame is uploaded as a texture and scatters left to right over `SCATTER_MS` | Stage fades over `REVEAL_MS` |
+Signing in from the panel turns its type into sand (the particle stage in
+`components/fx`, drifting the way the car left) and lands on the fleet.
 
-Rules that keep this inside the contract:
+---
 
-- **The machine never waits on an effect.** `COMPLETED` is entered on `ended`
-  as before. `IntroSequence` keeps the gate mounted until its dissolve reports
-  done, and keeps `VideoStage` mounted until its scatter reports done, as
-  local flags. The reducer does not know either exists.
-- **`RECOVERED` never runs an effect.** It drops the stage and the gate at once.
-  Reduced motion lands here at mount, so it never sees a particle.
-- **Nothing is ever stranded invisible.** A lost WebGL context finishes every
-  pending job immediately. Assembling content carries a deadline that reveals
-  it regardless. The real element is hidden only on the frame after the stage
-  draws its first, pixel-identical, particle frame.
-- **The loop never touches React state.** The stage's `requestAnimationFrame`
-  loop draws to its canvas and reads each job's rect; it stops when the last
-  job ends.
-- **Layering.** The canvas is fixed, full viewport, `pointer-events: none`, at
-  `Z.particles` (45): above the gate (40) and film (30) it dissolves, below the
-  boot loader (50).
+## 8. Reduced motion and no JavaScript
+
+`prefers-reduced-motion: reduce` and `(scripting: none)` get the same thing,
+by CSS first and by script once hydrated: no canvas, no loader, no smooth
+scroll. The track becomes a plain document: the hero as type, then each chapter
+in order with its own still (lazy-loaded, so the scrubbing layout never fetches
+them). The take-off chapter offers the film as a video with controls
+(`FilmOnRequest`), because a preference for less motion is not a prohibition on
+watching something.
+
+---
+
+## 9. Files
+
+```
+components/film/
+  FilmStory.tsx      the track, the pinned stage, the loader; owns progress
+  FilmStage.tsx      the canvas and every draw
+  FilmHero.tsx       the opening frame and its entrance
+  FilmChapter.tsx    one beat of copy
+  FilmOnRequest.tsx  the film as a video, for reduced motion
+  BootLoader.tsx     wordmark and progress rule
+  FilmContext.tsx    progress, ready, reduced
+  frame-loader.ts    fetch order and nearest-frame lookup
+  timeline.ts        every number above, pure
+  constants.ts       loader timings, spring, video sources
+lib/film-manifest.ts generated: count, sizes, per-frame car position
+scripts/build-film-frames.mjs
+public/film/v1/      the stills and engine.m4a
+```

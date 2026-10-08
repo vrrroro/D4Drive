@@ -2,15 +2,18 @@
 
 **Drive easy. Book smart. Delivered to you.**
 
-A car rental and doorstep-delivery platform. The site opens on a branded loader
-that fades into the first frame of a hero film, holds an auth gate over that
-frozen frame, and releases into the landing page when the film ends.
+A self-drive car rental and doorstep-delivery platform for Bengaluru. The landing
+page is a film of a red 911 that the visitor scrubs with their own scroll: the
+company's story sits in the spaces the film leaves, and when the car takes off
+its smoke fades into the sign-in panel. Every other page follows the same
+editorial system: Fraunces at poster scale, a condensed wordmark cropped by the
+page, red-pen notes, and full-bleed panels dealt in like cards.
 
 ---
 
 ## Stack
 
-Next.js 15 (App Router) - React 19 - TypeScript - Tailwind v4 - Motion - MySQL 8
+Next.js 15 (App Router) - React 19 - TypeScript - Tailwind v4 - Motion - Lenis - MySQL 8
 
 No ORM. Queries are hand-written and parameterised.
 
@@ -48,27 +51,33 @@ Or do all three in one step with `npm run db:setup` (uses the `.env` credentials
 
 A database created before 2026-10-05 lacks the `refresh_tokens` table. Either
 re-run `npm run db:setup` (it drops and reloads everything) or apply
-`database/migrations/001_refresh_tokens.sql`.
-
-Car photographs: the seed leaves `image_url` empty and the UI shows a labelled
-"Photograph pending" slot. To add one, put the file in `public/cars/` and set
-the car's photo to `/cars/<file>` in the admin fleet page.
-
-The intro film is already in the repo: `public/videos/` (four encodes, about 7.5 MB)
-and `public/posters/`. The 16 MB source film is **not** committed. Only if you
-replace the film, regenerate them from the new source:
-
-```bash
-npm run build:assets -- --input ~/Downloads/D4Drive.mp4 --poster-time 1.2
-```
-
-`--poster-time` must equal `POSTER_TIME` in `components/intro/constants.ts`.
+`database/migrations/001_refresh_tokens.sql`. A database seeded before
+2026-10-08 has no car photographs: re-run `npm run db:setup`, or set each car's
+photo in the admin fleet page to `/cars/<slug>.webp` (the files are in
+`public/cars/`).
 
 Run it:
 
 ```bash
 npm run dev
 ```
+
+### Assets
+
+Everything generated is committed, so a fresh clone runs as is: the film's
+scrubbed stills (`public/film/v1/`, 264 frames, 5.6 MB), the fleet photographs
+(`public/cars/`, studio composites of Creative Commons photos, credited on
+`/credits`), and the film as video (`public/videos/`, used only by reduced
+motion's "Play the film"). Only if you replace the film:
+
+```bash
+npm run build:assets -- --input ~/Downloads/D4Drive.mp4 --poster-time 1.2
+npm run build:frames
+```
+
+then bump `VERSION` in `scripts/build-film-frames.mjs`, because the stills are
+cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
+(Python; see its README).
 
 ## Scripts
 
@@ -80,6 +89,7 @@ npm run dev
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint:copy` | Fails on em-dashes and en-dashes in user-visible strings |
 | `npm run build:assets` | Transcodes the hero film and extracts poster stills |
+| `npm run build:frames` | Cuts the film into scrubbed stills and writes `lib/film-manifest.ts` |
 | `npm run db:setup` | Creates the database, loads schema and seed from `.env` |
 | `npm run test` | Unit tests; the MySQL tests skip unless `DB_HOST` and `DB_NAME` are set |
 | `npm run test:db` | Same, with `.env` loaded, so the double-booking and refresh-rotation tests run |
@@ -91,20 +101,21 @@ npm run dev
 | File | Contents |
 |---|---|
 | `PRD.md` | What the product does |
-| `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic |
-| `DESIGN.md` | Design system, tokens, components, hard bans |
-| `docs/VIDEO_STATE_MACHINE.md` | The intro sequence contract |
+| `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic, asset pipelines |
+| `DESIGN.md` | Design system: tokens, type, motion, components, hard bans |
+| `docs/VIDEO_STATE_MACHINE.md` | The landing film: how the scroll scrubs it |
 | `docs/ERD.md` | Data model, constraints, indexes, and the verified overlap query plan |
 | `CONTRIBUTING.md` | Git, worktree, and review protocol |
 | `SECURITY.md` | Threat model and security rules |
-| `PROJECT_STATUS.md` | Current phase and progress |
+| `PROJECT_STATUS.md` | Phases and what is left |
 | `CLAUDE.md` | Agent instructions, current state, and next step |
 | `CHANGELOG.md` | Every change, newest first |
-| `reference/vite-intro/` | Earlier Vite prototype, kept only to port its intro and particle effects |
+| `scripts/fleet-photos/README.md` | How the fleet photographs were chosen and made |
+| `reference/vite-intro/` | Earlier Vite prototype; only the blocked logo loader is left |
 
 ## Status
 
-MVP feature-complete in code; hardening and the intro port are in progress.
-See `PROJECT_STATUS.md` for the active phase and `CLAUDE.md` for the next step.
+Complete in code, redesigned on 2026-10-08 (Phase 12). See `PROJECT_STATUS.md`
+for what is left and `CLAUDE.md` for the current state.
 
 Payment is **simulated**. There is no real gateway and no card data is stored.

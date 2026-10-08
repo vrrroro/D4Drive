@@ -1,8 +1,8 @@
 # Project Status and Milestones
 
-**Current phase:** All phases done. Remaining items need real devices, a real screen reader, or the owner (see Summary)
-**Status:** Complete in code
-**Last updated:** 2026-10-07
+**Current phase:** Phase 12 done (2026-10-08). Remaining items need real devices, a real screen reader, or the owner (see Summary)
+**Status:** Complete in code, redesigned
+**Last updated:** 2026-10-08
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here and in the
@@ -25,8 +25,32 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 2 | 10: Close the gaps | Done |
 | 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
+| 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, on `feature/scroll-film-redesign` |
 
 ---
+
+### Phase 12: Scroll film and editorial redesign (done 2026-10-08)
+
+The owner's brief: scrub the hero film with the scroll instead of playing it
+outright, tell the company's story in the spaces it leaves, fade into sign-in as
+the car takes off, restyle every page to the "Lil Boxes" editorial-maximalism
+system while keeping D4Drive's identity, and give the fleet real photographs
+with one consistent look. Contract: `docs/VIDEO_STATE_MACHINE.md`. System:
+`DESIGN.md`.
+
+- [x] Film as 264 WebP stills (`npm run build:frames`), car position per frame, engine clip
+- [x] Canvas scrubber with coarse-to-fine loading, nearest-frame fallback, in-between blending
+- [x] Hero window opening out of the headline; five chapters placed in the film's empty space; smoke fades into the sign-in panel
+- [x] Portrait band mode that follows the car
+- [x] Reduced motion and no-script: a plain document of chapters with stills, film on request
+- [x] Smooth scrolling (Lenis), dealt-in stacked panels, heading lag, cursor halo, header chameleon, back-to-top
+- [x] Type and tokens: Fraunces, Six Caps, Inter, marker; ember, oxblood, blush, studio; corner-anchored fields; radius 0 kept
+- [x] Red-pen notes with self-drawing arrows; wordmark letters as windows onto the fleet; rotating roast word; easter egg
+- [x] Every page restyled; the catalog's ghost stack (cards on touch)
+- [x] Fleet photographs: ten Commons photos, cut out and composited on the cyclorama, credited (`/credits`), seeded
+- [x] Unit tests for the timeline; smoke test rewritten (41 checks)
+- [ ] Scrubbing on a real iPhone and Android phone: memory with 132 stills, Lenis off on touch (needs devices)
+- [ ] Lighthouse re-run on the new landing (the boot loader is the LCP candidate; measure it)
 
 ### Phase 0: Foundation and toolchain (done)
 
@@ -119,7 +143,7 @@ Specification is `docs/VIDEO_STATE_MACHINE.md`.
 - [x] Run against a real MySQL 8 (`npm run db:setup`), then `npm run test:db` so the double-booking test runs instead of skipping
 - [x] Smoke test in the browser: register, log in, intro, catalog, book, invoice, admin status change (`npm run smoke`)
 - [x] Car photography: labelled "Photograph pending" slots (`components/ui/CarPhoto.tsx`); seed `image_url` is `NULL`, picsum removed from seed and CSP
-- [ ] Real photographs of the ten seeded cars in `public/cars/`. **Cannot be done in the sandbox:** it needs real photography of these specific models, and stock images are banned. Upload via the admin fleet page's Photo field.
+- [x] Photographs of the ten seeded cars in `public/cars/` (Phase 12): Creative Commons photos of each model, composited onto the film's studio. Real photos of D4Drive's own cars can replace them through the admin fleet page.
 
 Found and fixed while closing the gaps:
 
@@ -198,6 +222,10 @@ Found and fixed in this phase:
 
 ## Open decisions
 
+- **Typeface:** Phase 12 replaced Playfair Display with Fraunces (the reference system's serif: light weights at poster size) and uses Six Caps in place of Humane, whose licence could not be confirmed. Swap back by changing `app/layout.tsx` if the brief needs Playfair.
+- **Fleet photo colours:** two cars (Thar, Virtus GT) are red; no usable neutral photo of those exact models existed. Replace with the owner's own photos when available.
+- **Hidden scrollbar:** the reference system hides it site-wide; kept, with the back-to-top keycap. Easy to restore in `globals.css` if users miss it.
+
 - **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered and deliberately not decided by an agent.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
 - **Dark-mode accent text:** `DESIGN.md` holds carmine constant in dark mode, but carmine text on the dark ground measures 2.4:1. Text and focus rings use `#E66256` (same hue) in dark only; fills stay `#A82519`. Confirm or replace.
 - **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
@@ -237,7 +265,9 @@ Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
 | Item | Why it is not done | Who |
 |---|---|---|
 | Review and merge PR #23 | Pushed 2026-10-07; agents do not merge their own work to `main` | Owner |
-| Real car photography | Needs photos of these ten models; stock images are banned | Owner |
+| Review and merge Phase 12 | Branch `feature/scroll-film-redesign`, stacked on PR #23 | Owner |
+| Own photos of the fleet | The current ones are Commons photos of the same models | Owner, optional |
+| Film scrubbing on real phones | Needs devices | Owner or a device cloud |
 | Logo spin loader | Only a gold render of the mark exists | Owner |
 | iOS Safari, Android Chrome | Needs physical devices | Owner or a device cloud |
 | VoiceOver, NVDA, TalkBack pass | Needs a real screen reader | Owner |
