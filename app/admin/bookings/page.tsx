@@ -1,10 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { StackPanel } from '@/components/motion/StackPanel';
 import { getSession } from '@/lib/auth/guards';
 import { listAllBookings } from '@/lib/services/bookings';
 import { AdminBookingRow } from '@/components/sections/AdminBookingRow';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Bookings admin' };
 
 const iso = (d: Date) => new Date(d).toISOString().slice(0, 10);
 
@@ -16,23 +21,20 @@ export default async function AdminBookingsPage() {
   const bookings = await listAllBookings();
 
   return (
-    <main className="px-8 pt-24 pb-20 md:px-16 md:pb-32">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <Link href="/admin" className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--accent-text)]">
+    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="bookings-admin-title">
+        <Link href="/admin" className="keycap t-label">
+          <ArrowLeft aria-hidden className="h-4 w-4" strokeWidth={1.5} />
           Operations
         </Link>
 
-        <h1 className="font-display mt-8 text-4xl leading-[0.95] text-[var(--ink)] md:text-6xl">
-          Bookings and{' '}
-          <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
-            deliveries
-          </span>
+        <h1 id="bookings-admin-title" className="t-mega mt-12 max-w-[14ch]">
+          Bookings and <span className="italic-safe inline-block italic">deliveries</span>.
         </h1>
 
         {bookings.length === 0 ? (
-          <section className="mt-16 border-t border-[var(--ink)] pt-12">
-            <h2 className="font-display text-2xl text-[var(--ink)]">No bookings yet</h2>
-            <p className="mt-4 max-w-[52ch] font-body text-[var(--muted)]">
+          <section className="mt-16 max-w-[52ch]">
+            <h2 className="t-sub">No bookings yet.</h2>
+            <p className="t-body mt-4 text-[var(--muted)]">
               Bookings appear here as customers place them, with the status
               changes available at each stage.
             </p>
@@ -58,7 +60,6 @@ export default async function AdminBookingsPage() {
             ))}
           </section>
         )}
-      </div>
-    </main>
+    </StackPanel>
   );
 }

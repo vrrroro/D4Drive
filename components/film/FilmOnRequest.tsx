@@ -42,7 +42,7 @@ export function FilmOnRequest() {
 
   return (
     <>
-      <Button variant="secondary" size="lg" onClick={() => dialogRef.current?.showModal()}>
+      <Button variant="secondary" size="md" onClick={() => dialogRef.current?.showModal()}>
         Play the film
       </Button>
 
@@ -65,8 +65,8 @@ export function FilmOnRequest() {
             event.currentTarget.currentTime = POSTER_TIME;
           }}
         >
-          <source src={VIDEO_SOURCES.webm1080} type="video/webm" />
-          <source src={VIDEO_SOURCES.mp41080} type="video/mp4" />
+          <source src={VIDEO_SOURCES.webm} type="video/webm" />
+          <source src={VIDEO_SOURCES.mp4} type="video/mp4" />
         </video>
         <form method="dialog" className="flex justify-end p-4">
           <Button type="submit" variant="secondary" onDark size="sm">

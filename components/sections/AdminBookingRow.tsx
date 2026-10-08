@@ -98,21 +98,17 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
   return (
     <Card className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center">
       <div className="md:col-span-3">
-        <h2 className="font-display text-xl text-[var(--ink)]">
+        <h2 className="t-sub text-[clamp(1.5rem,2vw,2rem)]">
           {booking.brand} {booking.model}
         </h2>
-        <p className="mt-2 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-          {booking.reference}
-        </p>
+        <p className="t-label mt-2 text-[var(--muted)]">{booking.reference}</p>
       </div>
 
       <div className="md:col-span-2">
-        <p className="font-body text-xs text-[var(--muted)]">
+        <p className="font-body text-sm text-[var(--muted)]">
           {booking.start_date} to {booking.end_date}
         </p>
-        <p className="mt-1 font-body text-sm text-[var(--ink)]">
-          {formatCurrency(Number(booking.total_amount))}
-        </p>
+        <p className="mt-1 font-display text-xl font-light">{formatCurrency(Number(booking.total_amount))}</p>
       </div>
 
       <div className="md:col-span-2">
@@ -135,7 +131,7 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
             type="button"
             disabled={disabled}
             onClick={() => patch('bookings', status)}
-            className="border border-[var(--ink)] px-4 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-[var(--ink)] transition-colors duration-500 hover:bg-[var(--ink)] hover:text-[var(--ground)] disabled:opacity-40"
+            className="keycap t-label text-[var(--ink)]"
           >
             {LABELS[status] ?? status}
           </button>
@@ -147,7 +143,7 @@ export function AdminBookingRow({ booking }: AdminBookingRowProps) {
             type="button"
             disabled={disabled}
             onClick={() => patch('deliveries', status)}
-            className="border border-[var(--color-carmine)] px-4 py-2 font-body text-[10px] uppercase tracking-[0.2em] text-[var(--accent-text)] transition-colors duration-500 hover:bg-[var(--color-carmine)] hover:text-[var(--color-paper)] disabled:opacity-40"
+            className="keycap t-label text-[var(--accent-text)]"
           >
             {LABELS[status] ?? status}
           </button>

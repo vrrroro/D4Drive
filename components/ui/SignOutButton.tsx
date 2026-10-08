@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { readCsrfToken } from '@/lib/csrf';
 
-export function SignOutButton() {
+export function SignOutButton({ className = '' }: { className?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -25,12 +25,7 @@ export function SignOutButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={signOut}
-      disabled={busy}
-      className="whitespace-nowrap font-body text-[10px] uppercase tracking-[0.12em] text-[var(--muted)] sm:tracking-[0.25em] transition-colors duration-500 hover:text-[var(--accent-text)] disabled:opacity-50"
-    >
+    <button type="button" onClick={signOut} disabled={busy} className={`${className} disabled:opacity-50`}>
       Sign out
     </button>
   );

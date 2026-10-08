@@ -1,17 +1,16 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   D4Drive design tokens
+   D4Drive design tokens: editorial maximalism, carmine edition
 
-   Every colour is defined once on bare `:root`. The dark block redefines only
-   the ground and ink roles. No colour gets its only definition inside a media
-   query, or the light theme breaks wherever that query does not match.
+   The palette is still built from the hero film: carmine is the 911's paint,
+   ground is the cyclorama lifted to alabaster, ink is the tyres and glass.
+   The new system adds ramps in the same hue family rather than new accents:
+   ember is carmine in sunlight, oxblood is carmine in shadow, blush is the
+   pale reflection along the car's flank. Studio is the cyclorama itself.
 
-   Carmine is the single accent, sampled from the car in the hero film rather
-   than picked by eye: hue 5, saturation 0.85, measured off frame 150. It
-   clears 6.72:1 against ground and 7.13:1 for white text on top of it.
-   Gold is a material, not an accent: it appears only as hairline foil and
-   never signals interactive state. See DESIGN.md section 1.
+   Every colour is defined once on bare `:root`; the dark blocks redefine
+   only the roles that flip. See DESIGN.md section 2.
    ========================================================================== */
 
 @theme {
@@ -21,30 +20,24 @@
   --color-muted: #6c6863;
   --color-carmine: #a82519;
   --color-carmine-deep: #7d1a12;
+  --color-ember: #c2412d;
+  --color-oxblood: #4d120c;
+  --color-blush: #f3e4dc;
+  --color-studio: #e9e6e2;
+  --color-night: #1a1a1a;
   --color-foil: #d4af37;
   --color-paper: #ffffff;
 
-  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+  --font-condensed: var(--font-six-caps), 'Arial Narrow', Impact, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-marker: var(--font-marker), 'Comic Sans MS', cursive;
 
-  /* Radius is 0 across the entire system. No exceptions, no states. */
   --radius-none: 0px;
 
-  /* Three motion tiers. Nothing snaps. */
-  --duration-interaction: 500ms;
-  --duration-colour: 700ms;
-  --duration-cinematic: 1500ms;
-  --duration-cinematic-slow: 2000ms;
   --ease-luxury: cubic-bezier(0.25, 0.46, 0.45, 0.94);
-
-  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.02);
-  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.06);
-  --shadow-image: 0 4px 24px rgb(0 0 0 / 0.08);
-  --shadow-image-hover: 0 8px 32px rgb(0 0 0 / 0.12);
-  --shadow-button: 0 4px 16px rgb(0 0 0 / 0.15);
-  --shadow-button-hover: 0 8px 24px rgb(0 0 0 / 0.25);
-  --shadow-stage: 0 8px 32px rgb(0 0 0 / 0.12);
-  --shadow-inner-frame: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+  --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-expo-in-out: cubic-bezier(0.87, 0, 0.13, 1);
 }
 
 :root {
@@ -52,39 +45,41 @@
   --ink: var(--color-ink);
   --surface: var(--color-surface);
   --muted: var(--color-muted);
-
-  /* Primary button fill is the inverse of the page ground, not a fixed
-     charcoal. On a dark ground a charcoal button is invisible, which is the
-     Button Contrast Check in DESIGN.md failing in the one mode nobody tests. */
+  --studio: var(--color-studio);
   --btn-bg: var(--color-ink);
   --btn-fg: var(--color-paper);
-  /* --muted measures 5.21:1 on ground but only 4.42:1 on the taupe surface,
-     under the 4.5:1 DESIGN.md requires for labels and helper text on any
-     panel. Surface panels remap --muted to this (4.91:1). */
-  --muted-on-surface: #65615c;
-  /* Carmine used as text, focus ring, or focus underline. Identical to
-     carmine in light. In dark, carmine fills and rules stay #A82519 (white on
-     it is still 7.13:1) but carmine text on #141414 is 2.4:1, so text moves
-     to a lighter tint of the same hue 5 (5.48:1 on ground, 4.95:1 on
-     surface). DESIGN.md holds carmine constant in dark; this is the one
-     place it cannot, and only for legibility. */
+  /* --muted on the studio grey drops to 4.6:1; panels remap to this (5.4:1). */
+  --muted-on-studio: #5f5b57;
   --accent-text: var(--color-carmine);
+
+  /* Corner-anchored fields. Never linear, never centred: each panel moves
+     the hotspot to a different corner. */
+  --grad-hot: radial-gradient(130% 130% at 10% 10%, var(--color-ember) 0%, var(--color-carmine) 48%, var(--color-carmine-deep) 100%);
+  --grad-studio: radial-gradient(120% 120% at 10% 90%, #e2ded9 0%, var(--studio) 38%, var(--ground) 100%);
+  --grad-night: radial-gradient(120% 120% at 90% 10%, #2b2826 0%, #1d1b1a 45%, #131211 100%);
+
+  --shadow-float: 40px 40px 80px 0 rgb(26 26 26 / 0.35);
+  --shadow-glass: 0 4px 30px 0 rgb(0 0 0 / 0.1);
+
+  /* Section padding, all sides: the one gutter every panel shares. */
+  --gutter: clamp(1.25rem, 6vw, 8rem);
+  --header-h: 72px;
+
   color-scheme: light;
 }
 
 :root:not([data-theme='light']) {
   @media (prefers-color-scheme: dark) {
-    /* Ground and ink swap roles. Carmine and foil hold constant, because the
-       accent is drawn from a physical object and does not change with the
-       viewer's system preference. */
     --ground: #141414;
     --ink: #f2f0ed;
     --surface: #1f1e1c;
     --muted: #9b968f;
+    --studio: #1d1c1a;
+    --muted-on-studio: #a39e97;
     --btn-bg: var(--color-paper);
     --btn-fg: var(--color-ink);
-    --muted-on-surface: #a8a39c;
     --accent-text: #e66256;
+    --grad-studio: radial-gradient(120% 120% at 10% 90%, #26241f 0%, var(--studio) 38%, var(--ground) 100%);
     color-scheme: dark;
   }
 }
@@ -94,10 +89,12 @@
   --ink: #f2f0ed;
   --surface: #1f1e1c;
   --muted: #9b968f;
+  --studio: #1d1c1a;
+  --muted-on-studio: #a39e97;
   --btn-bg: var(--color-paper);
   --btn-fg: var(--color-ink);
-  --muted-on-surface: #a8a39c;
   --accent-text: #e66256;
+  --grad-studio: radial-gradient(120% 120% at 10% 90%, #26241f 0%, var(--studio) 38%, var(--ground) 100%);
   color-scheme: dark;
 }
 
@@ -105,12 +102,38 @@
    Base
    ========================================================================== */
 
+/* Square corners at rest, everywhere, in every state. Round things that the
+   system needs (the cursor halo, the easter egg) are drawn in SVG. */
 * {
   border-radius: 0 !important;
 }
 
 html {
-  scroll-behavior: smooth;
+  /* The scrollbar is hidden, as in the reference system. The back-to-top
+     keycap and the header are the way around a long page. */
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* Lenis (components/motion/SmoothScroll.tsx). */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 body {
@@ -118,9 +141,18 @@ body {
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1rem;
-  line-height: 1.625;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* The page arrives rather than snapping in. CSS only, so a failed script
+     can never leave the body invisible. */
+  animation: body-in 450ms var(--ease-luxury) both;
+}
+
+@keyframes body-in {
+  from {
+    opacity: 0;
+  }
 }
 
 ::selection {
@@ -134,95 +166,786 @@ body {
 }
 
 /* ==========================================================================
-   Utilities
+   Type. Fraunces light and enormous, Six Caps condensed and cropped, Inter
+   for reading, Shadows Into Light Two for the red-pen notes.
    ========================================================================== */
-
-/* A taupe panel (checkout summary, admin car form). Remaps --muted so every
-   label and helper inside it clears 4.5:1 against the panel itself. */
-.surface-panel {
-  background-color: var(--surface);
-  --muted: var(--muted-on-surface);
-}
 
 .font-display {
   font-family: var(--font-display);
 }
 
-/* Vertical decorative label. Capped at two instances page-wide and hidden on
-   mobile, per DESIGN.md section 7. */
-.vertical-label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-/* Drop cap for section-opening paragraphs. leading is deliberately tight, and
-   the float needs the sibling clear to avoid text wrapping under it awkwardly. */
-.drop-cap::first-letter {
+/* Section mega heading. Light, crushed, tracked in: lines may collide. */
+.t-mega {
   font-family: var(--font-display);
-  font-size: 4.5rem;
+  font-weight: 330;
+  font-variation-settings: 'opsz' 144;
+  font-size: clamp(3.25rem, 11.5vw, 12rem);
   line-height: 0.8;
-  float: left;
-  margin-right: 0.75rem;
-  margin-top: 0.25rem;
-  color: var(--accent-text);
+  letter-spacing: -0.035em;
 }
 
-/* On the charcoal band carmine fails contrast, so the drop cap goes paper. */
-.drop-cap-on-dark::first-letter {
-  color: var(--color-paper);
+/* Hero and chapter lines. */
+.t-hero {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-variation-settings: 'opsz' 144;
+  font-size: clamp(2.75rem, 7.6vw, 9.5rem);
+  line-height: 0.82;
+  letter-spacing: -0.03em;
 }
 
-/* Any italic display word containing a descender clips at leading-[0.9].
-   This reserves the space. See DESIGN.md section 2. */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 330;
+  font-variation-settings: 'opsz' 144;
+  font-size: clamp(2.25rem, 5.2vw, 6rem);
+  line-height: 0.88;
+  letter-spacing: -0.025em;
+}
+
+.t-sub {
+  font-family: var(--font-display);
+  font-weight: 350;
+  font-variation-settings: 'opsz' 72;
+  font-size: clamp(1.75rem, 3.4vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+
+.t-body {
+  font-family: var(--font-body);
+  font-weight: 300;
+  font-size: clamp(1.0625rem, 1.25vw, 1.375rem);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.t-eyebrow {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(0.75rem, 0.95vw, 0.95rem);
+  line-height: 1.2;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Labels, nav, meta: small, upper, open. */
+.t-label {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.t-condensed {
+  font-family: var(--font-condensed);
+  font-weight: 400;
+  line-height: 0.76;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+/* The red pen. Blurred half a pixel so it reads as ink, not vector. */
+.t-marker {
+  font-family: var(--font-marker);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 2.2vw, 2.6rem);
+  line-height: 0.92;
+  filter: blur(0.35px);
+  pointer-events: none;
+  user-select: none;
+}
+
 .italic-safe {
   line-height: 1.1;
-  padding-bottom: 0.25rem;
+  padding-bottom: 0.08em;
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
+/* ==========================================================================
+   Panels. Full-bleed sections with a corner-anchored field. `--muted` is
+   remapped on each so helper text clears 4.5:1 against its own ground.
+   ========================================================================== */
+
+.panel {
+  padding-inline: var(--gutter);
+  padding-block: clamp(5rem, 9vw, 9rem);
+}
+
+.tone-ground {
+  background-color: var(--ground);
+  color: var(--ink);
+}
+
+.tone-studio {
+  background: var(--grad-studio);
+  background-color: var(--studio);
+  color: var(--ink);
+  --muted: var(--muted-on-studio);
+}
+
+.tone-hot {
+  background: var(--grad-hot);
+  background-color: var(--color-carmine);
+  color: var(--color-paper);
+  --muted: var(--color-blush);
+  --accent-text: var(--color-paper);
+  --btn-bg: var(--color-blush);
+  --btn-fg: var(--color-ink);
+  color-scheme: dark;
+}
+
+.tone-night {
+  background: var(--grad-night);
+  background-color: var(--color-night);
+  color: var(--color-blush);
+  --muted: #b8b0aa;
+  --accent-text: #e8806f;
+  --btn-bg: var(--color-blush);
+  --btn-fg: var(--color-ink);
+  color-scheme: dark;
+}
+
+/* The header has no bar of its own. Its colours follow the panel beneath
+   (components/ui/HeaderTone.tsx). */
+.site-header {
+  --header-fg: var(--ink);
+  --header-accent: var(--accent-text);
+}
+
+.site-header[data-tone='hot'] {
+  --header-fg: var(--color-blush);
+  --header-accent: var(--color-paper);
+}
+
+.site-header[data-tone='dark'] {
+  --header-fg: var(--color-blush);
+  --header-accent: #e8806f;
+}
+
+/* ==========================================================================
+   Keycaps: outlined on the bottom edge only, as if seen from slightly above.
+   Hover presses them in. Square, unlike the reference.
+   ========================================================================== */
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid currentColor;
+  box-shadow: 0 1px 0 0 currentColor;
+  background-color: transparent;
+  transition:
+    transform 300ms ease,
+    box-shadow 300ms ease,
+    background-color 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease;
+}
+
+.keycap:hover,
+.keycap:focus-visible,
+.keycap[aria-pressed='true'] {
+  transform: translate(2px, 2px);
+  border-color: transparent;
+  box-shadow: -2px -2px 2px 1px rgb(0 0 0 / 0.12);
+  background-color: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+.keycap:disabled,
+.keycap[aria-disabled='true'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   The landing film (components/film). Scroll scrubs a canvas pinned in a
+   tall track. Reduced motion and no-script get a plain document instead:
+   chapters stack, each with its own still. See docs/VIDEO_STATE_MACHINE.md.
+   ========================================================================== */
+
+.film-track {
+  position: relative;
+  height: var(--film-track, 700vh);
+}
+
+.film-stage {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--ground);
+}
+
+.film-still {
+  display: none;
+}
+
+.film-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Geometry published by FilmStage at runtime. These fallbacks match the
+   cover layout, so the server render already lines the type up with the
+   window it will overlap. */
+.film-stage {
+  --win-x: 7vw;
+  --win-y: 33.5dvh;
+  --win-w: 60vw;
+  --win-h: 23.5dvh;
+  --film-y: 0px;
+  --film-h: 100dvh;
+}
+
+/* The boot loader covers the page until the film is ready. Without script it
+   would cover it for good; with reduced motion it never shows. */
+@media (scripting: none), (prefers-reduced-motion: reduce) {
+  [data-boot-loader] {
+    display: none !important;
   }
 }
 
-.animate-fade-in {
-  animation: fade-in var(--duration-colour) var(--ease-luxury) both;
+/* --- Hero ---------------------------------------------------------------- */
+
+.hero-lines {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  font-size: clamp(2.6rem, min(7.4vw, 12.5dvh), 9.5rem);
 }
 
-/* Particle assembly (components/fx/use-particles.ts). Hidden only when the
-   script that reveals it can run and motion is welcome. The failsafe shows a
-   pending element after 3s if hydration never arrives; once the hook arms it,
-   the hook owns the reveal and the failsafe no longer applies. */
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  [data-assemble='pending'] {
-    opacity: 0;
-    animation: assemble-failsafe 1ms linear 3s forwards;
+.hero-line {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.hero-line-1 {
+  left: var(--win-x);
+  top: calc(var(--win-y) - 0.74em);
+}
+
+.hero-line-2 {
+  left: calc(var(--win-x) + 0.85em);
+  top: calc(var(--win-y) + var(--win-h) / 2 - 0.44em);
+}
+
+.hero-line-3 {
+  left: calc(var(--win-x) + 2.4em);
+  top: calc(var(--win-y) + var(--win-h) - 0.24em);
+}
+
+.hero-wordmark {
+  position: absolute;
+  right: var(--gutter);
+  bottom: 0;
+  margin-bottom: -0.3em;
+  font-size: clamp(9rem, 31vw, 38rem);
+  line-height: 0.76;
+}
+
+.hero-note-left {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 13dvh;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+}
+
+.hero-note-right {
+  position: absolute;
+  right: var(--gutter);
+  top: calc(var(--win-y) - 2dvh);
+  width: min(24vw, 22rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.hero-egg {
+  margin-bottom: -1.5rem;
+}
+
+/* --- Chapters -------------------------------------------------------------
+   Each sits where the film is empty at that moment. Landscape uses the clear
+   band above the car, the floor below it, and the flanks while it faces the
+   camera; portrait stacks copy above and below the film band. */
+
+.ch-top-left {
+  left: var(--gutter);
+  top: calc(var(--header-h) + 3dvh);
+  max-width: min(72vw, 64rem);
+}
+
+.ch-top-right {
+  right: var(--gutter);
+  top: calc(var(--header-h) + 3dvh);
+}
+
+.ch-bottom-right {
+  right: var(--gutter);
+  bottom: 5dvh;
+  max-width: min(36vw, 34rem);
+}
+
+.ch-bottom-left {
+  left: var(--gutter);
+  bottom: 5dvh;
+  max-width: min(40vw, 36rem);
+}
+
+.ch-left-flank {
+  left: var(--gutter);
+  top: 26dvh;
+  width: min(28vw, 30rem);
+}
+
+.ch-right-flank {
+  right: var(--gutter);
+  top: 34dvh;
+  width: min(30vw, 34rem);
+  text-align: right;
+}
+
+.ch-smoke {
+  left: var(--gutter);
+  top: 24dvh;
+  width: min(62vw, 70rem);
+}
+
+.ch-head {
+  font-size: clamp(2.1rem, min(5.4vw, 9.2dvh), 7rem);
+}
+
+@media (max-aspect-ratio: 11/10) {
+  /* A thumb covers ground faster than a wheel: a shorter track keeps the
+     film's pace the same. */
+  .film-track {
+    --film-track: 600vh;
   }
 
-  [data-assemble='armed'],
-  [data-assemble='running'] {
-    opacity: 0;
+  .film-stage {
+    --film-h: min(46dvh, 115vw);
+    --film-y: calc((100dvh - var(--film-h)) * 0.47);
+    --win-x: 6vw;
+    --win-w: 88vw;
+    --win-y: calc(var(--film-y) + var(--film-h) * 0.18);
+    --win-h: calc(var(--film-h) * 0.62);
+  }
+
+  .hero-lines {
+    font-size: clamp(2.3rem, 11.5vw, 5.5rem);
+  }
+
+  .hero-line-1 {
+    top: calc(var(--win-y) - 0.92em);
+  }
+
+  .hero-line-2 {
+    left: calc(var(--win-x) + 0.35em);
+  }
+
+  .hero-line-3 {
+    left: var(--win-x);
+    top: calc(var(--win-y) + var(--win-h) + 0.06em);
+  }
+
+  .hero-wordmark {
+    right: auto;
+    left: var(--gutter);
+    font-size: 54vw;
+  }
+
+  .hero-note-right {
+    display: none;
+  }
+
+  .hero-note-left {
+    bottom: 19dvh;
+  }
+
+  .ch-top-left,
+  .ch-top-right,
+  .ch-left-flank,
+  .ch-smoke {
+    left: var(--gutter);
+    right: var(--gutter);
+    top: calc(var(--header-h) + 1.5dvh);
+    width: auto;
+    max-width: none;
+    text-align: left;
+  }
+
+  /* Clear of the back-to-top keycap in the bottom corner. */
+  .ch-bottom-right,
+  .ch-bottom-left,
+  .ch-right-flank {
+    left: var(--gutter);
+    right: var(--gutter);
+    top: auto;
+    bottom: calc(4dvh + 3.25rem);
+    width: auto;
+    max-width: none;
+    text-align: left;
+  }
+
+  .ch-head {
+    font-size: clamp(2rem, 9.5vw, 3.6rem);
+  }
+
+  /* A body set in the top band on landscape moves under the film here. */
+  .ch-top-right.ch-body-top {
+    top: auto;
+    bottom: calc(4dvh + 3.25rem);
+    max-width: none;
+  }
+
+  .ch-landscape-only {
+    display: none;
   }
 }
 
-@keyframes assemble-failsafe {
-  to {
-    opacity: 1;
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .film-hero {
+    display: block !important;
+    padding: calc(var(--header-h) + 3rem) var(--gutter) 2rem !important;
+  }
+
+  .hero-lines,
+  .hero-line,
+  .hero-wordmark,
+  .hero-note-left,
+  .hero-note-right {
+    position: static !important;
+    margin: 0 !important;
+  }
+
+  .hero-line {
+    white-space: normal;
+  }
+
+  .hero-line-2 {
+    color: var(--accent-text) !important;
+  }
+
+  .hero-wordmark {
+    margin-top: 2rem !important;
+    font-size: 30vw;
+  }
+
+  .film-chapter .ch-head {
+    font-size: clamp(2.25rem, 6vw, 5rem);
+  }
+
+  /* Chapter blocks are absolutely placed over the film; in the document
+     layout they simply follow one another. */
+  .film-chapter .absolute {
+    position: static !important;
+    width: auto !important;
+    max-width: 52rem !important;
+    text-align: left !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .film-track {
+    height: auto;
+  }
+
+  .film-stage {
+    position: relative;
+    height: auto;
+    overflow: visible;
+  }
+
+  .film-canvas,
+  .film-layer [data-film-decor] {
+    display: none !important;
+  }
+
+  .film-layer {
+    position: relative;
+    inset: auto;
+    pointer-events: auto;
+  }
+
+  .film-layer,
+  .film-chapter,
+  .film-chapter * {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+
+  .film-chapter {
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    gap: 2rem;
+    padding: calc(var(--header-h) + 2rem) var(--gutter) 4rem;
+  }
+
+  .film-still {
+    display: block;
+    width: 100%;
+    max-width: 1100px;
+    height: auto;
   }
 }
 
 /* ==========================================================================
-   Reduced motion
+   The fleet (components/sections/FleetIndex.tsx). Photo cards by default;
+   a ghost stack of names where there is a mouse and room for it.
+   ========================================================================== */
 
-   At MOTION_INTENSITY 7 every animation on this page is gated. Transforms and
-   scales collapse; colour transitions survive, because they do not cause
-   vestibular discomfort and removing them would strip the interface of
-   feedback entirely.
+.fleet-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 3.5rem 2.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fleet-row-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  color: var(--color-paper);
+}
+
+.fleet-name {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2rem, 6vw, 2.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.fleet-brand {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  color: var(--color-blush);
+}
+
+.fleet-specs {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--color-blush);
+}
+
+.fleet-row-link:hover .fleet-name,
+.fleet-row-link:focus-visible .fleet-name {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.12em;
+}
+
+.fleet-preview {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+  .fleet {
+    min-height: 34rem;
+  }
+
+  .fleet-stack {
+    display: block;
+    position: relative;
+    padding-top: 0.75em;
+    font-size: clamp(3rem, 9.4vw, 10.5rem);
+  }
+
+  .fleet-row {
+    position: relative;
+    height: 0.2em;
+  }
+
+  /* Each link is exactly its own band of the stack, full width, and the
+     glyphs that spill below it ignore the pointer. Moving down the pile
+     therefore steps through the cars one band at a time, instead of the
+     tallest, boldest name swallowing the rows beneath it. */
+  .fleet-row-link {
+    display: block;
+    height: 0.2em;
+    white-space: nowrap;
+  }
+
+  .fleet-name {
+    display: block;
+    pointer-events: none;
+  }
+
+  .fleet-card-photo,
+  .fleet-specs,
+  .fleet-brand {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .fleet-name {
+    font-size: 1em;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: rgb(255 255 255 / 0.42);
+    transition: color 300ms ease;
+  }
+
+  .fleet-row-link:hover .fleet-name,
+  .fleet-row-link:focus-visible .fleet-name {
+    text-decoration: none;
+  }
+
+  .fleet-row[data-active='true'] .fleet-name {
+    font-size: 0.8em;
+    font-weight: 900;
+    letter-spacing: -0.045em;
+    color: var(--color-paper);
+    text-shadow: 0.035em 0.035em 0 var(--color-oxblood);
+  }
+
+  .fleet-preview {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .fleet-photo-frame {
+    position: absolute;
+    right: 0;
+    top: -14%;
+    width: 38%;
+    aspect-ratio: 3 / 2;
+    perspective: 1400px;
+  }
+
+  .fleet-photo {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+  }
+
+  .fleet-photo > img {
+    box-shadow: var(--shadow-float);
+    transform: rotateX(24deg) rotateY(-20deg) rotateZ(9deg);
+  }
+
+  .fleet-brief {
+    position: absolute;
+    right: 6%;
+    bottom: -4%;
+    width: min(22rem, 30%);
+  }
+
+  .fleet-note {
+    position: absolute;
+    right: 40%;
+    top: -18%;
+  }
+
+  .fleet-rest {
+    position: absolute;
+    left: 58%;
+    top: 34%;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .fleet-photo > img {
+    transform: none;
+  }
+}
+
+/* A photograph laid on the table at an angle; it straightens to face you on
+   hover or when anything inside it has focus. */
+.car-tilt {
+  perspective: 1400px;
+}
+
+.car-tilt > * {
+  transform: rotateX(9deg) rotateY(-14deg) rotateZ(-1.6deg);
+  transition: transform 700ms var(--ease-expo-out);
+}
+
+.car-tilt:hover > *,
+.car-tilt:focus-within > * {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .car-tilt > * {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Wordmark letters as photo windows. Ink at rest; on hover the fill goes
+   clear, the letter stretches and drops, and a fleet photo shows through.
+   ========================================================================== */
+
+.wordmark-letter {
+  display: inline-block;
+  color: var(--ink);
+  background-size: cover;
+  background-position: center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  transform-origin: 50% 0%;
+  transition:
+    color 300ms ease,
+    transform 300ms ease;
+}
+
+.wordmark-letter:hover {
+  color: transparent;
+  transform: var(--hover-transform);
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 10s linear infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.typed-caret {
+  animation: caret 1s steps(1) infinite;
+}
+
+/* ==========================================================================
+   Reduced motion. Transforms and scroll-linked motion collapse; colour
+   transitions survive, because they give feedback without moving anything.
    ========================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
@@ -231,8 +954,14 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property: color, background-color, border-color, opacity !important;
     scroll-behavior: auto !important;
+  }
+
+  .keycap:hover,
+  .keycap:focus-visible,
+  .wordmark-letter:hover {
+    transform: none;
   }
 
   .motion-safe-transform {

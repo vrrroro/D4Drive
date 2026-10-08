@@ -9,14 +9,16 @@ export const Z = {
   base: 0,
   gridlines: 10,
   nav: 20,
-  videoStage: 30,
-  authGate: 40,
-  // Above the gate and film it dissolves, below the loader. One fixed
+  // Back-to-top keycap: above the page, below anything modal.
+  floating: 30,
+  // Above the sign-in panel it dissolves, below the loader. One fixed
   // full-viewport canvas shared by every particle job (components/fx).
   particles: 45,
   bootLoader: 50,
   toast: 60,
   grain: 70,
+  // The cursor halo rides above everything, grain included.
+  cursor: 80,
 } as const;
 
 /** Delivery fee tiers, in rupees, keyed by straight-line distance in km. */

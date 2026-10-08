@@ -124,8 +124,8 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
   }
 
   const selectClass =
-    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--accent-text)] focus:outline-none';
-  const labelClass = 'font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]';
+    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-display text-lg font-light text-[var(--ink)] transition-colors duration-300 focus:border-[var(--accent-text)] focus:outline-none';
+  const labelClass = 't-label text-[var(--muted)]';
 
   return (
     <>
@@ -137,8 +137,8 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
       </div>
 
       {open && (
-        <section className="mt-12 surface-panel border-t-4 border-t-[var(--color-carmine)] p-8 md:p-12">
-          <h2 className="font-display text-2xl text-[var(--ink)]">
+        <section className="mt-12 border-t-4 border-t-[var(--color-carmine)] bg-[var(--ground)] p-8 shadow-[var(--shadow-glass)] md:p-12">
+          <h2 className="t-sub">
             {editing ? `${editing.brand} ${editing.model}` : 'New car'}
           </h2>
 
@@ -207,12 +207,10 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
         {cars.map((car) => (
           <Card key={car.id} className="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-center">
             <div className="md:col-span-4">
-              <h3 className={`font-display text-xl ${car.isActive ? 'text-[var(--ink)]' : 'text-[var(--muted)]'}`}>
+              <h3 className={`t-sub text-[clamp(1.5rem,2vw,2rem)] ${car.isActive ? '' : 'text-[var(--muted)]'}`}>
                 {car.brand} {car.model}
               </h3>
-              <p className="mt-2 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-                {car.registrationNo}
-              </p>
+              <p className="t-label mt-2 text-[var(--muted)]">{car.registrationNo}</p>
             </div>
 
             <div className="md:col-span-3">
@@ -235,7 +233,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
               <button
                 type="button"
                 onClick={() => { setEditing(car); setCreating(false); }}
-                className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--ink)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--accent-text)]"
+                className="keycap t-label"
               >
                 Edit
               </button>
@@ -243,7 +241,7 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
                 <button
                   type="button"
                   onClick={() => deactivate(car)}
-                  className="font-body text-[10px] uppercase tracking-[0.2em] text-[var(--accent-text)] underline underline-offset-8 transition-colors duration-500 hover:text-[var(--ink)]"
+                  className="keycap t-label text-[var(--accent-text)]"
                 >
                   Withdraw
                 </button>

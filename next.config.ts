@@ -60,6 +60,23 @@ const nextConfig: NextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
         ],
       },
+      {
+        // The landing film's stills. The folder is versioned (v1, v2...) by
+        // scripts/build-film-frames.mjs, so a changed frame gets a new URL.
+        source: '/film/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Fleet photographs. They share /cars/ with the car pages, so the rule
+        // matches image files only, and an admin can replace one in place, so
+        // it is cached for a day rather than forever.
+        source: '/cars/:file([\\w-]+\\.(?:webp|avif|jpe?g|png))',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
     ];
   },
 };

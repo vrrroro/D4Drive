@@ -1,37 +1,57 @@
 import type { Metadata, Viewport } from 'next';
-import { Playfair_Display, Inter } from 'next/font/google';
-import { Gridlines } from '@/components/ui/Gridlines';
+import { Fraunces, Inter, Shadows_Into_Light_Two, Six_Caps } from 'next/font/google';
+import { BackToTop } from '@/components/motion/BackToTop';
+import { CursorHalo } from '@/components/motion/CursorHalo';
+import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { Grain } from '@/components/ui/Grain';
+import { SiteFooter } from '@/components/ui/SiteFooter';
+import { SiteHeader } from '@/components/ui/SiteHeader';
 import { ToastProvider } from '@/components/ui/Toast';
-import { SiteNav } from '@/components/ui/SiteNav';
 import './globals.css';
 
 /**
- * Fonts are self-hosted through next/font rather than linked from Google.
- * A <link> to fonts.googleapis.com is a render-blocking third-party round trip
- * on the critical path, and it is the single easiest LCP win to give away.
+ * Self-hosted through next/font, never linked from Google: a stylesheet on
+ * fonts.googleapis.com is a render-blocking third-party round trip.
+ *
+ * Fraunces is variable with its optical-size axis, so the same file sets a
+ * 200px hairline headline and a 16px label each at its own optical size.
+ * Six Caps stands in for the reference system's Humane: the same ultra-tall,
+ * ultra-narrow proportions, freely licensed. The marker face is only ever
+ * used for annotations, which arrive after the first paint, so it is not
+ * preloaded.
  */
-const playfair = Playfair_Display({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  variable: '--font-playfair',
+  variable: '--font-fraunces',
   display: 'swap',
-  // 400 only: the type scale in DESIGN.md sets every display size at 400.
-  // Each extra weight is another file racing the LCP headline for bandwidth.
-  weight: ['400'],
   style: ['normal', 'italic'],
+  axes: ['opsz'],
+});
+
+const sixCaps = Six_Caps({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-six-caps',
+  display: 'swap',
 });
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
-  // Body at 400, UI labels and buttons at 500. Nothing uses 300.
-  weight: ['400', '500'],
+});
+
+const marker = Shadows_Into_Light_Two({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-marker',
+  display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {
-  title: 'D4Drive',
-  description: 'Drive easy. Book smart. Delivered to you.',
+  title: { default: 'D4Drive', template: '%s | D4Drive' },
+  description: 'Drive easy. Book smart. Delivered to you. Self-drive cars, delivered across Bengaluru.',
   robots: { index: false, follow: false },
 };
 
@@ -43,13 +63,18 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${playfair.variable} ${inter.variable}`}>
+    <html lang="en-IN" className={`${fraunces.variable} ${sixCaps.variable} ${inter.variable} ${marker.variable}`}>
       <body>
-        <Gridlines />
         <ToastProvider>
-          <SiteNav />
-          {children}
+          <SmoothScroll />
+          <SiteHeader />
+          <main id="main" tabIndex={-1} className="outline-none">
+            {children}
+          </main>
+          <SiteFooter />
+          <BackToTop />
         </ToastProvider>
+        <CursorHalo />
         <Grain />
       </body>
     </html>
