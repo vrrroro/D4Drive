@@ -5,10 +5,11 @@
  *   npm run build && npm start      # in one terminal, with a seeded database
  *   npm run smoke                   # in another
  *
- * Drives a real Chromium through the intro (loader, gate, wrong then right
- * password, film, landing), registration, catalog, booking, invoice, an
- * admin status change after the access token is deleted (so the client must
- * refresh and retry), refresh-token replay, and the ?next open redirect.
+ * Drives a real Chromium through the landing film (loader, scrubbing forward
+ * and back, chapters, the hand-over to sign-in, a wrong then right password),
+ * registration, the fleet stack, booking, invoice, an admin status change after
+ * the access token is deleted (so the client must refresh and retry),
+ * refresh-token replay, and the ?next open redirect.
  *
  * Uses playwright-core, which never downloads a browser. Point CHROME_PATH at
  * any Chromium; the default is where the cloud sandbox keeps one. Restart the
@@ -45,47 +46,69 @@ function watch(page, label) {
   page.on('pageerror', (e) => problems.push(`[${label}] pageerror: ${e.message}`));
 }
 
-// 1. Intro: loader, gate, login, film, landing
+// 1. The landing film: loader, scrub, chapters, sign-in at the end
 {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  watch(page, 'intro');
-  await page.goto(BASE + '/');
-  ok('boot loader shows a progressbar', await page.getByRole('progressbar').isVisible());
-  const dialog = page.getByRole('dialog', { name: /sign in/i });
-  await dialog.waitFor({ timeout: 15000 });
-  await page.screenshot({ path: `${SHOTS}/01-gate.png` });
-  ok('auth gate opens over the frozen frame', await dialog.isVisible());
-  await page.waitForTimeout(600);
-  const focused = await page.evaluate(() => document.activeElement?.getAttribute('name'));
-  ok('focus moves into the gate', focused === 'email', `focused=${focused}`);
-  await dialog.getByLabel('Email').fill('ananya.k@fastmail.in');
-  await dialog.getByLabel('Password').fill('wrong-password-123');
-  await dialog.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByText('Those details did not match').waitFor({ timeout: 10000 });
-  ok('wrong password keeps the gate open with an inline error', await dialog.isVisible());
-  await dialog.getByLabel('Password').fill('DemoRenter!2026');
-  await dialog.getByRole('button', { name: 'Sign in' }).click();
-  const webgl2 = await page.evaluate(() => Boolean(document.createElement('canvas').getContext('webgl2')));
-  if (webgl2) {
-    await page.locator('canvas[data-particle-stage]').waitFor({ state: 'attached', timeout: 10000 });
-    ok('sign-in dissolves the gate through the particle stage', true);
-  }
-  await dialog.waitFor({ state: 'detached', timeout: 15000 });
-  await page.waitForTimeout(2500);
-  await page.screenshot({ path: `${SHOTS}/02-playing.png` });
-  await page.waitForFunction(() => sessionStorage.getItem('d4drive:intro-seen') === '1', null, { timeout: 30000 });
-  await page.waitForTimeout(2000);
-  await page.screenshot({ path: `${SHOTS}/03-landing.png` });
-  ok('film completes and the landing is revealed', await page.getByRole('heading', { level: 1, name: /Delivered/ }).isVisible());
-  await page.locator('video').waitFor({ state: 'detached', timeout: 10000 });
-  ok('the film stage is released after its scatter', (await page.locator('video').count()) === 0);
+  watch(page, 'film');
+  await page.goto(BASE + '/', { waitUntil: 'commit' });
+  // The loader is server-rendered and holds for at least 900ms from
+  // navigation start, so it is on screen from the first paint.
+  const loader = await page.getByRole('progressbar').waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false);
+  ok('boot loader shows a progressbar', loader);
+  await page.locator('[data-film-ready="true"]').waitFor({ timeout: 15000 });
+  ok('loader lets go once the film has arrived', (await page.locator('[data-boot-loader]').count()) === 0);
+  await page.screenshot({ path: `${SHOTS}/01-hero.png` });
+
+  const canvas = page.locator('[data-film-canvas]');
+  const frame = async () => Number(await canvas.getAttribute('data-frame'));
+  const track = await page.evaluate(() => {
+    const el = document.querySelector('.film-track');
+    return { top: el.offsetTop, length: el.offsetHeight - innerHeight };
+  });
+  const scrubTo = async (p) => {
+    await page.evaluate((y) => window.scrollTo(0, y), track.top + p * track.length);
+    await page.waitForTimeout(1500);
+  };
+  ok('the film starts on its first frame', (await frame()) === 0, `frame=${await frame()}`);
+
+  await scrubTo(0.39);
+  const middle = await frame();
+  ok('scrolling scrubs the film forward', middle > 100 && middle < 140, `frame=${middle}`);
+  const help = page.locator('[data-chapter="roast"]');
+  ok('the chapter for that moment is on screen', Number(await help.evaluate((el) => getComputedStyle(el).opacity)) > 0.9);
+  await page.screenshot({ path: `${SHOTS}/02-film.png` });
+
+  await scrubTo(0.1);
+  ok('scrolling back rewinds it', (await frame()) < middle, `frame=${await frame()}`);
+
+  await scrubTo(1);
+  ok('the car leaves frame by the end of the track', (await frame()) === 263, `frame=${await frame()}`);
+  ok('the smoke fades into the page', Number(await canvas.evaluate((el) => el.style.opacity)) < 0.05);
+
+  const panel = page.locator('#sign-in');
+  await panel.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(800);
+  ok('the film hands over to the sign-in panel', await panel.getByRole('heading', { name: 'Sign in to drive.' }).isVisible());
+  await panel.getByLabel('Email').fill('ananya.k@fastmail.in');
+  await panel.getByLabel('Password').fill('wrong-password-123');
+  await panel.getByRole('button', { name: 'Sign in' }).click();
+  await panel.getByText('did not match').waitFor({ timeout: 10000 });
+  ok('wrong password keeps the panel open with an inline error', await panel.isVisible());
+  await page.screenshot({ path: `${SHOTS}/03-sign-in.png` });
+  await panel.getByLabel('Password').fill('DemoRenter!2026');
+  await panel.getByRole('button', { name: 'Sign in' }).click();
+  await page.waitForURL('**/cars', { timeout: 20000 });
+  ok('signing in at the end of the film lands on the fleet', page.url().endsWith('/cars'));
+
   const cookies = await ctx.cookies();
   ok('session cookies are httpOnly', cookies.filter((c) => c.name !== 'd4d_csrf').every((c) => c.httpOnly), cookies.map((c) => `${c.name}:${c.path}`).join(' '));
   ok('no token in localStorage', (await page.evaluate(() => Object.keys(localStorage).length)) === 0);
-  await page.reload();
-  await page.waitForTimeout(1500);
-  ok('reload in the same session skips the intro', !(await page.getByRole('dialog').count()));
+
+  await page.goto(BASE + '/');
+  await page.locator('[data-film-ready="true"]').waitFor({ timeout: 15000 });
+  await page.locator('#sign-in').scrollIntoViewIfNeeded();
+  ok('a signed-in visitor is welcomed instead of asked to sign in', await page.getByRole('heading', { name: /Welcome back/ }).isVisible());
   await ctx.close();
 }
 
@@ -106,26 +129,21 @@ let reference = '';
   await page.waitForURL('**/cars', { timeout: 15000 });
   ok('register signs in and honours ?next', page.url().endsWith('/cars'));
 
-  const cards = page.locator('main section a[href^="/cars/"]');
+  const cards = page.locator('.fleet-row-link');
   await cards.first().waitFor();
   const count = await cards.count();
   ok('catalog lists active cars', count === 9, `count=${count}`);
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
-  ok('every car without a photo shows a labelled slot', slots === count, `slots=${slots}`);
-  await page.screenshot({ path: `${SHOTS}/04-catalog.png`, fullPage: true });
+  ok('every car in the fleet has a photograph', slots === 0, `slots=${slots}`);
 
-  // Scroll the way a person does. A card only assembles once it has actually
-  // been in view, so one 4000px jump would leave the middle row armed.
-  for (let i = 0; i < 12; i += 1) {
-    await page.mouse.wheel(0, 350);
-    await page.waitForTimeout(250);
-  }
-  await page.waitForFunction(
-    () => [...document.querySelectorAll('[data-assemble]')].every((el) => el.dataset.assemble === 'done'),
-    null,
-    { timeout: 20000 },
-  );
-  ok('every catalog card assembles once seen', true);
+  // The ghost stack: pointing at a name brings up that car's photograph.
+  await page.locator('.fleet').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1200);
+  await cards.nth(2).hover();
+  await page.waitForTimeout(700);
+  const shown = await page.locator('.fleet-photo').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
+  ok('pointing at a name shows exactly that car', shown === 1, `shown=${shown}`);
+  await page.screenshot({ path: `${SHOTS}/04-catalog.png` });
 
   await page.goto(BASE + '/cars?fuel=electric');
   ok('fuel filter narrows the catalog', (await cards.count()) === 2, `electric=${await cards.count()}`);
@@ -133,7 +151,7 @@ let reference = '';
   await page.goto(BASE + '/cars');
   await cards.first().click();
   await page.waitForURL(/\/cars\/\d+$/);
-  await page.getByRole('link', { name: /Reserve this car/ }).click();
+  await page.getByRole('link', { name: /Reserve this car/ }).first().click();
   await page.waitForURL(/\/booking\/\d+$/);
   // Every run books the same car, so a random window can overlap a booking
   // left by an earlier run, which the engine rightly refuses (409). Pick
@@ -229,20 +247,22 @@ let reference = '';
   watch(page, 'reduced-motion');
   await page.goto(BASE + '/');
   await page.waitForTimeout(1200);
-  ok('reduced motion skips the film to the landing', (await page.getByRole('dialog').count()) === 0 && (await page.locator('[data-intro-layer]').count()) === 0);
+  ok('reduced motion never scrubs: no film canvas, no loader', (await page.locator('[data-film-canvas]').count()) === 0 && !(await page.locator('[data-boot-loader]').isVisible()));
+  const faded = await page.locator('[data-chapter]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
+  ok('reduced motion shows every chapter as plain copy', faded === 0, `faded=${faded}`);
   ok('reduced motion offers the film on request', await page.getByRole('button', { name: 'Play the film' }).isVisible());
-  await page.goto(BASE + '/cars');
-  await page.waitForTimeout(300);
-  const hidden = await page.locator('[data-assemble]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
-  ok('reduced motion shows catalog cards at once', hidden === 0, `hidden=${hidden}`);
   ok('reduced motion creates no particle canvas', (await page.locator('canvas[data-particle-stage]').count()) === 0);
+  await page.screenshot({ path: `${SHOTS}/08-reduced-motion.png` });
   await reduced.close();
 
   const noJs = await browser.newContext({ javaScriptEnabled: false });
   const staticPage = await noJs.newPage();
+  await staticPage.goto(BASE + '/');
+  ok('without JavaScript the loader never covers the page', !(await staticPage.locator('[data-boot-loader]').isVisible()));
+  const fadedNoJs = await staticPage.locator('[data-chapter]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
+  ok('without JavaScript every chapter is readable', fadedNoJs === 0, `faded=${fadedNoJs}`);
   await staticPage.goto(BASE + '/cars');
-  const hiddenNoJs = await staticPage.locator('[data-assemble]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
-  ok('without JavaScript catalog cards are visible', hiddenNoJs === 0, `hidden=${hiddenNoJs}`);
+  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-row-link').count()) === 9);
   await noJs.close();
 }
 
