@@ -100,6 +100,7 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 
 | File | Contents |
 |---|---|
+| `AGENTS.md` | The whole project in short sentences: start here, or hand it to any agent |
 | `PRD.md` | What the product does |
 | `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic, asset pipelines |
 | `DESIGN.md` | Design system: tokens, type, motion, components, hard bans |
