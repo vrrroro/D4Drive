@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { RowDataPacket } from 'mysql2/promise';
 import { query } from '@/lib/db';
+import { parseNamedQueries, type NamedQuery } from '@/lib/services/named-queries';
 
 /**
  * The admin reports, read from database/queries.sql.
@@ -12,13 +13,7 @@ import { query } from '@/lib/db';
  * windowed with CURDATE()), so nothing from a request ever reaches them.
  */
 
-export interface NamedQuery {
-  name: string;
-  title: string;
-  purpose: string;
-  uses: string;
-  sql: string;
-}
+export type { NamedQuery } from '@/lib/services/named-queries';
 
 export interface ReportResult extends NamedQuery {
   columns: string[];
@@ -28,38 +23,6 @@ export interface ReportResult extends NamedQuery {
 const QUERIES_FILE = path.join(process.cwd(), 'database', 'queries.sql');
 
 let cache: Promise<NamedQuery[]> | null = null;
-
-/** Parses the named blocks. Exported for the test that keeps the file honest. */
-export function parseNamedQueries(text: string): NamedQuery[] {
-  const out: NamedQuery[] = [];
-  let current: NamedQuery | null = null;
-  const sqlLines: string[] = [];
-
-  const flush = () => {
-    if (!current) return;
-    current.sql = sqlLines.join('\n').trim().replace(/;\s*$/, '');
-    out.push(current);
-    sqlLines.length = 0;
-  };
-
-  for (const line of text.split(/\r?\n/)) {
-    const meta = /^--\s*(name|title|purpose|uses):\s*(.+)$/.exec(line.trim());
-    if (meta) {
-      const [, key, value] = meta as unknown as [string, keyof NamedQuery, string];
-      if (key === 'name') {
-        flush();
-        current = { name: value.trim(), title: '', purpose: '', uses: '', sql: '' };
-      } else if (current) {
-        current[key] = value.trim();
-      }
-      continue;
-    }
-    if (!current || line.trimStart().startsWith('--')) continue;
-    sqlLines.push(line);
-  }
-  flush();
-  return out;
-}
 
 export function loadNamedQueries(): Promise<NamedQuery[]> {
   // Re-read in development so editing the file shows up on reload.

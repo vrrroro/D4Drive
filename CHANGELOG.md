@@ -12,9 +12,17 @@ Entries are grouped by session date, newest first. Every session adds one.
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
 (PR #24), draft PR #25. Steps land newest first below, each pushed as it is done.
 
+#### Fixed (found 2026-10-12, after Phase 13 was marked done)
+- `npm test` without a database failed: `tests/queries.test.ts` imported
+  `lib/services/reports.ts`, which opens the MySQL pool at import and throws
+  when `DB_HOST` is unset (as on CI). The parser moved to the pure
+  `lib/services/named-queries.ts`. The verification below first claimed
+  `npm test` 38 pass, 3 skip: that run predated the new test. Corrected
+  figures: `npm test` 40 pass, 4 skip; `test:db` 57 pass.
+
 #### Verified (Phase 13 done)
-- `lint`, `lint:copy`, `typecheck`, `npm test` (38 pass, 3 skip), `test:db`
-  (56 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks`
+- `lint`, `lint:copy`, `typecheck`, `npm test` (40 pass, 4 skip), `test:db`
+  (57 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks`
   (clean). Admin pages reviewed at 1440x900.
 - Added `scripts/shoot.mjs`: signed-in, full-page screenshots for review
   (`MSYS_NO_PATHCONV=1` in Git Bash).

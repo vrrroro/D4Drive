@@ -60,7 +60,7 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - [x] Admin "Reports" page and admin "How the database works" page (`/admin/database`): live inventory from information_schema, ERD, relational schema, 14 transactions in the five-question format, three "Try it" panels showing SQL, bound values and rows, the trigger feed (2026-10-12)
 - [x] `docs/DATABASE.md` (the write-up, with a five minute demo script), `docs/erd.svg` from `npm run build:erd`, `docs/ERD.md`, `ARCHITECTURE.md`, `README.md` updated (2026-10-12)
 - [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
-- [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (38 pass, 3 skip), `test:db` (56 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
+- [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (40 pass, 4 skip; corrected, see the CHANGELOG fix), `test:db` (57 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
 
 ### Phase 14: The owner's UI revisions (active)
 
