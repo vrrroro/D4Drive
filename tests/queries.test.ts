@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { parseNamedQueries } from '../lib/services/reports.ts';
+import { parseNamedQueries } from '../lib/services/named-queries.ts';
 
 /**
  * database/queries.sql is read and run by the admin Reports page. These keep
