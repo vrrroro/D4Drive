@@ -25,6 +25,7 @@ interface Car {
   imageUrl: string | null;
   description: string | null;
   isActive: boolean;
+  bookingCount: number;
 }
 
 interface Branch {
@@ -42,6 +43,8 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
+  // A permanent delete asks twice: the first press arms it for this car.
+  const [armedDelete, setArmedDelete] = useState<number | null>(null);
 
   const open = creating || editing !== null;
 
@@ -105,18 +108,43 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
     }
   }
 
+  async function errorMessage(response: Response, fallback: string): Promise<string> {
+    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+    return body?.error ?? fallback;
+  }
+
+  // Withdraw keeps the row (bookings point at it). The database refuses
+  // while the car has a confirmed or running rental, and says why.
   async function deactivate(car: Car) {
     try {
-      const response = await apiFetch(`/api/admin/cars/${car.id}`, {
-        method: 'DELETE',
-      });
+      const response = await apiFetch(`/api/admin/cars/${car.id}/withdraw`, { method: 'POST' });
 
       if (!response.ok) {
-        toast.show('That car could not be withdrawn.', 'error');
+        toast.show(await errorMessage(response, 'That car could not be withdrawn.'), 'error');
         return;
       }
 
       toast.show(`${car.brand} ${car.model} withdrawn from the fleet.`, 'success');
+      startTransition(() => router.refresh());
+    } catch {
+      toast.show('Could not reach the server.', 'error');
+    }
+  }
+
+  // Only offered for a car nobody has booked; the foreign key refuses the rest.
+  async function remove(car: Car) {
+    if (armedDelete !== car.id) {
+      setArmedDelete(car.id);
+      return;
+    }
+    setArmedDelete(null);
+    try {
+      const response = await apiFetch(`/api/admin/cars/${car.id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        toast.show(await errorMessage(response, 'That car could not be deleted.'), 'error');
+        return;
+      }
+      toast.show(`${car.brand} ${car.model} deleted.`, 'success');
       startTransition(() => router.refresh());
     } catch {
       toast.show('Could not reach the server.', 'error');
@@ -244,6 +272,16 @@ export function FleetManager({ cars, branches }: { cars: Car[]; branches: Branch
                   className="keycap t-label text-[var(--accent-text)]"
                 >
                   Withdraw
+                </button>
+              )}
+              {car.bookingCount === 0 && (
+                <button
+                  type="button"
+                  onClick={() => remove(car)}
+                  onBlur={() => setArmedDelete((id) => (id === car.id ? null : id))}
+                  className="keycap t-label text-[var(--accent-text)]"
+                >
+                  {armedDelete === car.id ? 'Delete for good' : 'Delete'}
                 </button>
               )}
             </div>

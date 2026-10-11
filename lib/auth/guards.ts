@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { readSession } from './cookies';
 import { CSRF_COOKIE } from './cookies';
 import type { SessionClaims } from './tokens';
+import { mapDbError, dbErrno } from '@/lib/services/db-errors';
 
 export interface Session {
   userId: number;
@@ -95,8 +96,22 @@ export async function verifyCsrf(request: Request): Promise<boolean> {
   return mismatch === 0;
 }
 
-/** Logs the real error server-side and returns a generic response. */
+/**
+ * Turns a thrown error into a response.
+ *
+ * A refusal from the database (a stored program's SIGNAL, a foreign key or
+ * CHECK constraint) is the caller asking for something impossible, so it
+ * becomes a 4xx with a safe message (lib/services/db-errors.ts). Anything
+ * else is logged server-side in full and answered with a generic 500.
+ */
 export function handleRouteError(context: string, error: unknown): NextResponse {
+  const mapped = mapDbError(error);
+  if (mapped) {
+    // Constraint hits that are not our own SIGNALs can mean a validation gap
+    // in the app, so they are worth seeing in the log.
+    if ((dbErrno(error) ?? 0) < 5000) console.warn(`[${context}]`, mapped.message, dbErrno(error));
+    return NextResponse.json({ error: mapped.message }, { status: mapped.status });
+  }
   console.error(`[${context}]`, error);
   return errors.server();
 }

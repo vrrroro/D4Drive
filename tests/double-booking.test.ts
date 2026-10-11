@@ -21,7 +21,7 @@ if (!CONFIGURED) {
 } else {
   const { pool, execute, query } = await import('../lib/db.ts');
   const { createBooking } = await import('../lib/services/bookings.ts');
-  const { CarUnavailableError } = await import('../lib/services/availability.ts');
+  const { dbErrno, DB_ERRNO } = await import('../lib/services/db-errors.ts');
 
   let userId: number;
   let carId: number;
@@ -83,9 +83,12 @@ if (!CONFIGURED) {
     assert.equal(rejected.length, 1, 'exactly one booking should be refused');
 
     const reason = (rejected[0] as PromiseRejectedResult).reason;
-    assert.ok(
-      reason instanceof CarUnavailableError,
-      `expected CarUnavailableError, got ${reason?.constructor?.name}: ${reason?.message}`,
+    // sp_create_booking's own refusal (errno 5002), raised after the loser
+    // waited on the car row lock and then saw the winner's booking.
+    assert.equal(
+      dbErrno(reason),
+      DB_ERRNO.carUnavailable,
+      `expected errno 5002, got ${dbErrno(reason)}: ${reason?.message}`,
     );
 
     // And the database agrees with the return values.

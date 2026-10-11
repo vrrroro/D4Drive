@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { carInputSchema, fieldErrors } from '@/lib/validation/schemas';
-import { updateCar, deactivateCar } from '@/lib/services/admin';
+import { updateCar, deleteCar } from '@/lib/services/admin';
 import { requireAdmin, verifyCsrf, errors, handleRouteError } from '@/lib/auth/guards';
 import { parsePositiveId } from '@/lib/validation/id';
 
@@ -43,6 +43,11 @@ export async function PUT(
   }
 }
 
+/**
+ * Permanent delete. Only a car nobody has ever booked: the bookings foreign
+ * key (ON DELETE RESTRICT) refuses any other, and that refusal is the 409.
+ * Withdrawing a car from the catalog is POST ./withdraw.
+ */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -55,11 +60,14 @@ export async function DELETE(
     const id = parsePositiveId((await params).id);
     if (id === null) return errors.badRequest('Invalid car id.');
 
-    // Soft delete. Booking history depends on the row surviving.
-    const done = await deactivateCar(id);
+    const done = await deleteCar(id);
     if (!done) return errors.notFound('Car not found.');
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return handleRouteError('admin/cars/deactivate', error);
+    const code = error instanceof Error && 'code' in error ? error.code : undefined;
+    if (code === 'ER_ROW_IS_REFERENCED_2') {
+      return errors.conflict('This car has bookings, so it stays on record. Withdraw it instead.');
+    }
+    return handleRouteError('admin/cars/delete', error);
   }
 }

@@ -61,7 +61,11 @@ export const createBookingSchema = z
     startDate: isoDate,
     endDate: isoDate,
     delivery: z.discriminatedUnion('mode', [
-      z.object({ mode: z.literal('self_pickup') }),
+      z.object({
+        mode: z.literal('self_pickup'),
+        // Any open branch. Omitted means the car's own branch.
+        pickupBranchId: z.coerce.number().int().positive().optional(),
+      }),
       z.object({
         mode: z.literal('doorstep'),
         addressLine: z.string().trim().min(6, 'Enter the full address').max(255),
@@ -97,7 +101,14 @@ export const carInputSchema = z.object({
   brand: z.string().trim().min(1).max(60),
   model: z.string().trim().min(1).max(80),
   year: z.coerce.number().int().min(1990).max(new Date().getFullYear() + 1),
-  registrationNo: z.string().trim().min(4).max(20).toUpperCase(),
+  // Same pattern as chk_cars_registration in database/schema.sql.
+  registrationNo: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .pipe(
+      z.string().regex(/^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{4}$/, 'Use an Indian registration like KA01MJ4417'),
+    ),
   fuelType: z.enum(['petrol', 'diesel', 'electric', 'hybrid']),
   transmission: z.enum(['manual', 'automatic']),
   seats: z.coerce.number().int().min(2).max(9),
