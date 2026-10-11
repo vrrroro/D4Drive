@@ -64,7 +64,21 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 
 ### Phase 14: The owner's UI revisions (active)
 
-Owner's list of 2026-10-12, numbered as given:
+Owner's list of 2026-10-12, numbered as given. Decisions the owner made when
+asked (2026-10-12):
+
+- **Item 2 colours:** "grey stage, dark text". During the film the page and
+  the film are toned to the studio grey; text and header stay charcoal. After
+  the film it returns to the light page.
+- **Item 6 logo:** the condensed `D4DRIVE` wordmark replaces the serif logo at
+  the **top left**; hidden on the landing's first screen, shown once the film
+  starts and on every other page.
+- **Item 13 map:** OpenStreetMap (Leaflet tiles), address search through our
+  own server to OpenStreetMap's Nominatim geocoder; no API key.
+- **Items 3, 8, 12 footer:** the flowing locations section ("Browse the
+  fleet") appears only after the landing's sign-in panel and at the end of the
+  fleet page for signed-out visitors. Every other page, sign-in included, ends
+  with a slim line (up arrow, credits, "This Was Bloomed By Rohit").
 
 - [ ] 1. Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
 - [ ] 2. During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
