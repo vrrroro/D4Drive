@@ -9,6 +9,12 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 6: the confirmation and the spacing (items 13, 15)
+- Confirmation stays carmine; its note now reads "this is important."
+- Spacing: the panel padding and the space above every inner page's heading
+  trimmed (the owner found pages too zoomed in); the checkout's own
+  tightening is in step 5.
+
 #### Phase 14, step 5: the checkout (items 13, 14, 16)
 - Checkout laid out to fit a laptop screen: dates and "How you get it" on
   the left; payment (method, card number and name on one row) and the
