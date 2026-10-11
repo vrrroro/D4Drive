@@ -88,10 +88,10 @@ asked (2026-10-12):
 - [x] 6. (2026-10-12: `header-logo`, hidden via `.film-track[data-film-phase='hero']`; frosted bar from `data-scrolled`) Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
 - [x] 7. (2026-10-12: scroll bug fixed in `SmoothScroll`, Lenis kept the old page's eased target; the fleet is one grey studio field) "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
 - [x] 8. (2026-10-12: `FleetIndex` deck, `.fleet-card-grey` hover, `AuthPanel` + `LocationsSection` only when signed out) Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors
-- [ ] 9. Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
-- [ ] 10. "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
+- [x] 9. (2026-10-12: `CarLink` view transition carries the photo; `.page-enter` on every page; `.car-tilt` level at rest) Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
+- [x] 10. (2026-10-12: inside the car's grey field, one Reserve button at the end) "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
 - [x] 11. (2026-10-12: `--btn-hover-bg`, deeper carmine on carmine panels; keycaps too) Every button hovers red with white text
-- [ ] 12. Reserve while signed out goes to sign-in directly, without the footer's fleet block
+- [x] 12. (2026-10-12: `/booking/:id` redirects to `/login?next=`; sign-in ends with the slim line only) Reserve while signed out goes to sign-in directly, without the footer's fleet block
 - [ ] 13. Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
 - [ ] 14. "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
 - [ ] 15. Confirmation stays red; "keep this one. the keys know it." becomes "this is important."

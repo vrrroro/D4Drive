@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation';
 import type { MouseEvent, ReactNode } from 'react';
 import { usePrefersReducedMotion } from './use-prefers-reduced-motion';
 
+interface ViewTransitionHandle {
+  finished: Promise<void>;
+  ready?: Promise<void>;
+  updateCallbackDone?: Promise<void>;
+}
+
 type ViewTransitionDocument = Document & {
-  startViewTransition?: (update: () => Promise<void>) => { finished: Promise<void> };
+  startViewTransition?: (update: () => Promise<void>) => ViewTransitionHandle;
 };
 
 interface CarLinkProps {
@@ -48,18 +54,27 @@ export function CarLink({ href, carId, className = '', children }: CarLinkProps)
         new Promise<void>((resolve) => {
           router.push(href);
           const started = performance.now();
-          // Polls the DOM, not React state, for the new page's photo.
+          // Polls the DOM, not React state, for the new page's photo. A
+          // timer, not requestAnimationFrame: the browser suppresses
+          // rendering (and so animation frames) while it waits for this
+          // update, and would abort the transition after four seconds.
           const check = () => {
             if (document.querySelector(`[data-car-hero="${carId}"]`) || performance.now() - started > 2500) resolve();
-            else requestAnimationFrame(check);
+            else window.setTimeout(check, 30);
           };
-          requestAnimationFrame(check);
+          window.setTimeout(check, 30);
         }),
-    );
-    void transition.finished.finally(() => {
-      delete document.documentElement.dataset.vt;
-      photo?.style.removeProperty('view-transition-name');
-    });
+    ) as ViewTransitionHandle;
+    // An aborted or skipped transition rejects these; the navigation itself
+    // has still happened, so there is nothing to report.
+    transition.ready?.catch(() => undefined);
+    transition.updateCallbackDone?.catch(() => undefined);
+    transition.finished
+      .catch(() => undefined)
+      .finally(() => {
+        delete document.documentElement.dataset.vt;
+        photo?.style.removeProperty('view-transition-name');
+      });
   }
 
   return (

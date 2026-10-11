@@ -9,6 +9,20 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 4: the car page (items 9, 10, 12)
+- The car page is one grey field: the level photo (tilting only on hover,
+  the landing spot of the fleet's view transition, `data-car-hero`), the
+  facts, then "How it gets to you" (collect at the car's branch, or another
+  within 15 km for the delivery fee; the delivery tiers) and a single
+  "Reserve this car" button at the end. The red card and the second Reserve
+  button are gone.
+- Fixed in `CarLink`: the view transition waited on requestAnimationFrame,
+  which browsers pause while a transition waits for its update, so Chrome
+  aborted it after four seconds; it now polls on a timer, and its rejected
+  promises are handled.
+- Signed out, Reserve already lands on sign-in (`/login?next=/booking/:id`),
+  which now ends with the slim footer line, not the branch list.
+
 #### Phase 14, step 3: the fleet (items 7, 8; groundwork for 9, 13, 14)
 - `/cars` is one grey studio field: the heading, the filters and the cars.
   The red hot panel is gone.
