@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 13, database coursework (started 2026-10-12), then Phase 14, the owner's UI revisions
-**Status:** Phase 12 complete in code; Phase 13 in progress on `feature/dbms-coursework`
+**Current phase:** Phase 14, the owner's UI revisions (Phase 13 done 2026-10-12, PR #25)
+**Status:** Phases 12 and 13 complete in code; Phase 14 in progress on `feature/ux-revisions`
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -26,12 +26,12 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
-| 6 | 13: Database coursework (the DBMS rubric) | **Active**, branch `feature/dbms-coursework` |
-| 7 | 14: The owner's UI revisions (18 items) | Next, branch `feature/ux-revisions` stacked on 13 |
+| 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
+| 7 | 14: The owner's UI revisions (18 items) | **Active**, branch `feature/ux-revisions` stacked on 13 |
 
 ---
 
-### Phase 13: Database coursework (active, started 2026-10-12)
+### Phase 13: Database coursework (done 2026-10-12, PR #25)
 
 The owner's course rubric, verbatim in substance: 6 to 8 related tables with
 PKs and FKs; NOT NULL, UNIQUE, CHECK and DEFAULT constraints; at least 10
@@ -60,9 +60,9 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - [x] Admin "Reports" page and admin "How the database works" page (`/admin/database`): live inventory from information_schema, ERD, relational schema, 14 transactions in the five-question format, three "Try it" panels showing SQL, bound values and rows, the trigger feed (2026-10-12)
 - [x] `docs/DATABASE.md` (the write-up, with a five minute demo script), `docs/erd.svg` from `npm run build:erd`, `docs/ERD.md`, `ARCHITECTURE.md`, `README.md` updated (2026-10-12)
 - [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
-- [ ] Full verification: `lint`, `lint:copy`, `typecheck`, `test`, `test:db`, `build`, `smoke` and `check:leaks` against `next start`; screens of the new admin pages
+- [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (38 pass, 3 skip), `test:db` (56 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
 
-### Phase 14: The owner's UI revisions (next)
+### Phase 14: The owner's UI revisions (active)
 
 Owner's list of 2026-10-12, numbered as given:
 

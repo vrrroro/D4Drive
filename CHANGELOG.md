@@ -12,6 +12,13 @@ Entries are grouped by session date, newest first. Every session adds one.
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
 (PR #24), draft PR #25. Steps land newest first below, each pushed as it is done.
 
+#### Verified (Phase 13 done)
+- `lint`, `lint:copy`, `typecheck`, `npm test` (38 pass, 3 skip), `test:db`
+  (56 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks`
+  (clean). Admin pages reviewed at 1440x900.
+- Added `scripts/shoot.mjs`: signed-in, full-page screenshots for review
+  (`MSYS_NO_PATHCONV=1` in Git Bash).
+
 #### Added (reports, demonstration, write-up)
 - `database/queries.sql`: 18 named queries (joins, GROUP BY and HAVING,
   scalar, correlated, NOT EXISTS and NOT IN subqueries, window functions,
