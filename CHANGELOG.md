@@ -9,6 +9,25 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 5: the checkout (items 13, 14, 16)
+- Checkout laid out to fit a laptop screen: dates and "How you get it" on
+  the left; payment (method, card number and name on one row) and the
+  summary on the right, sticky. Smaller heading.
+- "Collect or deliver" lists every open branch with its distance from the
+  car and the fee (the car's own branch free, others on the delivery tiers,
+  beyond 15 km disabled), then doorstep delivery. Sent as `pickupBranchId`.
+- Doorstep: `AddressPicker`. Search the address (through our new
+  `GET /api/geocode`, OpenStreetMap's Nominatim behind it, signed-in only,
+  30 a minute, one upstream request a second, cached a day, boxed to
+  Bengaluru), tap the map, or "use my location". The pin fills the street
+  and pincode, a dashed line runs from the branch, and the summary shows the
+  distance and fee. Latitude and longitude fields are gone. Leaflet 1.9.4
+  over OpenStreetMap tiles, greyscale, loaded only for doorstep.
+- CSP `img-src` allows `https://tile.openstreetmap.org` only;
+  `Permissions-Policy` allows geolocation for this origin.
+- "relax. nobody gets charged." sits beside the Payment heading, pointing
+  into it. No example name, card, UPI ID or address in the checkout.
+
 #### Phase 14, step 4: the car page (items 9, 10, 12)
 - The car page is one grey field: the level photo (tilting only on hover,
   the landing spot of the fleet's view transition, `data-car-hero`), the

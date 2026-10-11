@@ -906,6 +906,24 @@ html[data-vt] .page-enter {
   }
 }
 
+/* The checkout's map (AddressPicker). Its own stacking context, so Leaflet's
+   panes (z-index 400 and up) stay under the header; tiles in greyscale so
+   the carmine pin and route are the only colour on it. */
+.address-map {
+  isolation: isolate;
+  z-index: 0;
+  border: 1px solid rgb(26 26 26 / 0.15);
+}
+
+.address-map .leaflet-container {
+  font-family: var(--font-body);
+  background-color: var(--studio);
+}
+
+.address-map .leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.92) brightness(1.04);
+}
+
 /* Dropdowns. The closed select and its open list in the studio grey, so the
    options read on every panel (white lists on carmine were unreadable). */
 select {

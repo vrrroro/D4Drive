@@ -92,10 +92,10 @@ asked (2026-10-12):
 - [x] 10. (2026-10-12: inside the car's grey field, one Reserve button at the end) "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
 - [x] 11. (2026-10-12: `--btn-hover-bg`, deeper carmine on carmine panels; keycaps too) Every button hovers red with white text
 - [x] 12. (2026-10-12: `/booking/:id` redirects to `/login?next=`; sign-in ends with the slim line only) Reserve while signed out goes to sign-in directly, without the footer's fleet block
-- [ ] 13. Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
-- [ ] 14. "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
+- [x] 13. (2026-10-12: `.page-enter`; two-column checkout that fits a 900px screen; collection at any branch with its distance and fee; `--select-bg` grey lists; `AddressPicker` with OpenStreetMap search, map tap and "use my location", distance worked out from the pin) Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
+- [x] 14. (2026-10-12: beside the Payment heading, pointing into it; the method list is grey) "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
 - [ ] 15. Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
-- [ ] 16. (Let's link signed-out only, sign-in placeholders gone, 2026-10-12. Left: checkout placeholders) Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
+- [x] 16. (2026-10-12: Let's link signed-out only; no example names, numbers, emails, cards or UPI IDs in any form) Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
 - [x] 17. (2026-10-12: `AccountMenu`) Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
 - [x] 18. (2026-10-12: `BackToTop` is a small arrow at the left edge; `SiteFooter` is the slim line) No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
 

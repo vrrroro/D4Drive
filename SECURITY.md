@@ -109,7 +109,7 @@ the credits link out to Wikimedia without embedding anything from it.
 ```
 default-src 'self';
 media-src 'self';
-img-src 'self' data: blob:;
+img-src 'self' data: blob: https://tile.openstreetmap.org;
 script-src 'self';
 style-src 'self' 'unsafe-inline';
 font-src 'self';
@@ -118,6 +118,14 @@ frame-ancestors 'none';
 base-uri 'self';
 form-action 'self';
 ```
+
+`img-src` allows one outside origin, OpenStreetMap's tile server, for the
+checkout's address map. Address search does not go from the browser to any
+third party: it goes to our own `/api/geocode`, which asks OpenStreetMap's
+Nominatim from the server, without cookies, for signed-in visitors only (30
+lookups a minute each, one upstream request a second). The visitor's typed
+address and pin therefore reach one third party. `Permissions-Policy` allows
+geolocation for this origin only, for "use my location".
 
 `style-src 'unsafe-inline'` is present because Next.js injects inline styles.
 Narrow it to a nonce before any real deployment. `frame-ancestors 'none'`
