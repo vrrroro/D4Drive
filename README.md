@@ -47,14 +47,16 @@ mysql -u root -p d4drive < database/schema.sql
 mysql -u root -p d4drive < database/seed.sql
 ```
 
-Or do all three in one step with `npm run db:setup` (uses the `.env` credentials).
+Or do it all in one step with `npm run db:setup` (uses the `.env` credentials),
+which also loads `database/routines.sql` (the stored functions, procedures,
+triggers and view) between the schema and the seed. With the `mysql` client,
+load `schema.sql`, then `routines.sql`, then `seed.sql`.
 
-A database created before 2026-10-05 lacks the `refresh_tokens` table. Either
-re-run `npm run db:setup` (it drops and reloads everything) or apply
-`database/migrations/001_refresh_tokens.sql`. A database seeded before
-2026-10-08 has no car photographs: re-run `npm run db:setup`, or set each car's
-photo in the admin fleet page to `/cars/<slug>.webp` (the files are in
-`public/cars/`).
+**A database created before 2026-10-12 must be rebuilt** with
+`npm run db:setup`: the booking engine now runs in the stored procedures, and
+the schema gained a table, columns and constraints. `docs/DATABASE.md` is the
+database write-up (ER diagram, relational schema, constraints, routines,
+queries, and how each transaction flows); `/admin/database` shows it live.
 
 Run it:
 
@@ -90,7 +92,8 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 | `npm run lint:copy` | Fails on em-dashes and en-dashes in user-visible strings |
 | `npm run build:assets` | Transcodes the hero film and extracts poster stills |
 | `npm run build:frames` | Cuts the film into scrubbed stills and writes `lib/film-manifest.ts` |
-| `npm run db:setup` | Creates the database, loads schema and seed from `.env` |
+| `npm run db:setup` | Creates the database, loads schema, routines and seed from `.env` |
+| `npm run build:erd` | Redraws `docs/erd.svg` and `public/erd.svg` from the schema |
 | `npm run test` | Unit tests; the MySQL tests skip unless `DB_HOST` and `DB_NAME` are set |
 | `npm run test:db` | Same, with `.env` loaded, so the double-booking and refresh-rotation tests run |
 | `npm run smoke` | Browser smoke test against a running server (see `scripts/smoke.mjs`) |
@@ -105,6 +108,7 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 | `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic, asset pipelines |
 | `DESIGN.md` | Design system: tokens, type, motion, components, hard bans |
 | `docs/VIDEO_STATE_MACHINE.md` | The landing film: how the scroll scrubs it |
+| `docs/DATABASE.md` | The database coursework: ERD, relational schema, constraints, stored programs, queries, transaction walkthrough |
 | `docs/ERD.md` | Data model, constraints, indexes, and the verified overlap query plan |
 | `CONTRIBUTING.md` | Git, worktree, and review protocol |
 | `SECURITY.md` | Threat model and security rules |

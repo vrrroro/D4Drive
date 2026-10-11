@@ -55,11 +55,12 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - [x] Schema: `booking_status_log`, `pickup_branch_id`, `branches.pincode`, `payments.refunded_at`, stronger CHECK/UNIQUE/DEFAULT constraints (2026-10-12)
 - [x] Seed: at least 10 meaningful rows in every table: 11 branches, 12 users, 10 cars, 14 bookings, 14 deliveries, 14 payments, 16 refresh tokens, 27 status-log rows written by the triggers (2026-10-12)
 - [x] `database/routines.sql`: 3 functions (`fn_haversine_km`, `fn_delivery_fee`, `fn_car_available`), 3 procedures (`sp_create_booking`, `sp_cancel_booking`, `sp_end_of_day_close` with a cursor), 5 triggers (status log on insert and update, refund on cancel, delivered stamp, withdraw guard), view `v_booking_details`; `db:setup` learns `DELIMITER` and loads schema, routines, seed (2026-10-12). Every procedure path verified by hand against MySQL 8.0.
-- [ ] App wired to them: booking through the procedure, availability through the function, customer cancellation, admin end-of-day close, admin hard delete of never-booked cars (DELETE, FK protected), expired-session purge
-- [ ] `database/queries.sql`: 15+ queries, each one used by a page (admin reports) or the app
-- [ ] Admin "Reports" page and admin "Database" walkthrough page (live trace of the five-step flow per transaction)
-- [ ] `docs/DATABASE.md`: ER diagram, relational schema, every constraint, routine and query with its purpose, the per-transaction walkthrough; `docs/ERD.md` updated
-- [ ] Tests against MySQL for the routines and triggers; `test:db`, `smoke` green
+- [x] App wired to them: booking through `sp_create_booking`, availability through `fn_car_available`, customer cancellation (My bookings, `POST /api/bookings/:id/cancel`), admin end-of-day close (`POST /api/admin/operations/close`), withdraw (`POST /api/admin/cars/:id/withdraw`) and FK-protected hard delete (`DELETE /api/admin/cars/:id`), session purge inside the close; DB refusals map to 4xx in `handleRouteError` (2026-10-12)
+- [x] `database/queries.sql`: 18 named queries; `/admin/reports` reads and runs them from the file (2026-10-12)
+- [x] Admin "Reports" page and admin "How the database works" page (`/admin/database`): live inventory from information_schema, ERD, relational schema, 14 transactions in the five-question format, three "Try it" panels showing SQL, bound values and rows, the trigger feed (2026-10-12)
+- [x] `docs/DATABASE.md` (the write-up, with a five minute demo script), `docs/erd.svg` from `npm run build:erd`, `docs/ERD.md`, `ARCHITECTURE.md`, `README.md` updated (2026-10-12)
+- [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
+- [ ] Full verification: `lint`, `lint:copy`, `typecheck`, `test`, `test:db`, `build`, `smoke` and `check:leaks` against `next start`; screens of the new admin pages
 
 ### Phase 14: The owner's UI revisions (next)
 

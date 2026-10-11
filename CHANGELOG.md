@@ -10,7 +10,60 @@ Entries are grouped by session date, newest first. Every session adds one.
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
-(PR #24). Steps land newest first below, each pushed as it is done.
+(PR #24), draft PR #25. Steps land newest first below, each pushed as it is done.
+
+#### Added (reports, demonstration, write-up)
+- `database/queries.sql`: 18 named queries (joins, GROUP BY and HAVING,
+  scalar, correlated, NOT EXISTS and NOT IN subqueries, window functions,
+  CASE, the view). `lib/services/reports.ts` parses the file and runs it.
+- `/admin/reports`: every query's answer, grouped (money, fleet, customers,
+  operations), with "The SQL" under each table.
+- `/admin/database` ("How the database works"): live table counts, routines,
+  triggers and constraint counts from information_schema; the ER diagram and
+  relational schema; 14 transactions traced as operation, tables, component,
+  effect, result (`lib/database-walkthrough.ts`); three "Try it" panels
+  (`GET /api/admin/database/try`) that run `fn_car_available`, the distance
+  and fee functions, or a history lookup and show the SQL, bound values and
+  rows; the latest trigger writes.
+- `npm run build:erd` (`scripts/build-erd.mjs`): draws `docs/erd.svg` and
+  `public/erd.svg` from `database/schema.sql`, crow's foot notation.
+- `docs/DATABASE.md`: the database write-up, requirement by requirement, with
+  a five minute demonstration script.
+- Tests: `tests/queries.test.ts` (15+ queries, all described, all run),
+  `tests/walkthrough.test.ts` (the relational schema matches schema.sql).
+
+#### Changed (the app now runs on the stored programs)
+- `createBooking` calls `sp_create_booking`; the TypeScript lock path
+  (`assertAvailableForUpdate`) is gone. `isCarAvailable` calls
+  `fn_car_available`. Booking reads use the view `v_booking_details`.
+- Self-pickup takes an optional `pickupBranchId` (any open branch).
+- Customers can cancel from My bookings (`CancelBookingButton`, asks twice);
+  refunds show as "Refunded in full". Staff cancellations use the same
+  procedure.
+- Admin status changes pass the admin's id to the history trigger
+  (`withActor`); the delivered stamp moved into `trg_deliveries_bu_stamp`.
+- Admin fleet: Withdraw is `POST /api/admin/cars/:id/withdraw` and shows the
+  trigger's reason when refused; Delete (`DELETE /api/admin/cars/:id`) appears
+  only for never-booked cars, asks twice, and the foreign key refuses the rest.
+- Operations dashboard: "Run the end-of-day close" (`EndOfDayClose`), and
+  links to Reports and How the database works.
+- `handleRouteError` maps stored-program SIGNALs and FK, unique and CHECK
+  violations to 4xx (`lib/services/db-errors.ts`); everything else stays a
+  generic 500.
+- Car registration numbers are validated to the Indian format, as the
+  database's CHECK requires.
+- `lib/db.ts`: `callProcedure`, `withActor`.
+- `tests/double-booking.test.ts` asserts the procedure's 5002 refusal.
+- Seed: the pending booking belongs to Priya Venkatesh, so one customer
+  (Farhan Ahmed) has never booked and that report has an answer.
+- `docs/ERD.md`, `ARCHITECTURE.md` section 4, `README.md` (rebuild a database
+  created before 2026-10-12).
+
+#### Verified
+- `npm run test:db`: 56 pass. Every procedure path by hand and over HTTP
+  (book at another branch, cancel twice, cancel a started booking, the close,
+  withdraw a car with a running rental, delete a booked car). The three
+  admin pages render against the seed.
 
 #### Added (database layer)
 - `database/routines.sql`: functions `fn_haversine_km`, `fn_delivery_fee`,

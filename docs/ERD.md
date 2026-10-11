@@ -1,7 +1,9 @@
 # Entity Relationship Diagram
 
 Derived from `database/schema.sql`. If the two disagree, the schema is right
-and this file is stale: fix this file.
+and this file is stale: fix this file. `docs/DATABASE.md` is the full write-up
+(constraints, stored programs, queries, the transaction walkthrough), and
+`docs/erd.svg` is the diagram drawn from the schema (`npm run build:erd`).
 
 MySQL 8, InnoDB, `utf8mb4_unicode_ci`. Money is `DECIMAL(10,2)` everywhere,
 never `FLOAT`.
@@ -18,6 +20,9 @@ erDiagram
     cars ||--o{ bookings : "is booked in"
     bookings ||--|| deliveries : "has exactly one"
     bookings ||--o{ payments : "is paid by"
+    bookings ||--o{ booking_status_log : "is logged in"
+    users |o--o{ booking_status_log : "acts in"
+    branches |o--o{ deliveries : "is the collection point of"
 
     users {
         BIGINT id PK
@@ -45,6 +50,7 @@ erDiagram
         VARCHAR name
         VARCHAR address
         VARCHAR city
+        CHAR pincode
         DECIMAL latitude "9,6"
         DECIMAL longitude "9,6"
         VARCHAR phone
@@ -91,6 +97,7 @@ erDiagram
         BIGINT id PK
         BIGINT booking_id FK,UK
         ENUM mode "self_pickup | doorstep"
+        BIGINT pickup_branch_id FK "self-pickup only"
         VARCHAR address_line "required for doorstep"
         VARCHAR city
         VARCHAR pincode
@@ -114,7 +121,18 @@ erDiagram
         CHAR card_last_four "never the full number"
         VARCHAR upi_handle
         DATETIME paid_at
+        DATETIME refunded_at "set by trigger"
         TIMESTAMP created_at
+    }
+
+    booking_status_log {
+        BIGINT id PK
+        BIGINT booking_id FK
+        ENUM from_status "null on creation"
+        ENUM to_status
+        BIGINT actor_user_id FK "nullable"
+        VARCHAR reason
+        TIMESTAMP changed_at
     }
 ```
 
@@ -130,6 +148,9 @@ erDiagram
 | `deliveries.booking_id` | `bookings.id` | one to one (`UNIQUE`) | `CASCADE` | A delivery has no meaning without its booking. |
 | `payments.booking_id` | `bookings.id` | many to one | `CASCADE` | One payment per booking today; the schema allows a later refund row. |
 | `refresh_tokens.user_id` | `users.id` | many to one | `CASCADE` | A deleted user's sessions go with them. |
+| `deliveries.pickup_branch_id` | `branches.id` | many to one | `RESTRICT` | The branch a self-pickup is collected from; no referential action because a CHECK reads the column. |
+| `booking_status_log.booking_id` | `bookings.id` | many to one | `CASCADE` | History belongs to its booking. |
+| `booking_status_log.actor_user_id` | `users.id` | many to one | `SET NULL` | The history outlives the account; only the name is forgotten. |
 
 Every booking gets a `deliveries` row, including self-pickup, so the admin
 lifecycle query is an inner join with one shape rather than an outer join.
@@ -160,18 +181,22 @@ Two columns look like redundancy and are deliberate:
 
 ## 4. Constraints the database enforces
 
+30 CHECK constraints, listed with their rules in `docs/DATABASE.md` section 4.
+The ones that matter most to the booking engine:
+
 | Constraint | Table | Rule |
 |---|---|---|
-| `chk_cars_seats` | `cars` | `seats BETWEEN 2 AND 9` |
-| `chk_cars_price` | `cars` | `price_per_day > 0` |
 | `chk_bookings_dates` | `bookings` | `end_date > start_date` |
-| `chk_bookings_total` | `bookings` | `total_amount >= 0` |
-| `chk_deliveries_address` | `deliveries` | doorstep requires address and coordinates |
-| `chk_payments_amount` | `payments` | `amount >= 0` |
+| `chk_bookings_days` | `bookings` | `days = DATEDIFF(end_date, start_date)` |
+| `chk_bookings_rental`, `chk_bookings_total` | `bookings` | the amounts add up |
+| `chk_deliveries_mode` | `deliveries` | doorstep has an address and coordinates; self-pickup a branch |
+| `chk_deliveries_distance` | `deliveries` | 0 to 15 km |
+| `chk_payments_method` | `payments` | a card keeps four digits only; UPI its handle |
 
 Range overlap between bookings is the one rule MySQL cannot express as a
 constraint (it has no exclusion constraints). It is enforced by the
-`SELECT ... FOR UPDATE` transaction described in `ARCHITECTURE.md`, section 4.
+`SELECT ... FOR UPDATE` lock inside `sp_create_booking` (`database/routines.sql`),
+described in `ARCHITECTURE.md`, section 4.
 
 ---
 
@@ -186,6 +211,9 @@ constraint (it has no exclusion constraints). It is enforced by the
 | `uq_bookings_reference` | Confirmation page lookup |
 | `idx_deliveries_status` | Admin dispatch queue |
 | `idx_refresh_tokens_user (user_id, revoked_at)` | Revoking a user's whole token family |
+| `idx_refresh_tokens_expiry (expires_at)` | The end-of-day purge of expired sessions |
+| `idx_bookings_end (status, end_date)` | The end-of-day cursor's selection |
+| `idx_status_log_booking (booking_id, changed_at)` | One booking's history, in order |
 
 ### Verified: the overlap index covers the locking query
 
