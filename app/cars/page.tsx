@@ -57,7 +57,7 @@ export default async function CarsPage({
 
   return (
     <>
-      <section data-tone="light" className="tone-studio panel pt-[calc(var(--header-h)+clamp(3rem,7vw,7rem))]" aria-labelledby="fleet-title">
+      <section data-tone="light" className="tone-studio panel pt-[calc(var(--header-h)+clamp(2rem,4.5vw,4.5rem))]" aria-labelledby="fleet-title">
         <div className="relative">
           <h1 id="fleet-title" className="t-mega">
             Pick a car.

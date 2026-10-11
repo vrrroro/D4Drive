@@ -26,7 +26,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ r
   if (!booking) notFound();
 
   return (
-    <StackPanel tone="hot" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="booked-title">
+    <StackPanel tone="hot" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="booked-title">
       <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <h1 id="booked-title" className="t-mega">
@@ -43,7 +43,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ r
               arrowClassName="h-auto w-24 -scale-x-100 rotate-[60deg] text-[var(--color-blush)]"
               className="absolute -right-56 -top-6 hidden w-52 text-[var(--color-blush)] md:block"
             >
-              {'keep this one.\nthe keys know it.'}
+              {'this is\nimportant.'}
             </Annotation>
           </div>
         </div>

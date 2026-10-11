@@ -270,7 +270,8 @@ body {
 
 .panel {
   padding-inline: var(--gutter);
-  padding-block: clamp(5rem, 9vw, 9rem);
+  /* Trimmed 2026-10-12 (the owner found pages too zoomed in). */
+  padding-block: clamp(3.5rem, 6.5vw, 6.5rem);
 }
 
 .tone-ground {
