@@ -9,6 +9,34 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 2: the landing film (items 1, 2, 4, 5)
+- The hero is type only: the slogan at the top, the whole `D4DRIVE` wordmark
+  at the bottom (sized to the height left; its line box no longer crops the
+  letters), the red dot beside it. The "self-drive cars" note and its arrow
+  are gone; "this one isn't for rent. sadly." moved to the side-on hold, where
+  the car is.
+- A black slab fades in out of the blank space between them (1.5s after the
+  slogan, or with the first scroll), then opens to the film with the scroll
+  while the film rises out of its black, pushing the slogan up and the
+  wordmark down off the screen (`--hero-up`, `--hero-down`, transform only).
+  The old peeking window and its `--win-*` geometry are gone.
+- Grey stage: a studio-grey multiply layer (`.film-tone`) over the film and
+  the page while the film plays, charcoal copy above it; it fades back to the
+  page ground with the smoke.
+- Four holds: the film stops on the side-on car, head-on, three-quarter and
+  the smoke while each chapter's copy is fully shown, then moves on. Moving
+  segments ease in and out. Track 1000vh (850vh portrait).
+- Smoother scrub: the stills are cut at 60 a second with ffmpeg's
+  motion-compensated interpolation (`public/film/v2`, 524 stills, 11.2 MB;
+  phones load half, as before), each still decoded before first use and the
+  next eight decoded ahead of the playhead (`FrameLoader.warm`).
+  `public/film/v1` removed. `npm run build:frames` gains `--fps`.
+- Timeline in beats (30 a second) so the choreography is independent of the
+  cut; `filmPhase` drives the header logo. Tests rewritten (21), the smoke
+  test checks the holds, the grey stage and the header logo.
+- Delivery chapter copy corrected: collecting away from the car's branch now
+  costs the delivery tier.
+
 #### Phase 14, step 1: the site's chrome (branch `feature/ux-revisions`, draft PR #26)
 - Header: the condensed `D4DRIVE` wordmark is the logo, hidden on the
   landing's first screen until the film starts (`FilmStory` writes

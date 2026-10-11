@@ -415,7 +415,7 @@ body {
 
 .film-track {
   position: relative;
-  height: var(--film-track, 700vh);
+  height: var(--film-track, 1000vh);
 }
 
 .film-stage {
@@ -436,14 +436,9 @@ body {
   pointer-events: none;
 }
 
-/* Geometry published by FilmStage at runtime. These fallbacks match the
-   cover layout, so the server render already lines the type up with the
-   window it will overlap. */
+/* Geometry published by FilmStage at runtime; these fallbacks match the
+   cover layout for the server render. */
 .film-stage {
-  --win-x: 7vw;
-  --win-y: 33.5dvh;
-  --win-w: 60vw;
-  --win-h: 23.5dvh;
   --film-y: 0px;
   --film-h: 100dvh;
 }
@@ -456,65 +451,79 @@ body {
   }
 }
 
-/* --- Hero ---------------------------------------------------------------- */
+/* --- Hero ----------------------------------------------------------------
+   The slogan at the top, the whole wordmark at the bottom, a blank band
+   between. FilmStage draws a black slab into that band and opens it; its
+   edges push the type away (--hero-up, --hero-down), transform only. */
+
+.hero-slogan {
+  position: absolute;
+  left: var(--gutter);
+  top: calc(var(--header-h) + 2.5dvh);
+  transform: translate3d(0, var(--hero-up, 0px), 0);
+}
 
 .hero-lines {
-  position: absolute;
-  inset: 0;
   margin: 0;
   font-size: clamp(2.6rem, min(7.4vw, 12.5dvh), 9.5rem);
 }
 
 .hero-line {
-  position: absolute;
   white-space: nowrap;
 }
 
-.hero-line-1 {
-  left: var(--win-x);
-  top: calc(var(--win-y) - 0.74em);
-}
-
 .hero-line-2 {
-  left: calc(var(--win-x) + 0.85em);
-  top: calc(var(--win-y) + var(--win-h) / 2 - 0.44em);
+  margin-left: 0.9em;
 }
 
 .hero-line-3 {
-  left: calc(var(--win-x) + 2.4em);
-  top: calc(var(--win-y) + var(--win-h) - 0.24em);
+  margin-left: 2.1em;
 }
 
-.hero-wordmark {
-  position: absolute;
-  right: var(--gutter);
-  bottom: 0;
-  margin-bottom: -0.3em;
-  font-size: clamp(9rem, 31vw, 38rem);
-  line-height: 0.76;
-}
-
-.hero-note-left {
+.hero-base {
   position: absolute;
   left: var(--gutter);
-  bottom: 13dvh;
+  right: var(--gutter);
+  bottom: 3dvh;
   display: flex;
   align-items: flex-end;
-  gap: 1.5rem;
+  justify-content: space-between;
+  gap: 2rem;
+  transform: translate3d(0, var(--hero-down, 0px), 0);
 }
 
-.hero-note-right {
-  position: absolute;
-  right: var(--gutter);
-  top: calc(var(--win-y) - 2dvh);
-  width: min(24vw, 22rem);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+/* Whole, never cropped: sized to the height that is left, not the width. */
+.hero-wordmark {
+  font-size: min(31vw, 46dvh);
+}
+
+/* Six Caps' glyphs stand taller than its crushed 0.76 line box; given only
+   that, the base of every letter was cut off by the screen edge. */
+.hero-wordmark .t-condensed {
+  line-height: 0.92;
 }
 
 .hero-egg {
-  margin-bottom: -1.5rem;
+  margin-bottom: 5dvh;
+}
+
+/* While the film plays the hero is out of the way; it must not catch the
+   pointer (its letters are hover targets). */
+.film-track[data-film-phase='film'] .film-hero *,
+.film-track[data-film-phase='after'] .film-hero * {
+  pointer-events: none !important;
+}
+
+/* The grey stage (timeline.stageTone): the studio grey multiplied over the
+   film and the page beneath the copy, so the white studio stops glaring.
+   The copy sits above it and keeps its charcoal. */
+.film-tone {
+  position: absolute;
+  inset: 0;
+  background-color: #e2ded9;
+  mix-blend-mode: multiply;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* --- Chapters -------------------------------------------------------------
@@ -572,47 +581,39 @@ body {
   /* A thumb covers ground faster than a wheel: a shorter track keeps the
      film's pace the same. */
   .film-track {
-    --film-track: 600vh;
+    --film-track: 850vh;
   }
 
   .film-stage {
     --film-h: min(46dvh, 115vw);
     --film-y: calc((100dvh - var(--film-h)) * 0.47);
-    --win-x: 6vw;
-    --win-w: 88vw;
-    --win-y: calc(var(--film-y) + var(--film-h) * 0.18);
-    --win-h: calc(var(--film-h) * 0.62);
   }
 
   .hero-lines {
     font-size: clamp(2.3rem, 11.5vw, 5.5rem);
   }
 
-  .hero-line-1 {
-    top: calc(var(--win-y) - 0.92em);
-  }
-
   .hero-line-2 {
-    left: calc(var(--win-x) + 0.35em);
+    margin-left: 0.4em;
   }
 
   .hero-line-3 {
-    left: var(--win-x);
-    top: calc(var(--win-y) + var(--win-h) + 0.06em);
+    margin-left: 0;
   }
 
+  /* Small enough to leave the red dot room on the same row, so the two
+     leave the screen together when the slab pushes them. */
   .hero-wordmark {
-    right: auto;
-    left: var(--gutter);
-    font-size: 54vw;
+    font-size: min(40vw, 26dvh);
   }
 
-  .hero-note-right {
-    display: none;
+  .hero-base {
+    bottom: 5dvh;
+    flex-direction: row-reverse;
   }
 
-  .hero-note-left {
-    bottom: 19dvh;
+  .hero-egg {
+    margin-bottom: 3dvh;
   }
 
   .ch-top-left,
@@ -662,12 +663,10 @@ body {
     padding: calc(var(--header-h) + 3rem) var(--gutter) 2rem !important;
   }
 
-  .hero-lines,
-  .hero-line,
-  .hero-wordmark,
-  .hero-note-left,
-  .hero-note-right {
+  .hero-slogan,
+  .hero-base {
     position: static !important;
+    transform: none !important;
     margin: 0 !important;
   }
 
@@ -675,13 +674,13 @@ body {
     white-space: normal;
   }
 
-  .hero-line-2 {
-    color: var(--accent-text) !important;
-  }
-
   .hero-wordmark {
     margin-top: 2rem !important;
     font-size: 30vw;
+  }
+
+  .film-tone {
+    display: none;
   }
 
   .film-chapter .ch-head {

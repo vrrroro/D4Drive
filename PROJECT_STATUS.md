@@ -80,11 +80,11 @@ asked (2026-10-12):
   fleet page for signed-out visitors. Every other page, sign-in included, ends
   with a slim line (up arrow, credits, "This Was Bloomed By Rohit").
 
-- [ ] 1. Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
-- [ ] 2. During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
+- [x] 1. (2026-10-12: `closedSlab`, `slabAlpha`, `heroPush`; the slab fades in 1.5s after the slogan, or with the first scroll) Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
+- [x] 2. (2026-10-12: `.film-tone` multiply layer, `stageTone`; four holds in `SEGMENTS`; chapters fully shown through their holds) During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
 - [ ] 3. (landing done 2026-10-12: `LocationsSection` flows on from sign-in; both notes re-aimed. Left: the fleet page's end) Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
-- [ ] 4. ("self-drive" removed from all copy 2026-10-12. Left: the hero) Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
-- [ ] 5. Film scrub much smoother (more in-between frames, holds)
+- [x] 4. (2026-10-12: "self-drive" removed from all copy; note and arrow gone; the wordmark sized to the height left, line box 0.92) Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
+- [x] 5. (2026-10-12: v2 cut at 60 stills a second by motion interpolation, decode ahead of the playhead, eased segments, the holds) Film scrub much smoother (more in-between frames, holds)
 - [x] 6. (2026-10-12: `header-logo`, hidden via `.film-track[data-film-phase='hero']`; frosted bar from `data-scrolled`) Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
 - [ ] 7. (scroll bug fixed 2026-10-12 in `SmoothScroll`: Lenis kept the old page's eased target. Left: the grey fleet page) "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
 - [ ] 8. Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors

@@ -8,7 +8,8 @@ import { LocationsSection } from '@/components/ui/LocationsSection';
 import { RotatingWord } from '@/components/ui/RotatingWord';
 import { getSession } from '@/lib/auth/guards';
 import { DELIVERY_TIERS, MAX_DELIVERY_KM } from '@/lib/constants';
-import { frameSrc } from '@/lib/film-manifest';
+import { FILM_MANIFEST, frameSrc } from '@/lib/film-manifest';
+import { LAST_BEAT } from '@/components/film/timeline';
 import { listActiveBranches, listFleetPhotos } from '@/lib/services/branches';
 import { formatCurrency } from '@/lib/services/pricing';
 import { getFirstName } from '@/lib/services/users';
@@ -27,6 +28,9 @@ const ROAST = [
   'out of charge',
   'not answering',
 ];
+
+/** The still at a beat of the film (30 a second), whatever the cut. */
+const still = (beat: number) => frameSrc(Math.round((beat / LAST_BEAT) * (FILM_MANIFEST.count - 1)));
 
 function list(items: string[]): string {
   if (items.length <= 1) return items.join('');
@@ -58,7 +62,7 @@ export default async function HomePage() {
       <FilmStory label="The D4Drive film">
         <FilmHero images={photos} />
 
-        <FilmChapter id="flank" still={{ src: frameSrc(64), alt: 'A red sports coupe side on, in a white studio.' }}>
+        <FilmChapter id="flank" still={{ src: still(80), alt: 'A red sports coupe side on, in a white studio.' }}>
           <h2 className="ch-top-left ch-head t-display absolute text-[var(--ink)]">
             We bring the car.
             <br />
@@ -68,9 +72,17 @@ export default async function HomePage() {
             D4Drive is car rental for Bengaluru, brought to you. Pick a car, choose your dates and pay once. We drive it to
             your door and hand you the keys.
           </p>
+          <Annotation
+            tilt={9}
+            arrow="loop"
+            arrowClassName="mt-2 h-auto w-[clamp(5rem,8vw,9rem)] rotate-[58deg] text-[var(--color-carmine)]"
+            className="ch-landscape-only absolute left-[44vw] top-[22dvh] text-[var(--color-carmine)]"
+          >
+            {"this one isn't\nfor rent. sadly."}
+          </Annotation>
         </FilmChapter>
 
-        <FilmChapter id="roast" still={{ src: frameSrc(120), alt: 'The coupe head-on, facing the camera.' }}>
+        <FilmChapter id="roast" still={{ src: still(120), alt: 'The coupe head-on, facing the camera.' }}>
           <div className="ch-left-flank absolute">
             <p className="t-eyebrow text-[var(--ink)]">Your ride is</p>
             <p className="t-condensed mt-4 text-[clamp(3.2rem,6.6vw,8.4rem)] text-[var(--color-carmine)] [text-shadow:0.024em_0.024em_0_var(--color-oxblood)]">
@@ -87,7 +99,7 @@ export default async function HomePage() {
           </p>
         </FilmChapter>
 
-        <FilmChapter id="delivery" still={{ src: frameSrc(176), alt: 'The coupe at three quarters, turned to the right.' }}>
+        <FilmChapter id="delivery" still={{ src: still(176), alt: 'The coupe at three quarters, turned to the right.' }}>
           <h2 className="ch-top-left ch-head t-display absolute max-w-[46vw] text-[var(--ink)]">
             Free delivery inside {firstTier.maxKm} km.
           </h2>
@@ -110,12 +122,16 @@ export default async function HomePage() {
             {'shown before\nyou pay'}
           </Annotation>
           <p className="ch-bottom-left t-body absolute text-[var(--ink)]">
-            Further than {MAX_DELIVERY_KM} km from a branch, we cannot deliver yet.
-            {branchNames.length > 0 && <> Collect the car from {list(branchNames)} instead. That is free too.</>}
+            Further than {MAX_DELIVERY_KM} km from the car&apos;s branch, we cannot deliver yet. Collect it instead: free at
+            its own branch
+            {branchNames.length > 1 && (
+              <>, or at any of our {branchNames.length} branches within {MAX_DELIVERY_KM} km for the same fee as a delivery</>
+            )}
+            .
           </p>
         </FilmChapter>
 
-        <FilmChapter id="takeoff" still={{ src: frameSrc(240), alt: 'The coupe leaving frame through tyre smoke.' }}>
+        <FilmChapter id="takeoff" still={{ src: still(240), alt: 'The coupe leaving frame through tyre smoke.' }}>
           <div className="ch-smoke absolute">
             <h2 className="t-mega text-[var(--ink)]">Your turn.</h2>
             <p className="t-body mt-8 max-w-[34ch] text-[var(--ink)]">

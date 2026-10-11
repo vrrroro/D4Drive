@@ -17,10 +17,10 @@ export const BOOT_MAX_MS = 6000;
 export const LOADER_FADE_MS = 700;
 
 /**
- * Track length lives in CSS (`--film-track` in globals.css: 700vh, 600vh on
- * portrait), so the server render already has the right height. The film's
- * 264 stills spread over about 540vh of that: roughly 18px of wheel per still
- * on a 900px screen, fine enough that slow scrolling never steps.
+ * Track length lives in CSS (`--film-track` in globals.css: 1000vh, 850vh on
+ * portrait), so the server render already has the right height. About half
+ * of it plays the film (the rest is the four holds and the fades): roughly
+ * 9px of wheel per still at 60 a second on a 900px screen.
  */
 
 /**
@@ -28,6 +28,13 @@ export const LOADER_FADE_MS = 700;
  * (Page Down, Space) without adding perceptible lag to a wheel or a finger.
  */
 export const PROGRESS_SPRING = { stiffness: 260, damping: 42, mass: 0.35, restDelta: 0.00005 } as const;
+
+/**
+ * The black slab fades in by itself between the slogan and the wordmark,
+ * after the slogan's lines have landed, then waits for the scroll to open it.
+ * Scrolling first shows it at once (timeline.slabAlpha).
+ */
+export const SLAB_ENTRANCE = { delay: 1.5, duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] } as const;
 
 /** Session flag: the hero's entrance has played once this session. */
 export const ENTRANCE_SEEN_KEY = 'd4drive:entrance-seen';
