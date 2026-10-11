@@ -442,6 +442,31 @@ body {
 .film-stage {
   --film-y: 0px;
   --film-h: 100dvh;
+  /* The slab that opens into the film: black on the light page, the studio
+     grey on the dark one, so it always appears out of the blank space. */
+  --film-slab: #121110;
+}
+
+:root:not([data-theme='light']) .film-stage {
+  @media (prefers-color-scheme: dark) {
+    --film-slab: #e9e6e2;
+  }
+}
+
+:root[data-theme='dark'] .film-stage {
+  --film-slab: #e9e6e2;
+}
+
+/* The film is a white studio in either colour scheme, so the copy laid over
+   it keeps the light scheme's charcoal even when the page is dark. Only while
+   the film runs: the reduced-motion document sets the same copy on the page
+   ground and keeps the page's own ink. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .film-chapter:not(.film-hero) {
+    --ink: var(--color-ink);
+    --muted: #4f4b47;
+    --accent-text: var(--color-carmine);
+  }
 }
 
 /* The boot loader covers the page until the film is ready. Without script it

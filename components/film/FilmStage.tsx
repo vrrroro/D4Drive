@@ -32,7 +32,7 @@ interface FilmStageProps {
   onBootProgress: (fraction: number) => void;
 }
 
-/** The slab's black: the ink of the night panel, a shade deeper. */
+/** The slab's colour when the stage does not say (globals.css `--film-slab`). */
 const SLAB = '#121110';
 
 /** Layout position of `el` inside `ancestor`, ignoring transforms. */
@@ -77,6 +77,7 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
     let mode: FitMode = 'cover';
     let closed: Rect = closedSlab(1, 1, 0);
     let gap = { top: 0, bottom: 1 };
+    let slabColour = SLAB;
     let ground = 'rgb(249, 248, 246)';
     let groundClear = 'rgba(249, 248, 246, 0)';
     let raf = 0;
@@ -130,7 +131,7 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
 
       // The slab: black, appearing out of the blank space.
       ctx.globalAlpha = slab;
-      ctx.fillStyle = SLAB;
+      ctx.fillStyle = slabColour;
       ctx.fillRect(win.x, win.y, win.width, win.height);
 
       // The film rises out of the black as the slab opens.
@@ -214,7 +215,9 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
       canvas.height = Math.round(vh * dpr);
       canvas.style.width = `${vw}px`;
       canvas.style.height = `${vh}px`;
-      const channels = getComputedStyle(stage).backgroundColor.match(/\d+(\.\d+)?/g);
+      const styles = getComputedStyle(stage);
+      slabColour = styles.getPropertyValue('--film-slab').trim() || SLAB;
+      const channels = styles.backgroundColor.match(/\d+(\.\d+)?/g);
       if (channels && channels.length >= 3) {
         const [r, g, b] = channels;
         ground = `rgb(${r}, ${g}, ${b})`;

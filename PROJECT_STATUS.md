@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 14, the owner's UI revisions (Phase 13 done 2026-10-12, PR #25)
-**Status:** Phases 12 and 13 complete in code; Phase 14 in progress on `feature/ux-revisions`
+**Current phase:** none active. Phases 13 and 14 done 2026-10-12 (PRs #25, #26); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 14 verified
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -27,7 +27,7 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
 | 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
-| 7 | 14: The owner's UI revisions (18 items) | **Active**, branch `feature/ux-revisions` stacked on 13 |
+| 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
 
 ---
 
@@ -62,7 +62,7 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
 - [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (40 pass, 4 skip; corrected, see the CHANGELOG fix), `test:db` (57 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
 
-### Phase 14: The owner's UI revisions (active; all 18 items done in code 2026-10-12, verification left)
+### Phase 14: The owner's UI revisions (done 2026-10-12, PR #26)
 
 Owner's list of 2026-10-12, numbered as given. Decisions the owner made when
 asked (2026-10-12):
@@ -97,6 +97,9 @@ asked (2026-10-12):
 - [x] 15. (2026-10-12) Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
 - [x] 16. (2026-10-12: Let's link signed-out only; no example names, numbers, emails, cards or UPI IDs in any form) Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
 - [x] 17. (2026-10-12: `AccountMenu`) Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
+- [x] Verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `test:db` (63), `build`, `smoke` (47/47), `check:leaks` (54, clean); screens at 1440x900 and 390x844, reduced motion and dark mode (found and fixed: the slab and the film copy in dark mode)
+- [ ] On real phones: the scrub at 60 stills a second, the deck, the map (needs devices)
+- [ ] Lighthouse on the new landing (11.2 MB of stills, coarse to fine; measure LCP and memory)
 - [x] 18. (2026-10-12: `BackToTop` is a small arrow at the left edge; `SiteFooter` is the slim line) No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
 
 ---
@@ -302,6 +305,7 @@ Found and fixed in this phase:
 - **Dark-mode accent text:** `DESIGN.md` holds carmine constant in dark mode, but carmine text on the dark ground measures 2.4:1. Text and focus rings use `#E66256` (same hue) in dark only; fills stay `#A82519`. Confirm or replace.
 - **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
 - **Logo loader:** needs a carmine render of the mark, or a decision to drop it.
+- **Checkout map provider:** OpenStreetMap's free tiles and Nominatim (chosen by the owner, 2026-10-12). Fine for coursework traffic; a real deployment needs a paid or self-hosted provider.
 - **`EDRD.md` vs `DESIGN.md`:** EDRD is the original brief (gold accent). `DESIGN.md` supersedes it (carmine accent). Follow `DESIGN.md`.
 
 ---

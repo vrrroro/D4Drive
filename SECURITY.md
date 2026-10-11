@@ -76,6 +76,16 @@ query.
 **Errors do not leak.** Log the full error server-side. Return a generic message
 and the correct status code. Stack traces, SQL fragments, and column names never
 cross the wire. This is enforced in the shared error handler, not per route.
+The one class of message passed through is the stored programs' own refusals
+(`SIGNAL SQLSTATE '45000'`, errnos 5001 to 5201), whose text is written for
+the customer ("This car is already booked for the selected dates.").
+
+**SQL shown on purpose, to staff only.** `/admin/reports` prints each query
+under its result and `/admin/database` walks through the statements every
+transaction runs; that is the coursework demonstration. Both pages, and
+`/api/admin/database/try`, are behind `requireAdmin`. `npm run check:leaks`
+waives only its SQL pattern for those two pages and still fails them on a
+stack frame, driver code or path.
 
 **Never log a secret.** No passwords, no tokens, no full card numbers, not even
 at debug level. Logs get copied into issues and screenshots.

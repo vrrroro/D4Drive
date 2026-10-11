@@ -9,6 +9,20 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14 verified (2026-10-12)
+- Fixed in dark mode: the black slab was invisible on the dark page (it is
+  now the studio grey there, `--film-slab`), and the copy laid over the film
+  took the dark scheme's light ink, light on a light film (it keeps the
+  charcoal while the film runs).
+- `npm run check:leaks` covers the new routes (cancel, withdraw, delete,
+  the close, the database try-it, the geocoder): 54 requests. Only the SQL
+  pattern is waived, and only on the two admin pages that show SQL by
+  design; `SECURITY.md` says so.
+- `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `test:db`
+  (63 pass), `build`, `smoke` (47/47 against `next start`), `check:leaks`
+  (clean), production audit 0. Screens at 1440x900 and 390x844, reduced
+  motion, dark mode.
+
 #### Phase 14, step 6: the confirmation and the spacing (items 13, 15)
 - Confirmation stays carmine; its note now reads "this is important."
 - Spacing: the panel padding and the space above every inner page's heading
