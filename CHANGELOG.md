@@ -12,6 +12,38 @@ Entries are grouped by session date, newest first. Every session adds one.
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
 (PR #24). Steps land newest first below, each pushed as it is done.
 
+#### Added (database layer)
+- `database/routines.sql`: functions `fn_haversine_km`, `fn_delivery_fee`,
+  `fn_car_available`; procedures `sp_create_booking` (the whole booking in one
+  locked transaction), `sp_cancel_booking`, `sp_end_of_day_close` (a cursor
+  over due bookings, plus the expired-session purge); triggers
+  `trg_bookings_ai_log`, `trg_bookings_au_log`, `trg_bookings_au_refund`,
+  `trg_deliveries_bu_stamp`, `trg_cars_bu_withdraw_guard`; view
+  `v_booking_details`. Custom errors use SQLSTATE 45000 with errnos 5001 to
+  5201, listed at the top of the file.
+- Table `booking_status_log` (8th table), written only by triggers.
+- Columns `deliveries.pickup_branch_id` (collect at any branch),
+  `branches.pincode`, `payments.refunded_at`.
+- CHECK constraints mirroring the app's validation: email, mobile, branch
+  phone and pincode, coordinates, car year and registration format, booking
+  days and amounts that must add up, reference format, delivery mode shape,
+  payment method shape, refund stamp.
+
+#### Changed (database layer)
+- Seed: 11 branches (Yelahanka not yet open), 12 users (two admins), 10 cars
+  spread over the branches, 14 bookings across every status with dates
+  relative to the seed day, their deliveries and payments, 16 session rows.
+  Status changes are real UPDATEs, so the triggers write 27 history rows and
+  refund both cancellations.
+- `npm run db:setup` loads schema, routines, seed; understands `DELIMITER`;
+  prints row counts for all eight tables and the routine and trigger counts.
+- Fixed a wrong seed comment: Koramangala to Whitefield is 13.9 km, not 15.4.
+
+#### Note
+- Until the next commit, the app's booking code still inserts rows itself and
+  the new constraints reject its self-pickup rows. The next step routes it
+  through `sp_create_booking`.
+
 #### Planned
 - Phase 13 and Phase 14 written into `PROJECT_STATUS.md` with the owner's
   course rubric and the owner's 18 numbered UI revisions, so any session can

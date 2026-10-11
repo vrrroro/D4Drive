@@ -52,9 +52,9 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - Connectivity is the Next.js app itself, through `mysql2` (Node), which the rubric allows ("any other suitable programming language").
 
 - [x] Plan recorded (this list)
-- [ ] Schema: `booking_status_log`, `pickup_branch_id`, stronger CHECK/UNIQUE/DEFAULT constraints
-- [ ] Seed: at least 10 meaningful rows in every table (branches, users, cars, bookings, deliveries, payments, refresh tokens, status log by trigger)
-- [ ] `database/routines.sql`: functions (distance, delivery fee, availability, rental days), procedures (create booking, cancel booking, end-of-day close with a cursor), triggers (status log, refund on cancel, delivered stamp, booking guard), a view; `db:setup` learns `DELIMITER`
+- [x] Schema: `booking_status_log`, `pickup_branch_id`, `branches.pincode`, `payments.refunded_at`, stronger CHECK/UNIQUE/DEFAULT constraints (2026-10-12)
+- [x] Seed: at least 10 meaningful rows in every table: 11 branches, 12 users, 10 cars, 14 bookings, 14 deliveries, 14 payments, 16 refresh tokens, 27 status-log rows written by the triggers (2026-10-12)
+- [x] `database/routines.sql`: 3 functions (`fn_haversine_km`, `fn_delivery_fee`, `fn_car_available`), 3 procedures (`sp_create_booking`, `sp_cancel_booking`, `sp_end_of_day_close` with a cursor), 5 triggers (status log on insert and update, refund on cancel, delivered stamp, withdraw guard), view `v_booking_details`; `db:setup` learns `DELIMITER` and loads schema, routines, seed (2026-10-12). Every procedure path verified by hand against MySQL 8.0.
 - [ ] App wired to them: booking through the procedure, availability through the function, customer cancellation, admin end-of-day close, admin hard delete of never-booked cars (DELETE, FK protected), expired-session purge
 - [ ] `database/queries.sql`: 15+ queries, each one used by a page (admin reports) or the app
 - [ ] Admin "Reports" page and admin "Database" walkthrough page (live trace of the five-step flow per transaction)
