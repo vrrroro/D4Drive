@@ -82,22 +82,22 @@ asked (2026-10-12):
 
 - [ ] 1. Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
 - [ ] 2. During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
-- [ ] 3. Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
-- [ ] 4. Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
+- [ ] 3. (landing done 2026-10-12: `LocationsSection` flows on from sign-in; both notes re-aimed. Left: the fleet page's end) Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
+- [ ] 4. ("self-drive" removed from all copy 2026-10-12. Left: the hero) Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
 - [ ] 5. Film scrub much smoother (more in-between frames, holds)
-- [ ] 6. Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
-- [ ] 7. "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
+- [x] 6. (2026-10-12: `header-logo`, hidden via `.film-track[data-film-phase='hero']`; frosted bar from `data-scrolled`) Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
+- [ ] 7. (scroll bug fixed 2026-10-12 in `SmoothScroll`: Lenis kept the old page's eased target. Left: the grey fleet page) "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
 - [ ] 8. Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors
 - [ ] 9. Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
 - [ ] 10. "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
-- [ ] 11. Every button hovers red with white text
+- [x] 11. (2026-10-12: `--btn-hover-bg`, deeper carmine on carmine panels; keycaps too) Every button hovers red with white text
 - [ ] 12. Reserve while signed out goes to sign-in directly, without the footer's fleet block
 - [ ] 13. Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
 - [ ] 14. "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
 - [ ] 15. Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
-- [ ] 16. Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
-- [ ] 17. Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
-- [ ] 18. No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
+- [ ] 16. (Let's link signed-out only, sign-in placeholders gone, 2026-10-12. Left: checkout placeholders) Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
+- [x] 17. (2026-10-12: `AccountMenu`) Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
+- [x] 18. (2026-10-12: `BackToTop` is a small arrow at the left edge; `SiteFooter` is the slim line) No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
 
 ---
 

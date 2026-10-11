@@ -4,6 +4,7 @@ import { FilmHero } from '@/components/film/FilmHero';
 import { FilmStory } from '@/components/film/FilmStory';
 import { FilmOnRequest } from '@/components/film/FilmOnRequest';
 import { Annotation } from '@/components/ui/Annotation';
+import { LocationsSection } from '@/components/ui/LocationsSection';
 import { RotatingWord } from '@/components/ui/RotatingWord';
 import { getSession } from '@/lib/auth/guards';
 import { DELIVERY_TIERS, MAX_DELIVERY_KM } from '@/lib/constants';
@@ -64,8 +65,8 @@ export default async function HomePage() {
             <span className="italic">You</span> take the wheel.
           </h2>
           <p className="ch-top-right ch-body-top t-body absolute max-w-[min(30vw,26rem)] text-[var(--ink)]">
-            D4Drive is self-drive car rental for Bengaluru. Pick a car, choose your dates and pay once. We drive it to your
-            door and hand you the keys.
+            D4Drive is car rental for Bengaluru, brought to you. Pick a car, choose your dates and pay once. We drive it to
+            your door and hand you the keys.
           </p>
         </FilmChapter>
 
@@ -140,6 +141,7 @@ export default async function HomePage() {
       ) : (
         <AuthPanel id="sign-in" tone="light" next="/cars" dissolve />
       )}
+      <LocationsSection />
     </>
   );
 }

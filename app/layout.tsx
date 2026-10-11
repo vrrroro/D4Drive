@@ -51,7 +51,7 @@ const marker = Shadows_Into_Light_Two({
 
 export const metadata: Metadata = {
   title: { default: 'D4Drive', template: '%s | D4Drive' },
-  description: 'Drive easy. Book smart. Delivered to you. Self-drive cars, delivered across Bengaluru.',
+  description: 'Drive easy. Book smart. Delivered to you. Rental cars brought to your door across Bengaluru.',
   robots: { index: false, follow: false },
 };
 
@@ -65,6 +65,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN" className={`${fraunces.variable} ${sixCaps.variable} ${inter.variable} ${marker.variable}`}>
       <body>
+        {/* 24px into the document. HeaderTone watches it: once it has left the
+            screen the page has moved, and the header gains its frosted bar. */}
+        <div data-scroll-sentinel aria-hidden="true" className="pointer-events-none absolute left-0 top-6 h-px w-px" />
         <ToastProvider>
           <SmoothScroll />
           <SiteHeader />

@@ -58,6 +58,19 @@ export const CHAPTERS = {
 
 export type ChapterId = keyof typeof CHAPTERS;
 
+/**
+ * Where the visitor is in the story, for CSS: `hero` before the film starts
+ * (the header hides its wordmark, the hero shows it), `film` while it plays,
+ * `after` once it has faded into the page.
+ */
+export type FilmPhase = 'hero' | 'film' | 'after';
+
+export function filmPhase(p: number): FilmPhase {
+  if (p < CHAPTERS.hero[2]) return 'hero';
+  if (p < FADE_OUT[1]) return 'film';
+  return 'after';
+}
+
 export const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 /** Smoothstep easing, for the window opening and the fade. */

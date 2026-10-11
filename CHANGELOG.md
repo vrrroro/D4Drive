@@ -9,6 +9,29 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 1: the site's chrome (branch `feature/ux-revisions`, draft PR #26)
+- Header: the condensed `D4DRIVE` wordmark is the logo, hidden on the
+  landing's first screen until the film starts (`FilmStory` writes
+  `data-film-phase` on the track; `filmPhase` in `timeline.ts`). Once the page
+  has moved, a frosted grey bar (`data-scrolled`, from a sentinel watched by
+  `HeaderTone`, no scroll listener), tinted for carmine and charcoal panels.
+- Signed in: "Signed in as *Name*" opens `AccountMenu` (My bookings, Fleet,
+  admin pages for staff, Photo credits, Sign out). The rotating "Let's ___"
+  is for signed-out visitors only. `SignOutButton` removed.
+- Every button hovers red with white type: primary, blush, secondary and
+  keycaps share `--btn-hover-bg` (the deeper carmine on carmine panels).
+- `SiteFooter` is a slim line on every page with "This Was Bloomed By Rohit".
+  The branch list and "Browse the fleet" moved to `LocationsSection`, which
+  flows on from the landing's sign-in panel with no card or tilt.
+- The "go on." notes are anchored to their buttons, arrows rising to them.
+- Back to top is a small arrow at the left edge, red on hover.
+- Fixed: the Fleet link landed at the end of the page. Lenis kept the
+  previous page's eased target; `SmoothScroll` now jumps to the top of a new
+  page before it paints (back and forward, and #fragments, keep theirs).
+- "Self-drive" removed from all copy; example names, numbers and emails
+  removed from the sign-in form.
+- `scripts/shoot.mjs` gains `SHOOT_SELECTOR`.
+
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
 (PR #24), draft PR #25. Steps land newest first below, each pushed as it is done.
 

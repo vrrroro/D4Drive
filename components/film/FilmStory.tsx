@@ -6,6 +6,7 @@ import { BootLoader } from './BootLoader';
 import { FilmContext, usePrefersReducedMotion } from './FilmContext';
 import { FilmStage } from './FilmStage';
 import { BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING } from './constants';
+import { filmPhase } from './timeline';
 
 /**
  * The landing film: a tall track with the film pinned inside it.
@@ -72,6 +73,20 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
     }
   }, [loaderGone]);
 
+  // The phase, written straight onto the track for CSS (the header logo and
+  // the grey stage hang off it). A motion-value subscription, not React state
+  // and not a scroll listener.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || reduced) return undefined;
+    const write = (p: number) => {
+      const phase = filmPhase(p);
+      if (track.dataset.filmPhase !== phase) track.dataset.filmPhase = phase;
+    };
+    write(progress.get());
+    return progress.on('change', write);
+  }, [progress, reduced]);
+
   const ready = reduced || loaderGone;
   const value = useMemo(() => ({ progress, ready, reduced }), [progress, ready, reduced]);
 
@@ -82,6 +97,7 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
         aria-label={label}
         data-tone="light"
         data-film-ready={ready ? 'true' : 'false'}
+        data-film-phase="hero"
         className="film-track"
       >
         <div ref={stageRef} className="film-stage">

@@ -6,11 +6,12 @@ import { Z } from '@/lib/constants';
 import { getLenis } from './SmoothScroll';
 
 /**
- * Back to top, once the visitor is 300px down.
+ * A small up arrow on the left edge, once the visitor is 300px down.
  *
  * Visibility comes from an IntersectionObserver on a sentinel 300px into the
  * document, not from reading the scroll position: no scroll listeners. When
- * hidden it is out of the tab order as well as out of sight.
+ * hidden it is out of the tab order as well as out of sight. Like every
+ * button it fills red on hover.
  */
 export function BackToTop() {
   const sentinel = useRef<HTMLDivElement>(null);
@@ -43,11 +44,11 @@ export function BackToTop() {
         tabIndex={shown ? 0 : -1}
         aria-hidden={!shown}
         style={{ zIndex: Z.floating }}
-        className={`keycap fixed bottom-6 left-6 bg-[var(--ground)] text-[var(--color-carmine)] transition-opacity duration-700 md:bottom-8 md:left-8 ${
+        className={`fixed left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center bg-[var(--ground)]/70 text-[var(--color-carmine)] backdrop-blur-sm transition-[opacity,background-color,color] duration-500 hover:bg-[var(--color-carmine)] hover:text-[var(--color-paper)] focus-visible:bg-[var(--color-carmine)] focus-visible:text-[var(--color-paper)] md:left-4 ${
           shown ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
-        <ArrowUp aria-hidden className="h-5 w-5" strokeWidth={1.75} />
+        <ArrowUp aria-hidden className="h-4 w-4" strokeWidth={1.75} />
       </button>
     </>
   );
