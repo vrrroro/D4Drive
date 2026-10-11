@@ -209,10 +209,11 @@ film sits in a band that follows the car, with copy above and below.
 7. **Inertial scrolling with lagging headings.**
 8. **The trailing cursor halo.** The native cursor stays.
 9. **The rotating roast word**: "Your ride is _late again_".
-10. **3D-tilted photographs** that straighten on hover: the detail page, the
-    fleet preview.
-11. **The ghost stack**: every model name piled at a fifth of a line; point at
-    one and it becomes a bold headline with its photograph beside it.
+10. **Level photographs that tilt toward you on hover** (the car page), the
+    owner's rule since 2026-10-12: nothing sits tilted at rest.
+11. **The deck**: the fleet as cards that slide over one another as you scroll,
+    a sliver of each left showing (it replaced the ghost stack of names on
+    2026-10-12).
 12. **Keycap controls.**
 13. **The header chameleon**: its colours follow the panel beneath.
 14. **The escalating red dot**: six clicks of increasingly tired badges, then the
@@ -235,7 +236,8 @@ condition for keeping them.
 | `LocationsSection` | Real branches from the database, "Browse the fleet" with its note, the whole wordmark. Landing and signed-out fleet only. |
 | `BackToTop` | A small up arrow at the left edge, red on hover. |
 | `AuthPanel` | Sign in and register as one three-column panel (brand, heading, form). Light at the end of the film, hot and swinging in on `/login`. |
-| `FleetIndex` | The ghost stack where there is a mouse and room; photo cards otherwise. One list of links serves both. |
+| `FleetIndex` | The deck: one card per car, pinned under the header a little lower than the last, each sliding over the one before and popping up as it arrives. Hover greys the car and its name. A plain list under reduced motion. |
+| `CarLink` | A link to a car that carries its photo into the car page with a View Transition where the browser has one. |
 | `CarPhoto` | Studio composite, or a labelled "Photograph pending" slot. Never a stock image or a CSS shape. |
 | `Field` | Underline input, label always above, error and helper slots always present. `tone` light, dark, hot; `size="lg"` sets values in Fraunces. |
 | `Button`, `ButtonLink` | Primary (charcoal, red wipe), blush (on carmine and charcoal, presses like a keycap, fills red), secondary (fills red), link. |

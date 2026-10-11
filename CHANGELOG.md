@@ -9,6 +9,27 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14, step 3: the fleet (items 7, 8; groundwork for 9, 13, 14)
+- `/cars` is one grey studio field: the heading, the filters and the cars.
+  The red hot panel is gone.
+- The fleet is a deck (`FleetIndex` rewritten): each car a card pinned under
+  the header a little lower than the last, the next sliding over it and
+  popping up from 90% as it arrives (scroll-linked, transform only). Hovering
+  greys the photograph (a pre-greyed copy fades in) and the name. Reduced
+  motion gets a plain list. The ghost stack and its CSS are gone.
+- Signed-out visitors get the sign-in panel and the branches after the last
+  car; signed-in visitors do not.
+- `CarLink`: on browsers with View Transitions the clicked car's photo morphs
+  into the car page's photo while the rest cross-fades; otherwise an
+  ordinary link. `app/template.tsx`: every page arrives with a short rise and
+  fade (CSS), standing aside during a view transition.
+- Every select and its open list is the studio grey (`--select-bg`), so the
+  options read on every panel.
+- The car page's photo lies level and tilts only on hover (`.car-tilt`).
+- Fleet copy: "Nine cars across Bengaluru ... or wait for you at any of our
+  ten branches".
+- Smoke test: the deck's hover, and no sign-in panel for a signed-in visitor.
+
 #### Phase 14, step 2: the landing film (items 1, 2, 4, 5)
 - The hero is type only: the slogan at the top, the whole `D4DRIVE` wordmark
   at the bottom (sized to the height left; its line box no longer crops the

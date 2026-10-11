@@ -136,20 +136,21 @@ let reference = '';
   await page.waitForURL('**/cars', { timeout: 15000 });
   ok('register signs in and honours ?next', page.url().endsWith('/cars'));
 
-  const cards = page.locator('.fleet-row-link');
+  const cards = page.locator('.fleet-card-link');
   await cards.first().waitFor();
   const count = await cards.count();
   ok('catalog lists active cars', count === 9, `count=${count}`);
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
   ok('every car in the fleet has a photograph', slots === 0, `slots=${slots}`);
 
-  // The ghost stack: pointing at a name brings up that car's photograph.
-  await page.locator('.fleet').scrollIntoViewIfNeeded();
+  // The deck: pointing at a card greys exactly that car.
+  await cards.nth(0).scrollIntoViewIfNeeded();
   await page.waitForTimeout(1200);
-  await cards.nth(2).hover();
-  await page.waitForTimeout(700);
-  const shown = await page.locator('.fleet-photo').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
-  ok('pointing at a name shows exactly that car', shown === 1, `shown=${shown}`);
+  await cards.nth(0).hover();
+  await page.waitForTimeout(800);
+  const greyed = await page.locator('.fleet-card-grey').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
+  ok('pointing at a car greys exactly that car', greyed === 1, `greyed=${greyed}`);
+  ok('a signed-in visitor gets no sign-in panel at the end of the fleet', (await page.locator('#sign-in').count()) === 0);
   await page.screenshot({ path: `${SHOTS}/04-catalog.png` });
 
   await page.goto(BASE + '/cars?fuel=electric');
@@ -269,7 +270,7 @@ let reference = '';
   const fadedNoJs = await staticPage.locator('[data-chapter]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
   ok('without JavaScript every chapter is readable', fadedNoJs === 0, `faded=${fadedNoJs}`);
   await staticPage.goto(BASE + '/cars');
-  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-row-link').count()) === 9);
+  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-card-link').count()) === 9);
   await noJs.close();
 }
 

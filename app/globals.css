@@ -744,202 +744,192 @@ body {
 }
 
 /* ==========================================================================
-   The fleet (components/sections/FleetIndex.tsx). Photo cards by default;
-   a ghost stack of names where there is a mouse and room for it.
+   The fleet (components/sections/FleetIndex.tsx): a deck of cards. Each card
+   pins under the header a little lower than the one before, so the next
+   slides up over it and a sliver of each stays in view. The pop as a card
+   arrives is FleetCard's scroll-linked scale and lift (transform only).
    ========================================================================== */
 
-.fleet-stack {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-  gap: 3.5rem 2.5rem;
+.fleet-cards {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.fleet-row-link {
+.fleet-card-slot {
+  position: sticky;
+  top: calc(var(--header-h) + 1rem + var(--i) * 0.8rem);
+  /* The scroll each card is read for before the next one covers it. */
+  padding-bottom: 14dvh;
+}
+
+.fleet-card-slot:last-child {
+  padding-bottom: 0;
+}
+
+.fleet-card {
+  background-color: var(--ground);
+  box-shadow:
+    0 -14px 40px -18px rgb(26 26 26 / 0.3),
+    0 24px 60px -30px rgb(26 26 26 / 0.35);
+}
+
+.fleet-card-link {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  padding: clamp(1.25rem, 2.4vw, 2.5rem);
+  color: var(--ink);
+}
+
+@media (min-width: 1024px) {
+  .fleet-card-link {
+    grid-template-columns: 7fr 5fr;
+    gap: clamp(2rem, 4vw, 4rem);
+    height: min(70dvh, 38rem);
+  }
+}
+
+.fleet-card-photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  align-self: center;
+}
+
+/* The grey copy for the hover. The filter is static; only opacity moves. */
+.fleet-card-grey {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(0.92);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-luxury);
+  pointer-events: none;
+}
+
+.fleet-card-text {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  color: var(--color-paper);
+  min-height: 100%;
 }
 
-.fleet-name {
-  font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(2rem, 6vw, 2.75rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+.fleet-card-name {
+  margin-top: 0.5rem;
+  transition: color 400ms var(--ease-luxury);
 }
 
-.fleet-brand {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-family: var(--font-body);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  line-height: 1.3;
-  text-transform: uppercase;
-  color: var(--color-blush);
+.fleet-card-cta {
+  margin-top: 2rem;
+  align-self: flex-start;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid currentColor;
+  transition: color 300ms ease;
 }
 
-.fleet-specs {
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 300;
-  line-height: 1.5;
-  color: var(--color-blush);
+.fleet-card-link:hover .fleet-card-grey,
+.fleet-card-link:focus-visible .fleet-card-grey {
+  opacity: 1;
 }
 
-.fleet-row-link:hover .fleet-name,
-.fleet-row-link:focus-visible .fleet-name {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.12em;
+.fleet-card-link:hover .fleet-card-name,
+.fleet-card-link:focus-visible .fleet-card-name {
+  color: var(--muted);
 }
 
-.fleet-preview {
-  display: none;
+.fleet-card-link:hover .fleet-card-cta,
+.fleet-card-link:focus-visible .fleet-card-cta {
+  color: var(--accent-text);
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
-  .fleet {
-    min-height: 34rem;
-  }
-
-  .fleet-stack {
-    display: block;
-    position: relative;
-    padding-top: 0.75em;
-    font-size: clamp(3rem, 9.4vw, 10.5rem);
-  }
-
-  .fleet-row {
-    position: relative;
-    height: 0.2em;
-  }
-
-  /* Each link is exactly its own band of the stack, full width, and the
-     glyphs that spill below it ignore the pointer. Moving down the pile
-     therefore steps through the cars one band at a time, instead of the
-     tallest, boldest name swallowing the rows beneath it. */
-  .fleet-row-link {
-    display: block;
-    height: 0.2em;
-    white-space: nowrap;
-  }
-
-  .fleet-name {
-    display: block;
-    pointer-events: none;
-  }
-
-  .fleet-card-photo,
-  .fleet-specs,
-  .fleet-brand {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .fleet-name {
-    font-size: 1em;
-    line-height: 1;
-    letter-spacing: -0.035em;
-    color: rgb(255 255 255 / 0.42);
-    transition: color 300ms ease;
-  }
-
-  .fleet-row-link:hover .fleet-name,
-  .fleet-row-link:focus-visible .fleet-name {
-    text-decoration: none;
-  }
-
-  .fleet-row[data-active='true'] .fleet-name {
-    font-size: 0.8em;
-    font-weight: 900;
-    letter-spacing: -0.045em;
-    color: var(--color-paper);
-    text-shadow: 0.035em 0.035em 0 var(--color-oxblood);
-  }
-
-  .fleet-preview {
-    display: block;
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .fleet-photo-frame {
-    position: absolute;
-    right: 0;
-    top: -14%;
-    width: 38%;
-    aspect-ratio: 3 / 2;
-    perspective: 1400px;
-  }
-
-  .fleet-photo {
-    position: absolute;
-    inset: 0;
-    transform-style: preserve-3d;
-  }
-
-  .fleet-photo > img {
-    box-shadow: var(--shadow-float);
-    transform: rotateX(24deg) rotateY(-20deg) rotateZ(9deg);
-  }
-
-  .fleet-brief {
-    position: absolute;
-    right: 6%;
-    bottom: -4%;
-    width: min(22rem, 30%);
-  }
-
-  .fleet-note {
-    position: absolute;
-    right: 40%;
-    top: -18%;
-  }
-
-  .fleet-rest {
-    position: absolute;
-    left: 58%;
-    top: 34%;
+@media (prefers-reduced-motion: reduce) {
+  /* Without the motion the deck is a plain list: nothing pins or overlaps. */
+  .fleet-card-slot {
+    position: static;
+    padding-bottom: 3rem;
   }
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: reduce) {
-  .fleet-photo > img {
-    transform: none;
-  }
-}
-
-/* A photograph laid on the table at an angle; it straightens to face you on
-   hover or when anything inside it has focus. */
+/* A photograph that lies level and tilts toward you only while the pointer
+   is on it (the car page). */
 .car-tilt {
   perspective: 1400px;
 }
 
 .car-tilt > * {
-  transform: rotateX(9deg) rotateY(-14deg) rotateZ(-1.6deg);
   transition: transform 700ms var(--ease-expo-out);
 }
 
-.car-tilt:hover > *,
-.car-tilt:focus-within > * {
-  transform: none;
+@media (hover: hover) and (pointer: fine) {
+  .car-tilt:hover > * {
+    transform: rotateX(6deg) rotateY(-10deg) rotateZ(-1deg) scale(1.02);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .car-tilt > * {
+  .car-tilt:hover > * {
     transform: none;
   }
+}
+
+/* The car photo carried from the fleet into the car page (CarLink). */
+html[data-vt='car'] [data-car-hero] {
+  view-transition-name: car-photo;
+}
+
+::view-transition-group(car-photo) {
+  animation-duration: 650ms;
+  animation-timing-function: var(--ease-expo-out);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 420ms;
+}
+
+/* Every page arrives rather than snapping in (app/template.tsx). Not while a
+   view transition is carrying the page across: it animates that itself. */
+.page-enter {
+  animation: page-enter 650ms var(--ease-expo-out) both;
+}
+
+html[data-vt] .page-enter {
+  animation: none;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+}
+
+/* Dropdowns. The closed select and its open list in the studio grey, so the
+   options read on every panel (white lists on carmine were unreadable). */
+select {
+  background-color: var(--select-bg);
+}
+
+select option,
+select optgroup {
+  background-color: var(--select-bg);
+  color: var(--ink);
+}
+
+:root {
+  --select-bg: #e2ded9;
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    --select-bg: #2a2825;
+  }
+}
+
+:root[data-theme='dark'] {
+  --select-bg: #2a2825;
 }
 
 /* ==========================================================================
