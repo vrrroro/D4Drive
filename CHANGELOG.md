@@ -7,6 +7,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
+
+Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
+(PR #24). Steps land newest first below, each pushed as it is done.
+
+#### Planned
+- Phase 13 and Phase 14 written into `PROJECT_STATUS.md` with the owner's
+  course rubric and the owner's 18 numbered UI revisions, so any session can
+  resume from the list.
+
 ### 2026-10-08: Phase 12, the scroll film and the editorial redesign
 
 Owner's brief: the hero film should be scrubbed by the scroll instead of
