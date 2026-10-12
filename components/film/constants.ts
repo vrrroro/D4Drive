@@ -17,10 +17,11 @@ export const BOOT_MAX_MS = 6000;
 export const LOADER_FADE_MS = 700;
 
 /**
- * Track length lives in CSS (`--film-track` in globals.css: 760vh, 640vh on
- * portrait), so the server render already has the right height. Almost all
- * of it plays the film in one unbroken run: roughly 12px of wheel per still
- * at 60 a second on a 900px screen.
+ * Track length lives in CSS (`--film-track` in globals.css: 1200vh, 1000vh
+ * on portrait), so the server render already has the right height. Almost
+ * all of it plays the film in one unbroken run: on a 900px screen about 9px
+ * of wheel per still at full pace, and about 26px while it slows for copy
+ * (timeline.SLOWDOWNS).
  */
 
 /**

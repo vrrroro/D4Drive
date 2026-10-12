@@ -6,9 +6,9 @@
  * (tests/film-timeline.test.ts) and FilmStage only has to draw what it is told.
  *
  * Progress `p` runs 0 to 1 across the pinned track. Film positions are given
- * in beats: the source film's own frames at 30 a second, 0 to 263, from 1.25s
- * in. `frameAt` scales beats to however many stills the manifest has (264 at
- * 30 a second, 524 at 60), so the choreography does not change with the cut.
+ * in beats: the film's frames at 30 a second, 0 to 263, from 1.25s in.
+ * `frameAt` scales beats to however many stills the manifest has (264 at 30
+ * a second, 525 at 60), so the choreography does not change with the cut.
  * See docs/VIDEO_STATE_MACHINE.md for the contract.
  */
 
@@ -16,54 +16,50 @@
 export const LAST_BEAT = 263;
 
 /**
- * Scroll-to-film mapping: one long run. The film never stops while the page
- * scrolls; the copy comes and goes over a moving picture. Only the very
- * start (the film appearing in the hero's gap) and the very end (once it has
- * faded into the page) are still. `edge` is the eased share at each end of a
- * moving segment (easeInOut).
+ * The cut: at the top of the page the space between the slogan and the
+ * wordmark is plain grey. The first scroll slits it open across the whole
+ * width, and the slit's two edges move apart, up and down, pushing the slogan
+ * and the wordmark ahead of them, until the film fills its rectangle.
  */
-export const SEGMENTS: ReadonlyArray<{ from: number; to: number; beats: [number, number]; edge?: number }> = [
-  // The film appears in the blank space between the slogan and the wordmark.
-  { from: 0, to: 0.012, beats: [0, 0] },
-  // It opens out to the whole screen and plays through to the smoke.
-  { from: 0.012, to: 0.94, beats: [0, LAST_BEAT], edge: 0.08 },
-  // Gone into the page.
-  { from: 0.94, to: 1, beats: [LAST_BEAT, LAST_BEAT] },
-];
+export const CUT: readonly [number, number] = [0.003, 0.055];
+
+/** How much closer the film sits inside the cut than its own framing, settling as it opens. */
+export const CUT_ZOOM = 1.07;
 
 /**
- * The film blooms out of the blank grey between the slogan and the wordmark
- * between these two points: nothing at the very top of the page, then a
- * soft-edged pool of picture that spreads until it fills the screen.
+ * The film plays across this range of the track, starting from rest just
+ * before the cut is fully open (so it eases into motion as the cut settles)
+ * and coming to rest at the end. `RUN_EDGE` is the eased share at each end.
  */
-export const BLOOM: readonly [number, number] = [0.004, 0.075];
+export const FILM_RUN: readonly [number, number] = [0.045, 0.94];
+export const RUN_EDGE = 0.06;
 
-/** Share of the bloom's radius that is solid picture; the rest feathers into the page. */
-export const BLOOM_CORE = 0.45;
+/**
+ * The film slows down, never stops, while there is something to read. In
+ * these beat ranges it plays at `SLOW` of its pace, easing down to it and
+ * back up over `SLOW_RAMP` beats either side: the copy fades in while the
+ * film decelerates and out while it picks up again. Each range is the shot
+ * its copy is set against: side on (flank), head-on (roast), three-quarter
+ * (delivery). The take-off plays at full pace into the end of the film.
+ */
+export const SLOWDOWNS = {
+  flank: [58, 84],
+  roast: [112, 132],
+  delivery: [160, 190],
+} as const satisfies Record<string, readonly [number, number]>;
 
-/** How much closer the film starts than its own framing, settling as it opens. */
-export const BLOOM_ZOOM = 1.06;
+export const SLOW = 0.35;
+export const SLOW_RAMP = 10;
+
+/** The take-off's copy fades in over these beats, as the smoke starts. */
+export const TAKEOFF_BEATS: readonly [number, number] = [205, 222];
 
 /** The film fades into the page (the same grey) over this range. */
 export const FADE_OUT: readonly [number, number] = [0.88, 0.95];
 
-/**
- * Chapter windows as [fade in from, fully in, start out, gone], each centred
- * on the moment its shot passes: side on (beat 80), head-on (120),
- * three-quarter (176), and the take-off through the smoke.
- */
-export const CHAPTERS = {
-  flank: [0.235, 0.26, 0.335, 0.36],
-  roast: [0.385, 0.41, 0.465, 0.49],
-  delivery: [0.54, 0.565, 0.655, 0.68],
-  takeoff: [0.76, 0.785, 0.88, 0.92],
-} as const satisfies Record<string, readonly [number, number, number, number]>;
-
-export type ChapterId = keyof typeof CHAPTERS;
-
 export const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
-/** Smoothstep easing, for the window, the fades and the chapters. */
+/** Smoothstep easing, for the cut, the fades and the chapters. */
 export const ease = (t: number) => {
   const x = clamp01(t);
   return x * x * (3 - 2 * x);
@@ -82,28 +78,105 @@ export function easeInOut(t: number, edge = 0.18): number {
   return k * (x - edge / 2);
 }
 
-/** The film position in beats for a progress value. Monotonic. */
-export function beatAt(p: number, segments = SEGMENTS): number {
-  const progress = clamp01(p);
-  for (const segment of segments) {
-    if (progress <= segment.to) {
-      const [a, b] = segment.beats;
-      if (a === b) return a;
-      const span = segment.to - segment.from;
-      // Eased at the two ends, so the film starts and stops smoothly rather
-      // than on one scroll pixel; even pace everywhere between.
-      const t = span > 0 ? (progress - segment.from) / span : 1;
-      return a + (b - a) * easeInOut(t, segment.edge);
-    }
+/** 1 inside [lo, hi], easing to 0 over `ramp` either side. */
+function plateau(b: number, lo: number, hi: number, ramp: number): number {
+  if (b <= lo - ramp || b >= hi + ramp) return 0;
+  if (b < lo) return ease((b - (lo - ramp)) / ramp);
+  if (b <= hi) return 1;
+  return 1 - ease((b - hi) / ramp);
+}
+
+/**
+ * How much scroll a beat of film costs, relative to its normal pace: 1, rising
+ * smoothly to 1 / SLOW while there is copy to read. The film's speed is its
+ * inverse, so it eases down and up with no corner anywhere.
+ */
+export function scrollCost(beat: number): number {
+  let extra = 0;
+  for (const [lo, hi] of Object.values(SLOWDOWNS)) extra = Math.max(extra, plateau(beat, lo, hi, SLOW_RAMP));
+  return 1 + (1 / SLOW - 1) * extra;
+}
+
+/** Cumulative scroll cost at every TABLE_STEP of a beat, for inverting. */
+const TABLE_STEP = 1 / 8;
+const COST: number[] = (() => {
+  const table = [0];
+  const steps = Math.round(LAST_BEAT / TABLE_STEP);
+  for (let i = 1; i <= steps; i += 1) {
+    const b = i * TABLE_STEP;
+    table.push(table[i - 1]! + ((scrollCost(b - TABLE_STEP) + scrollCost(b)) / 2) * TABLE_STEP);
   }
-  const last = segments[segments.length - 1];
-  return last ? last.beats[1] : 0;
+  return table;
+})();
+const TOTAL_COST = COST[COST.length - 1]!;
+
+/** The beat at which `cost` of the film's scroll has been spent. */
+function beatForCost(cost: number): number {
+  if (cost <= 0) return 0;
+  if (cost >= TOTAL_COST) return LAST_BEAT;
+  let lo = 0;
+  let hi = COST.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (COST[mid]! <= cost) lo = mid;
+    else hi = mid;
+  }
+  const span = COST[hi]! - COST[lo]!;
+  return (lo + (span > 0 ? (cost - COST[lo]!) / span : 0)) * TABLE_STEP;
+}
+
+/**
+ * The film position in beats for a progress value. Monotonic, and smooth: at
+ * rest before the run, easing into its pace, slowing (never stopping) for
+ * each SLOWDOWN, easing to rest on its last frame.
+ */
+export function beatAt(p: number): number {
+  const t = (clamp01(p) - FILM_RUN[0]) / (FILM_RUN[1] - FILM_RUN[0]);
+  if (t <= 0) return 0;
+  if (t >= 1) return LAST_BEAT;
+  return beatForCost(easeInOut(t, RUN_EDGE) * TOTAL_COST);
+}
+
+/** The progress value at which the film reaches `beat`: beatAt's inverse. */
+export function progressAtBeat(beat: number): number {
+  let lo = FILM_RUN[0];
+  let hi = FILM_RUN[1];
+  for (let i = 0; i < 48; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (beatAt(mid) < beat) lo = mid;
+    else hi = mid;
+  }
+  return Number(((lo + hi) / 2).toFixed(5));
 }
 
 /** Fractional still index for a progress value, for a film of `count` stills. */
-export function frameAt(p: number, count = LAST_BEAT + 1, segments = SEGMENTS): number {
-  return (beatAt(p, segments) / LAST_BEAT) * (count - 1);
+export function frameAt(p: number, count = LAST_BEAT + 1): number {
+  return (beatAt(p) / LAST_BEAT) * (count - 1);
 }
+
+type Window = readonly [number, number, number, number];
+
+const slowWindow = ([lo, hi]: readonly [number, number]): Window => [
+  progressAtBeat(lo - SLOW_RAMP),
+  progressAtBeat(lo),
+  progressAtBeat(hi),
+  progressAtBeat(hi + SLOW_RAMP),
+];
+
+/**
+ * Chapter windows as [fade in from, fully in, start out, gone]. The three
+ * reading chapters are exactly their slowdowns: in while the film slows, held
+ * while it is slow, out while it picks up. The take-off comes in with the
+ * smoke and stays until the film fades into the page.
+ */
+export const CHAPTERS = {
+  flank: slowWindow(SLOWDOWNS.flank),
+  roast: slowWindow(SLOWDOWNS.roast),
+  delivery: slowWindow(SLOWDOWNS.delivery),
+  takeoff: [progressAtBeat(TAKEOFF_BEATS[0]), progressAtBeat(TAKEOFF_BEATS[1]), FADE_OUT[0], 0.92],
+} as const satisfies Record<string, Window>;
+
+export type ChapterId = keyof typeof CHAPTERS;
 
 /** 0 to 1 visibility for a chapter window at progress p. */
 export function chapterOpacity(p: number, [a, b, c, d]: readonly [number, number, number, number]): number {
@@ -114,14 +187,14 @@ export function chapterOpacity(p: number, [a, b, c, d]: readonly [number, number
 }
 
 /**
- * Where the visitor is in the story, for CSS: `hero` before the window starts
- * to open (the hero's letters are hover targets), `film` while it plays,
- * `after` once it has faded into the page.
+ * Where the visitor is in the story, for CSS: `hero` before the cut opens
+ * (the hero's letters are hover targets), `film` while it plays, `after`
+ * once it has faded into the page.
  */
 export type FilmPhase = 'hero' | 'film' | 'after';
 
 export function filmPhase(p: number): FilmPhase {
-  if (p < BLOOM[0]) return 'hero';
+  if (p < CUT[0]) return 'hero';
   if (p < FADE_OUT[1]) return 'film';
   return 'after';
 }
@@ -168,85 +241,70 @@ export function defaultGap(vh: number): Gap {
   return { top: vh * 0.43, bottom: vh * 0.6 };
 }
 
-/** 0 at the top of the page, 1 once the film fills its rectangle. */
-export function bloomAmount(p: number): number {
-  return ease((p - BLOOM[0]) / (BLOOM[1] - BLOOM[0]));
+/** 0 at the top of the page, 1 once the cut has opened to the film's rectangle. */
+export function cutAmount(p: number): number {
+  return ease((p - CUT[0]) / (CUT[1] - CUT[0]));
 }
 
 /**
- * How visible the film is: nothing at the top of the page, so the space
- * between the slogan and the wordmark is plain grey; it comes up over the
- * first part of the bloom, so it appears out of the page rather than popping.
+ * The cut's top and bottom edges, in px. It opens from a line across the
+ * middle of the gap and its edges travel to the film rectangle's, so both
+ * arrive together. `null` once it is fully open: draw unclipped.
  */
-export function bloomAlpha(p: number): number {
-  return ease((p - BLOOM[0]) / ((BLOOM[1] - BLOOM[0]) * 0.55));
+export interface Cut {
+  top: number;
+  bottom: number;
 }
 
-/**
- * The soft ellipse the film is seen through while it blooms: solid inside
- * BLOOM_CORE of its radii, feathering to nothing at the edge, so there is
- * never a hard edge or a rectangle. It starts small in the middle of the
- * gap and grows, its centre drifting to the film's, until its solid core
- * covers the whole film rectangle. `null` once it does: draw unmasked.
- */
-export interface BloomShape {
-  cx: number;
-  cy: number;
-  rx: number;
-  ry: number;
-}
-
-export function bloomShape(p: number, mode: FitMode, vw: number, vh: number, gap: Gap = defaultGap(vh)): BloomShape | null {
-  const t = bloomAmount(p);
+export function cutEdges(p: number, mode: FitMode, vw: number, vh: number, gap: Gap = defaultGap(vh)): Cut | null {
+  const t = cutAmount(p);
   if (t >= 1) return null;
   const frame = filmFrame(mode, vw, vh);
-  const space = Math.max(24, gap.bottom - gap.top);
-  const start = { cx: vw / 2, cy: gap.top + space / 2, rx: vw * 0.24, ry: Math.max(30, space * 0.45) };
-  // Radii whose solid core reaches the frame's corners: (1/sqrt2, 1/sqrt2)
-  // of each half-size lies exactly on the core's ellipse.
-  const end = {
-    cx: frame.x + frame.width / 2,
-    cy: frame.y + frame.height / 2,
-    rx: (Math.SQRT2 * frame.width) / 2 / BLOOM_CORE,
-    ry: (Math.SQRT2 * frame.height) / 2 / BLOOM_CORE,
-  };
-  // The radii grow slowly at first, so the film is seen gathering in the gap
-  // before it spreads; the centre moves evenly.
-  const grow = t ** 1.6;
-  const mix = (a: number, b: number, k: number) => a + (b - a) * k;
+  const mid = gap.top + Math.max(0, gap.bottom - gap.top) / 2;
   return {
-    cx: mix(start.cx, end.cx, t),
-    cy: mix(start.cy, end.cy, t),
-    rx: mix(start.rx, end.rx, grow),
-    ry: mix(start.ry, end.ry, grow),
+    top: mid + (frame.y - mid) * t,
+    bottom: mid + (frame.y + frame.height - mid) * t,
   };
 }
 
 /**
- * The bloom pushes the type out of its way: by the time the film fills the
- * screen the slogan has gone off the top and the wordmark off the bottom,
- * `margin` px clear, whether the film opens to the whole screen (landscape)
- * or to a band (portrait). Transform only, so nothing reflows.
+ * The cut pushes the type out of its way: the slogan rides up on its top
+ * edge and the wordmark down on its bottom edge, `margin` px clear of it, so
+ * they only move once the cut reaches them. By the time it is fully open
+ * both are off the screen, also on portrait, where the film's band stops
+ * short of the screen's edges (the `t ** 3` term carries them the rest of
+ * the way). Transform only, so nothing reflows.
  */
-export function heroPush(p: number, gap: Gap, vh: number, margin = 24): { up: number; down: number } {
-  const t = bloomAmount(p);
+export function heroPush(
+  p: number,
+  mode: FitMode,
+  vw: number,
+  vh: number,
+  gap: Gap,
+  margin = 14,
+): { up: number; down: number } {
+  const t = cutAmount(p);
+  const frame = filmFrame(mode, vw, vh);
+  const edges = cutEdges(p, mode, vw, vh, gap) ?? { top: frame.y, bottom: frame.y + frame.height };
+  const clearTop = gap.top + margin;
+  const clearBottom = Math.max(0, vh - gap.bottom + margin);
   return {
-    up: -(gap.top + margin) * t,
-    down: Math.max(0, vh - gap.bottom + margin) * t,
+    up: Math.min(0, edges.top - margin - gap.top, -clearTop * t ** 3),
+    down: Math.max(0, edges.bottom + margin - gap.bottom, clearBottom * t ** 3),
   };
 }
 
 type Placement = { dx: number; dy: number; dw: number; dh: number };
 
 /**
- * While it blooms the film sits a touch closer (BLOOM_ZOOM, about the
- * bloom's centre) and settles to its own placement as it opens: a short,
- * gentle dolly out.
+ * Inside the cut the film sits a touch closer (CUT_ZOOM, about the cut's
+ * centre) and settles to its own placement as it opens: a short, gentle
+ * dolly out.
  */
-export function bloomFraming(p: number, at: Placement, centre: { x: number; y: number }): Placement {
-  const t = bloomAmount(p);
+export function cutFraming(p: number, at: Placement, centre: { x: number; y: number }): Placement {
+  const t = cutAmount(p);
   if (t >= 1) return at;
-  const zoom = BLOOM_ZOOM + (1 - BLOOM_ZOOM) * t;
+  const zoom = CUT_ZOOM + (1 - CUT_ZOOM) * t;
   return {
     dw: at.dw * zoom,
     dh: at.dh * zoom,

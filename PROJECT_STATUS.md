@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** 16, the island and the bloom (done in code 2026-10-12, branch `feature/island-motion`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 16 verified
+**Current phase:** 17, the film master and the cut (done in code 2026-10-12, branch `feature/film-master`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 17 verified
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -29,11 +29,28 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
 | 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
 | 8 | 15: One grey (the owner's next list) | Done 2026-10-12, PR #27 |
-| 9 | 16: The island and the bloom (the owner's list after 15) | Done in code 2026-10-12, branch `feature/island-motion` |
+| 9 | 16: The island and the bloom (the owner's list after 15) | Done 2026-10-12, PR #28 |
+| 10 | 17: The film master and the cut | Done in code 2026-10-12, branch `feature/film-master` |
 
 ---
 
-### Phase 16: The island and the bloom (done in code 2026-10-12, branch `feature/island-motion`)
+### Phase 17: The film master and the cut (done in code 2026-10-12, branch `feature/film-master`)
+
+The owner's request of 2026-10-12, after Phase 16, with a new 60 a second
+master of the film (`D4DRIVEMAIN.mp4`, in the repo root, gitignored).
+
+- [x] Split the new master into stills: a real 60 a second, no invented frames (v4, 524 stills, 1600x828, 12.1 MB); its two stray repeated frames filled; no repeated stills anywhere (checked pair by pair)
+- [x] The film slows down, never stops, wherever there is copy on screen: three slowdowns (flank, roast, delivery) to 0.35 of the pace, on a smooth speed curve (`scrollCost`, `SLOWDOWNS`); the copy comes in as it slows and goes as it picks up
+- [x] Very smooth: no step in speed anywhere (tested); track lengthened to 1200vh (1000vh portrait) so the full pace stays close to before
+- [x] The loader's wordmark slides in with the old letter-by-letter entrance first, then fills from grey to ink
+- [x] The film comes out of a clean cut in the space between the slogan and the wordmark; the cut's edges move apart in opposite directions, pushing the slogan up and the wordmark down, then the scrub starts smoothly (`cutEdges`, `heroPush`, `FILM_RUN`)
+- [x] The reduced-motion "Play the film" video and poster re-encoded from the new master
+- [x] Found on the way: the slogan's descenders (the y of "you.") hung below its box into the film; the cut now clears them
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (47 pass, 4 skip), `build`, `smoke` (62/62), screens at 1440x900 and 390x844
+- [ ] On real phones: the cut, the slowdowns, the scrub (needs devices)
+- [ ] Lighthouse on the landing (12.1 MB of stills on desktop, loaded coarse to fine)
+
+### Phase 16: The island and the bloom (done 2026-10-12, PR #28)
 
 The owner's list of 2026-10-12, after Phase 15.
 

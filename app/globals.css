@@ -463,7 +463,7 @@ main > .panel:not(.panel ~ .panel) {
 
 .film-track {
   position: relative;
-  height: var(--film-track, 760vh);
+  height: var(--film-track, 1200vh);
 }
 
 .film-stage {
@@ -501,9 +501,9 @@ main > .panel:not(.panel ~ .panel) {
 
 /* --- Hero ----------------------------------------------------------------
    The slogan at the top left, the whole wordmark at the bottom right, blank
-   grey between. The first scroll blooms the film out of that grey
-   (FilmStage) and pushes the type away (--hero-up, --hero-down), transform
-   only. */
+   grey between. The first scroll cuts that grey open across the width
+   (FilmStage); the cut's edges part and push the type away (--hero-up,
+   --hero-down), transform only. */
 
 .hero-slogan {
   position: absolute;
@@ -615,7 +615,7 @@ main > .panel:not(.panel ~ .panel) {
   /* A thumb covers ground faster than a wheel: a shorter track keeps the
      film's pace the same. */
   .film-track {
-    --film-track: 640vh;
+    --film-track: 1000vh;
   }
 
   .film-stage {

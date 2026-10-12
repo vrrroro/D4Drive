@@ -7,6 +7,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-12: Phase 17, the film master and the cut (branch `feature/film-master`, stacked on PR #28)
+
+The owner's request after Phase 16, with a new master of the film,
+`D4DRIVEMAIN.mp4` (60 a second, 2560x1324; gitignored, never committed).
+
+#### Changed
+- **The stills come from the new master** (`public/film/v4`, 524 stills,
+  1600x828, 12.1 MB; v3 removed). It is the same film and soundtrack to the
+  frame, shot at a real 60 a second, so nothing is interpolated any more
+  except its two stray repeated frames (5.0s, 9.55s), which `mpdecimate`
+  drops and `minterpolate` refills. Checked pair by pair: no repeated stills.
+  The reduced-motion video and its poster are re-encoded from it too.
+- **The film slows for its copy instead of running at one pace.** Three
+  slowdowns (side on, head-on, three-quarter) to 0.35 of the pace, on a
+  smooth speed curve: each beat has a scroll cost that eases up and down with
+  smoothstep ramps, and the cumulative cost is inverted to map scroll to film
+  (`scrollCost`, `SLOWDOWNS`, `progressAtBeat`). The chapters are derived
+  from it: in as the film slows, fully up while it is slow, out as it picks
+  up. It never stops and never steps in speed (both tested). The track is
+  1200vh (1000vh portrait) so the full pace stays near Phase 16's.
+- **The film comes out of a cut, not a bloom.** At the top of the page the
+  gap is plain grey; the first scroll slits it open across the whole width,
+  and the slit's edges part in opposite directions, pushing the slogan up and
+  the wordmark down ahead of them, until the film fills its rectangle; the
+  scrub starts from rest just before the cut settles (`CUT`, `cutEdges`,
+  `heroPush`, `cutFraming`, `FILM_RUN`). The soft-ellipse bloom is gone.
+- **The loader's letters slide in first.** The wordmark's grey letters
+  spring up one by one (the hero wordmark's old entrance), and only once the
+  last has landed do they fill from grey to ink.
+
+#### Fixed
+- The slogan's descenders (the y of "you.") hung below its box, into the
+  film and, pushed off, peeking out at the top of the screen. The measured gap
+  now includes them.
+
+#### Verified
+- `lint`, `lint:copy`, `typecheck`, `npm test` (47 pass, 4 skip), `build`,
+  `npm run smoke` (62/62 against `next start`; new checks: the letters slide
+  in before the fill, a clean full-width cut, the slogan clear of it, the
+  film slower while its copy is up), screens at 1440x900 and 390x844.
+  `npm run db:setup` afterwards.
+
 ### 2026-10-12: Phase 16, the island and the bloom (branch `feature/island-motion`, stacked on PR #27)
 
 The owner's list after Phase 15, with a screenshot of the red ribbon in the

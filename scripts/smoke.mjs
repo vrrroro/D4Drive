@@ -56,6 +56,22 @@ function watch(page, label) {
   // navigation start, so it is on screen from the first paint.
   const loader = await page.getByRole('progressbar').waitFor({ state: 'visible', timeout: 5000 }).then(() => true, () => false);
   ok('boot loader shows a progressbar', loader);
+  // Its grey letters spring up one by one, and the ink waits for the last.
+  let staggered = false;
+  let inkWaited = true;
+  for (let i = 0; i < 40 && !staggered; i += 1) {
+    const s = await page.evaluate(() => {
+      const ys = [...document.querySelectorAll('[data-boot-loader] [data-loader-letter]')].map((el) => new DOMMatrix(getComputedStyle(el).transform).m42);
+      const ink = document.querySelector('[data-boot-loader] [data-loader-ink]');
+      return { ys, ink: ink ? new DOMMatrix(getComputedStyle(ink).transform).m42 / ink.offsetHeight : 1 };
+    }).catch(() => ({ ys: [], ink: 1 }));
+    if (s.ys.length === 7 && s.ys[6] - s.ys[0] > 5) {
+      staggered = true;
+      inkWaited = s.ink > 0.99;
+    }
+    await page.waitForTimeout(40);
+  }
+  ok('the loader letters slide in one by one before the fill', staggered && inkWaited, `staggered=${staggered} inkWaited=${inkWaited}`);
   await page.locator('[data-film-ready="true"]').waitFor({ timeout: 15000 });
   ok('loader lets go once the film has arrived', (await page.locator('[data-boot-loader]').count()) === 0);
   await page.screenshot({ path: `${SHOTS}/01-hero.png` });
@@ -106,12 +122,22 @@ function watch(page, label) {
     `logo=${Math.round((await logoBox()).x)} glass=${(await glassOpacity()).toFixed(2)}`);
   ok('the red dot and the back-to-top button are gone', (await page.locator('[data-easter-egg]').count()) === 0 && (await page.getByRole('button', { name: 'Back to top' }).count()) === 0);
 
-  // A little scroll: the film blooms out of the gap with no hard edge, and
-  // the header docks into the glass island around the logo and the links.
+  // A little scroll: a clean cut opens across the gap's whole width, and the
+  // header docks into the glass island around the logo and the links.
   await scrubTo(0.02);
-  const centre = await alphaAt('centre');
-  const corner = await alphaAt('corner');
-  ok('the film blooms out of the gap, soft at the edges', centre > 100 && corner < centre, `centre=${centre} corner=${corner}`);
+  const cut = await page.evaluate(() => {
+    const c = document.querySelector('[data-film-canvas]');
+    const r = c.width / c.clientWidth;
+    const column = (x) => Array.from(c.getContext('2d').getImageData(Math.round(x * r), 0, 1, c.height).data.filter((_, i) => i % 4 === 3));
+    const middle = column(innerWidth / 2);
+    const edge = column(3);
+    const top = middle.findIndex((a) => a > 0);
+    const bottom = middle.length - 1 - [...middle].reverse().findIndex((a) => a > 0);
+    return { top: top / r, bottom: bottom / r, sharp: middle[top + Math.ceil(2 * r)] === 255 && middle[top - 1] === 0, wide: edge[Math.round((top + bottom) / 2)] === 255, height: c.clientHeight };
+  });
+  ok('a clean cut opens across the whole width of the gap', cut.top > 40 && cut.bottom < cut.height - 40 && cut.sharp && cut.wide, JSON.stringify(cut));
+  const sloganBottom = await page.locator('[data-hero-slogan]').evaluate((el) => el.getBoundingClientRect().bottom);
+  ok('the slogan stays clear of the cut', sloganBottom <= cut.top + 1, `slogan=${Math.round(sloganBottom)} cut=${Math.round(cut.top)}`);
   ok('scrolling docks the header into the island', (await header.getAttribute('data-docked')) === 'true' && (await glassOpacity()) > 0.95 && (await logoBox()).x > 300,
     `logo=${Math.round((await logoBox()).x)} glass=${(await glassOpacity()).toFixed(2)}`);
   const glassWidth = () => page.locator('[data-island-glass]').evaluate((el) => Math.round(el.getBoundingClientRect().width));
@@ -122,13 +148,19 @@ function watch(page, label) {
   }
   ok('the island grows and shrinks with the typed word', widths.size > 2, `${widths.size} widths`);
 
-  await scrubTo(0.42);
+  await scrubTo(0.13);
+  const runFrom = await frame();
+  await scrubTo(0.15);
+  const runPace = (await frame()) - runFrom;
+  await scrubTo(0.44);
   const middle = await frame();
   ok('scrolling scrubs the film forward toward the head-on shot', middle > 100 && middle < 130, `beat=${middle}`);
   const help = page.locator('[data-chapter="roast"]');
   ok('the chapter for that moment is on screen', Number(await help.evaluate((el) => getComputedStyle(el).opacity)) > 0.9);
   await scrubTo(0.46);
-  ok('the film keeps moving while its copy is up: no holds', (await frame()) > middle + 3, `beat=${await frame()}`);
+  const slowPace = (await frame()) - middle;
+  ok('the film keeps moving while its copy is up: no holds', slowPace >= 2, `beat=${await frame()}`);
+  ok('and slows down for it', slowPace < runPace * 0.6, `slow=${slowPace} full=${runPace}`);
   await page.screenshot({ path: `${SHOTS}/02-film.png` });
 
   await scrubTo(0.1);

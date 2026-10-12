@@ -28,18 +28,26 @@ keyframe, which stutters in Safari and Firefox and depends on the encode. The
 film ships instead as a numbered sequence of stills drawn into a canvas:
 
 - `scripts/build-film-frames.mjs` cuts the film from 1.25s (past the fade up
-  from black) to the end at 60 stills a second: 523 stills, 1600x900 WebP at
-  quality 70, about 22 KB each, 11.1 MB in all. Phones load every other still
-  (about 5.5 MB).
-- **The source is 24 frames a second padded to 30** (pulldown: every fifth
+  from black) to the end at 60 stills a second: 524 stills, 1600x828 WebP at
+  quality 70, about 23 KB each, 12.1 MB in all. Phones load every other still
+  (about 6 MB).
+- **Since v4 the source is the owner's master, `D4DRIVEMAIN.mp4`** (kept in
+  the repo root, gitignored, never committed): the same film and soundtrack
+  to the frame, but shot at a real 60 a second, 2560x1324 (a touch wider than
+  16:9) and far sharper. Every still is a real frame. The master holds two
+  single repeated frames past the fade (5.0s and 9.55s); a repeat is a dead
+  spot on a slow scroll, so the script drops them (`mpdecimate`, tight
+  thresholds) and `minterpolate` fills just those two gaps (it copies through
+  every frame that lands on a real one). A check of every pair of neighbouring
+  stills finds no repeats. `--fps 30` takes every other frame.
+- **History: the old source was 24 frames a second padded to 30** (pulldown: every fifth
   frame repeats; ffmpeg's `mpdecimate` keeps 72 of 90 over three seconds).
   v2 interpolated the padded 30 straight to 60, so every repeat became a dead
   spot of three identical stills in every ten, and a slow scroll felt the car
   stop, then lurch on (the owner's "jitters as I scroll slowly"). Since v3
   the script drops the repeats first (`decimate=cycle=5`) and interpolates
   from the real 24 with ffmpeg's motion-compensated `minterpolate`, so every
-  still moves the car the same distance. `--fps 30` builds a 30-a-second cut
-  the same way.
+  still moves the car the same distance.
 - It also measures where the car is in each frame (it is the only saturated red
   on a grey set) and writes that, smoothed, to `lib/film-manifest.ts`, along
   with the count and sizes.
@@ -47,15 +55,16 @@ film ships instead as a numbered sequence of stills drawn into a canvas:
   the RMS climbs from -23 dB to -12 dB). Only the red-dot easter egg played
   it, and that was removed on 2026-10-12; the clip is still cut, unused.
 
-The output folder is versioned (`public/film/v3`) and served immutable. Change
+The output folder is versioned (`public/film/v4`) and served immutable. Change
 the film, bump `VERSION` in the script.
 
 ---
 
 ## 2. Geometry
 
-The film is pinned (`position: sticky`) inside a track 760vh tall (640vh on
-portrait). Almost all of it plays the film, in one run.
+The film is pinned (`position: sticky`) inside a track 1200vh tall (1000vh on
+portrait), longer than before (760vh) because the film now slows for each
+piece of copy. Almost all of it plays the film, in one run.
 
 Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
 
@@ -64,22 +73,26 @@ Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
 | `cover` | aspect at least 1.1 | Fills the viewport, crops symmetrically |
 | `band` | portrait | A horizontal band (46% of the height), cropped to keep the car centred using the manifest's per-frame focus, never past the frame's own edges. The band's top and bottom dissolve into the page. |
 
-**The hero and the bloom.** The first screen is type only: the slogan at
-the top left, the whole `D4DRIVE` wordmark at the bottom right (sized to the
+**The hero and the cut.** The first screen is type only: the slogan at the
+top left, the whole `D4DRIVE` wordmark at the bottom right (sized to the
 height left, never cropped), and blank grey between them. Nothing is drawn
 there while the page is at its top: no slab, no window, no rectangle (the
-owner's rule, 2026-10-12). The first scroll blooms the film out of that grey
-(`BLOOM`, 0.004 to 0.075 of the track): FilmStage measures the gap from the
-layout (`[data-hero-slogan]`, `[data-hero-wordmark]`) and draws the whole film
-frame through a soft ellipse centred in it (`timeline.bloomShape`): solid in
-its core (`BLOOM_CORE`, 45% of the radius), feathering to nothing with a
-smoothstep falloff, so there is never an edge. The ellipse grows (slowly at
-first) and drifts to the film's centre until its core covers the whole film
-rectangle, then the mask is dropped. The picture fades up over the first part
-of it (`bloomAlpha`) and settles from 1.06x to its own framing
-(`bloomFraming`), a short dolly out. The bloom pushes the slogan up and the
-wordmark down (`heroPush`, written as `--hero-up` and `--hero-down`, transform
-only) until both are off the screen, in either fit mode.
+owner's rule). The first scroll cuts that grey open (`CUT`, 0.003 to 0.055 of
+the track, the owner's call of 2026-10-12, replacing the soft bloom of Phase
+16): a clean slit across the whole width, from a line in the middle of the
+gap, whose top and bottom edges move apart (`timeline.cutEdges`) until they
+reach the film rectangle's. FilmStage measures the gap from the layout
+(`[data-hero-slogan]`, `[data-hero-wordmark]`; the slogan's bottom includes
+its descenders, which hang below its box). The edges push the type ahead of
+them (`heroPush`, written as `--hero-up` and `--hero-down`, transform only):
+the slogan rides up on the top edge and the wordmark down on the bottom one,
+14px clear, so they only move once the cut reaches them, and both are off the
+screen once it is open, in either fit mode (on portrait, where the band stops
+short of the screen edges, a `t^3` term carries them the rest of the way).
+Inside the cut the film sits at 1.07x and settles to its own framing
+(`cutFraming`), a short dolly out. The scrub starts from rest just before
+the cut has finished opening (`FILM_RUN[0]`, 0.045), so one flows into the
+other.
 
 **One grey.** The page is the film's own studio grey (`#BDBCBA`, measured off
 the stills), so the film needs no toning layer: it sits on the page, and when
@@ -93,25 +106,34 @@ scales them to however many stills the manifest has.
 
 | p | Beats | Beat |
 |---|---|---|
-| 0 to 0.012 | 0 | The film fades in, in the hero's gap (if the entrance has not already shown it) |
-| 0.012 to 0.94 | 0 to 263 | One run: the window opens (to 0.07), the pull back along the flank, the turn to face you and away, the burnout and take-off |
+| 0 to 0.055 | 0 | The cut opens in the hero's gap |
+| 0.045 to 0.94 | 0 to 263 | One run (`FILM_RUN`): the pull back along the flank, the turn to face you and away, the burnout and take-off, slowing three times for copy |
 | 0.94 to 1 | 263 | Gone into the page; from 0.88 to 0.95 the film fades into the grey |
 
-The run eases in and out (`easeInOut` with an 8% edge: quadratic at each end,
-linear between), so the film pulls away gently and settles gently, and moves
-at an even pace everywhere else. There are no holds: it never stops while the
-page scrolls (tested). The mapping is monotonic: scrolling forward never
-plays the film backward.
+**Slowing for copy, never stopping** (the owner's call, 2026-10-12). The
+film's pace is a smooth curve, not a set of segments. Each beat has a scroll
+cost (`scrollCost`): 1 normally, rising to `1 / SLOW` (SLOW is 0.35) inside
+each of the three `SLOWDOWNS`, with smoothstep ramps `SLOW_RAMP` (10 beats)
+either side. The cumulative cost, tabled every eighth of a beat and inverted,
+gives the beat for a share of the run's scroll; `easeInOut` (6% edge) on top
+lets the run start and end at rest. So the film runs at full pace, eases down
+to about a third of it while there is something to read, and eases back up,
+with no step in speed anywhere (tested) and no hold (tested: it keeps moving
+everywhere inside the run). On a 900px screen that is about 9px of wheel per
+still at full pace and about 26px while slowed. The mapping is monotonic:
+scrolling forward never plays the film backward.
 
-Copy (`CHAPTERS`, as fade-in-from, fully-in, start-out, gone), each centred on
-the moment its shot passes, over a moving picture:
+Copy (`CHAPTERS`, as fade-in-from, fully-in, start-out, gone) is derived from
+the slowdowns (`progressAtBeat`): each reading chapter fades in while the
+film slows for it, is fully up exactly while it is slow, and fades out while
+it picks up again.
 
-| Chapter | Window | Passing | Space it uses |
-|---|---|---|---|
-| Flank | 0.235 to 0.36 | side on, beat 80 | The band above the car; body top right; the "not for rent" note at the roof |
-| Roast | 0.385 to 0.49 | head-on, beat 120 | The flanks while the car faces the camera; body on the floor |
-| Delivery | 0.54 to 0.68 | three-quarter, beat 176 | The band above; tiers top right; body on the floor |
-| Take-off | 0.76 to 0.92 | the smoke | The smoke, going with the film |
+| Chapter | Slow beats | Window (p) | Shot | Space it uses |
+|---|---|---|---|---|
+| Flank | 58 to 84 | 0.160 to 0.366 | side on | The band above the car; body top right; the "not for rent" note at the roof |
+| Roast | 112 to 132 | 0.381 to 0.556 | head-on | The flanks while the car faces the camera; body on the floor |
+| Delivery | 160 to 190 | 0.571 to 0.798 | three-quarter | The band above; tiers top right; body on the floor |
+| Take-off | in over 205 to 222 | 0.807 to 0.92 | the smoke | The smoke, at full pace into the end of the film |
 
 No two chapters are ever on screen at once (tested). Opacity follows the scroll
 exactly; each chapter's drift is on a spring, so copy keeps settling for a
@@ -135,16 +157,16 @@ Each draw:
 1. Sets the canvas opacity from the fade (`FADE_OUT`, 0.88 to 0.95). Always,
    even when the frame has not changed.
 2. Writes the hero push (`--hero-up`, `--hero-down`) when it changed.
-3. Works out the fractional frame and the bloom. Skips if nothing moved.
-4. Draws the exact still, or the nearest loaded one, into the film rectangle
-   at `bloomAlpha`, with nothing behind it. If the playhead sits between two
-   stills, blends the next one in by the fraction.
-5. While it blooms, keeps only what lies inside the soft ellipse
-   (`destination-in` with a radial gradient, squashed to the ellipse).
-6. In band mode, once bloomed, fades the band's edges into the page ground
-   (to the ground colour at zero alpha, not to transparent black, which draws
-   a grey bar).
-7. Asks the loader to decode the next eight stills in the direction of travel
+3. Works out the fractional frame and the cut. Skips if nothing moved, and
+   draws nothing while the cut is shut.
+4. Draws the exact still, or the nearest loaded one, clipped to the cut (the
+   whole width between its edges) or, once open, to the film rectangle, with
+   nothing behind it. If the playhead sits between two stills, blends the
+   next one in by the fraction.
+5. In band mode fades the band's edges into the page ground, coming up over
+   the last 30% of the cut (to the ground colour at zero alpha, not to
+   transparent black, which draws a grey bar).
+6. Asks the loader to decode the next eight stills in the direction of travel
    (`FrameLoader.warm`, `img.decode()`), so a still's first draw is never a
    synchronous decode. Each still is also decoded as it arrives.
 
@@ -166,7 +188,7 @@ does not show.
 Stills stay as `HTMLImageElement`s. Each is decoded (`img.decode()`, off the
 main thread) before it is offered for drawing, and the ones ahead of the
 playhead are decoded again on the way (`warm`), because the browser may drop
-decoded pixels it is not using. They are not held as ImageBitmaps: 523 decoded
+decoded pixels it is not using. They are not held as ImageBitmaps: 524 decoded
 frames would pin about 3 GB.
 
 ---
@@ -175,8 +197,10 @@ frames would pin about 3 GB.
 
 The loader covers the landing until the coarse pass is in. It is the
 wordmark alone, in the very place the hero keeps it (it uses the hero's own
-`.hero-base` and `.hero-wordmark`), filling from grey to ink from the bottom
-up as the stills arrive: the ink is a second copy of the letters inside a
+`.hero-base` and `.hero-wordmark`). Its grey letters first spring up into
+place one by one (the hero wordmark's old entrance: a spring, 90ms apart);
+only once the last has landed (its `onAnimationComplete`, or 2.4s at most) do
+they fill from grey to ink from the bottom up as the stills arrive: the ink is a second copy of the letters inside a
 window that rises while the letters inside it move down by the same amount,
 two transforms. It fades only once the letters are full, onto the hero's
 wordmark, which is already in place underneath (it no longer has an entrance
@@ -235,12 +259,12 @@ components/film/
   FilmHero.tsx       the opening frame and its entrance
   FilmChapter.tsx    one beat of copy
   FilmOnRequest.tsx  the film as a video, for reduced motion
-  BootLoader.tsx     the wordmark filling grey to ink
+  BootLoader.tsx     the wordmark sliding in, then filling grey to ink
   FilmContext.tsx    progress, ready, reduced
   frame-loader.ts    fetch order and nearest-frame lookup
   timeline.ts        every number above, pure
   constants.ts       loader timings, spring, video sources
 lib/film-manifest.ts generated: count, sizes, per-frame car position
 scripts/build-film-frames.mjs
-public/film/v3/      the stills and engine.m4a
+public/film/v4/      the stills and engine.m4a
 ```
