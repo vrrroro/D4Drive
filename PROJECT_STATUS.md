@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** 15, one grey (done in code 2026-10-12, branch `feature/one-grey`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 15 verified
+**Current phase:** 16, the island and the bloom (done in code 2026-10-12, branch `feature/island-motion`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 16 verified
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -28,11 +28,40 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
 | 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
 | 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
-| 8 | 15: One grey (the owner's next list) | Done in code 2026-10-12, branch `feature/one-grey` |
+| 8 | 15: One grey (the owner's next list) | Done 2026-10-12, PR #27 |
+| 9 | 16: The island and the bloom (the owner's list after 15) | Done in code 2026-10-12, branch `feature/island-motion` |
 
 ---
 
-### Phase 15: One grey (done in code 2026-10-12, branch `feature/one-grey`)
+### Phase 16: The island and the bloom (done in code 2026-10-12, branch `feature/island-motion`)
+
+The owner's list of 2026-10-12, after Phase 15.
+
+- [x] No rectangle in the hero's gap: the film blooms out of the blank grey itself, with no edge (`bloomShape`), only once the page moves
+- [x] The `D4DRIVE` wordmark back at the bottom right of the landing
+- [x] Fix the scrub going backwards and jittering on a slow scroll (the source's pulldown repeats; stills rebuilt as v3)
+- [x] Replace the loader with the wordmark filling from grey to ink
+- [x] Fix the fleet (from the header) not opening at the top
+- [x] Fleet hover: words red and a slight red shadow under the car, instead of greying
+- [x] Fix a car page opening at the bottom
+- [x] Car page: a smaller name, details fitted beside the photo, "How it gets to you" directly beneath
+- [x] Header: open at the top of a page (logo top left, the rest top right, no glass); glides into the island once the page moves; more opaque, more glass
+- [x] The island grows and shrinks smoothly with the typed "Let's ___" word
+- [x] Remove photo credits from the account menu and the footer
+- [x] Branch addresses five on top, five below
+- [x] Fix the grey flash between pages; a car click flies the photo to the top, then the details arrive
+- [x] Confirmation: the whole page slides into carmine, the bottom included
+- [x] "this is important." arrow placed clear of the words
+- [x] Checkout map in colour
+- [x] Checkout note: "relax, nobody gets charged yet."
+- [x] Found on the way: the first line of every page sat under the header on phones (`.panel` beat the `pt-` utilities)
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `build`, `smoke` (59/59), screens at 1440x900 and 390x844
+- [ ] On real phones: the bloom, the docking header, the scrub (needs devices)
+- [ ] Lighthouse on the landing
+
+---
+
+### Phase 15: One grey (done 2026-10-12, PR #27)
 
 The owner's list of 2026-10-12, after Phase 14. Decisions the owner made when
 asked: the whole site is the film's studio grey (`#BDBCBA`, "film appears
@@ -327,7 +356,7 @@ Found and fixed in this phase:
 
 - **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered and deliberately not decided by an agent.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
 - **Dark mode:** removed in Phase 15 (the owner's decision). The old dark-mode accent question is moot. On the grey, small accent text is carmine-deep (5.5:1) and carmine is kept for large type (3.8:1).
-- **Carmine panels:** `/login` and the confirmation are still carmine (the owner kept the confirmation red in Phase 14). Phase 15's "one grey" was read as covering the greys only; confirm.
+- **Carmine sign-in:** `/login` is still carmine. Phase 15's "one grey" was read as covering the greys only; confirm. (The confirmation is settled: the owner asked in Phase 16 for the whole page to turn carmine.)
 - **Island corners:** square, per radius 0; a rounded pill is one line if wanted.
 - **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
 - **Logo loader:** needs a carmine render of the mark, or a decision to drop it.
