@@ -17,10 +17,10 @@ export const BOOT_MAX_MS = 6000;
 export const LOADER_FADE_MS = 700;
 
 /**
- * Track length lives in CSS (`--film-track` in globals.css: 1000vh, 850vh on
- * portrait), so the server render already has the right height. About half
- * of it plays the film (the rest is the four holds and the fades): roughly
- * 9px of wheel per still at 60 a second on a 900px screen.
+ * Track length lives in CSS (`--film-track` in globals.css: 760vh, 640vh on
+ * portrait), so the server render already has the right height. Almost all
+ * of it plays the film in one unbroken run: roughly 12px of wheel per still
+ * at 60 a second on a 900px screen.
  */
 
 /**
@@ -30,11 +30,11 @@ export const LOADER_FADE_MS = 700;
 export const PROGRESS_SPRING = { stiffness: 260, damping: 42, mass: 0.35, restDelta: 0.00005 } as const;
 
 /**
- * The black slab fades in by itself between the slogan and the wordmark,
- * after the slogan's lines have landed, then waits for the scroll to open it.
- * Scrolling first shows it at once (timeline.slabAlpha).
+ * The film fades in by itself in the space between the slogan and the
+ * wordmark, after the slogan's lines have landed, then waits for the scroll
+ * to open it. Scrolling first shows it at once (timeline.appearAlpha).
  */
-export const SLAB_ENTRANCE = { delay: 1.5, duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] } as const;
+export const APPEAR_ENTRANCE ={ delay: 1.5, duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] } as const;
 
 /** Session flag: the hero's entrance has played once this session. */
 export const ENTRANCE_SEEN_KEY = 'd4drive:entrance-seen';

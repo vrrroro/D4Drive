@@ -21,7 +21,7 @@ export async function LocationsSection({ showFleetLink = true }: { showFleetLink
   }
 
   return (
-    <section aria-labelledby="locations-title" data-tone="light" className="tone-ground px-[var(--gutter)] pb-[clamp(3rem,6vw,6rem)] pt-[clamp(4rem,8vw,8rem)]">
+    <section aria-labelledby="locations-title" data-tone="light" className="tone-ground px-[var(--gutter)] pb-[clamp(4rem,8vw,8rem)] pt-[clamp(4rem,8vw,8rem)]">
       <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-x-12">
         <div className="lg:col-span-7">
           <h2 id="locations-title" className="t-label leading-relaxed text-[var(--muted)]">
@@ -77,10 +77,6 @@ export async function LocationsSection({ showFleetLink = true }: { showFleetLink
           </div>
         )}
       </div>
-
-      <p aria-hidden="true" className="t-condensed mt-[clamp(5rem,10vw,9rem)] select-none whitespace-nowrap text-[clamp(7rem,30vw,34rem)] leading-[0.76]">
-        D4Drive
-      </p>
     </section>
   );
 }

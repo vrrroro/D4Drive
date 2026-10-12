@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter, Shadows_Into_Light_Two, Six_Caps } from 'next/font/google';
-import { BackToTop } from '@/components/motion/BackToTop';
 import { CursorHalo } from '@/components/motion/CursorHalo';
 import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { Grain } from '@/components/ui/Grain';
@@ -56,7 +55,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f9f8f6',
+  themeColor: '#bdbcba',
   width: 'device-width',
   initialScale: 1,
 };
@@ -66,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-IN" className={`${fraunces.variable} ${sixCaps.variable} ${inter.variable} ${marker.variable}`}>
       <body>
         {/* 24px into the document. HeaderTone watches it: once it has left the
-            screen the page has moved, and the header gains its frosted bar. */}
+            screen the page has moved, and the island firms up its glass. */}
         <div data-scroll-sentinel aria-hidden="true" className="pointer-events-none absolute left-0 top-6 h-px w-px" />
         <ToastProvider>
           <SmoothScroll />
@@ -75,7 +74,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <SiteFooter />
-          <BackToTop />
         </ToastProvider>
         <CursorHalo />
         <Grain />

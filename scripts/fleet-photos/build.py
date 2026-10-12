@@ -4,13 +4,20 @@ Fleet photography pipeline.
 Downloads each photograph listed in picks.json from Wikimedia Commons, cuts
 the car out of its background, blurs a readable number plate, and sets the car
 on the hero film's cyclorama with a contact shadow, so the whole fleet reads
-as one studio shoot. Writes public/cars/<slug>.webp and
+as one studio shoot. Then it relights the whole frame to the site's one grey
+(relight()), so the backdrop is exactly the page colour and a car stands on
+the page with no box around it. Writes public/cars/<slug>.webp and
 public/cars/credits.json.
 
     python -m venv .venv
     .venv/Scripts/pip install "rembg[cpu]" scipy pillow numpy      (Windows)
     .venv/bin/pip install "rembg[cpu]" scipy pillow numpy          (macOS, Linux)
     python scripts/fleet-photos/build.py [--work .cache/fleet-photos]
+
+    python scripts/fleet-photos/build.py --relight-only
+        Relights the photos already in public/cars without rebuilding them
+        (numpy and pillow only). Safe to run twice: a photo whose backdrop is
+        already the page grey is left alone.
 
 The cutout model (BiRefNet lite, about 220 MB) downloads on first run into the
 work folder. Every source is CC BY or CC BY-SA; credits.json records author,
@@ -31,8 +38,10 @@ OUT = os.path.join(ROOT, 'public', 'cars')
 UA = 'D4DriveAssetScript/1.0 (https://github.com/vrrroro/D4Drive)'
 
 W, H = 2400, 1600            # master canvas; written out at 1600x1067
+OUT_SIZE = (1600, 1067)
 CAR_W, MAX_CAR_H = 0.80, 0.64  # car width, and a height cap for tall cars
 GROUND = 0.84                  # where every car's lowest point sits
+PAGE = np.array([189, 188, 186], np.float32)  # #BDBCBA, --color-ground in app/globals.css
 
 
 def download(url, path):
@@ -67,6 +76,46 @@ def backdrop():
     img -= (np.clip(vignette - 0.75, 0, 1) * 18)[..., None]
     img += np.random.default_rng(7).normal(0, 1.4, img.shape).astype(np.float32)
     return Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), 'RGB').convert('RGBA')
+
+
+def relight(frame, base):
+    """
+    Relight a finished frame so its backdrop becomes the page grey.
+
+    Every pixel is multiplied by page / backdrop, the light that backdrop pixel
+    had. A backdrop pixel becomes the page colour exactly, a shadow keeps its
+    depth, and the car takes the same light: as if the whole studio had been
+    lit to the page's grey. No cutout is needed, so it also works on the
+    finished photographs. `base` is backdrop() at the frame's size.
+    """
+    arr = np.asarray(frame.convert('RGB'), np.float32)
+    ratio = PAGE[None, None, :] / np.maximum(np.asarray(base.convert('RGB'), np.float32), 1)
+    return Image.fromarray(np.clip(arr * ratio + 0.5, 0, 255).astype(np.uint8), 'RGB')
+
+
+def already_relit(photo):
+    """True when the photo's top band (backdrop only) is the page grey already."""
+    arr = np.asarray(photo.convert('RGB'), np.float32)
+    band = arr[: arr.shape[0] // 12].reshape(-1, 3).mean(axis=0)
+    return float(np.abs(band - PAGE).max()) < 3
+
+
+def relight_only():
+    base = backdrop().convert('RGB').resize(OUT_SIZE, Image.LANCZOS)
+    for name in sorted(os.listdir(OUT)):
+        if not name.endswith('.webp'):
+            continue
+        target = os.path.join(OUT, name)
+        photo = Image.open(target)
+        photo.load()
+        if photo.size != OUT_SIZE:
+            print(name, 'skipped: not a fleet composite', flush=True)
+            continue
+        if already_relit(photo):
+            print(name, 'already relit', flush=True)
+            continue
+        relight(photo, base).save(target, 'WEBP', quality=82, method=6)
+        print(name, os.path.getsize(target) // 1024, 'KB', flush=True)
 
 
 def place(cut):
@@ -135,7 +184,11 @@ def blur_plate(cut, box):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--work', default=os.path.join(ROOT, '.cache', 'fleet-photos'))
+    parser.add_argument('--relight-only', action='store_true', help='relight the photos already in public/cars')
     args = parser.parse_args()
+    if args.relight_only:
+        relight_only()
+        return
     os.makedirs(args.work, exist_ok=True)
     os.makedirs(OUT, exist_ok=True)
     os.environ.setdefault('U2NET_HOME', os.path.join(args.work, 'models'))
@@ -144,6 +197,7 @@ def main():
 
     session = new_session('birefnet-general-lite')
     picks = json.load(open(PICKS, encoding='utf-8'))
+    base = backdrop().convert('RGB').resize(OUT_SIZE, Image.LANCZOS)
     credits = []
     for pick in picks:
         source = os.path.join(args.work, pick['slug'] + os.path.splitext(pick['url'])[1].lower())
@@ -165,7 +219,7 @@ def main():
         frame.alpha_composite(shadows(car, left, top))
         frame.alpha_composite(car, (left, top))
         target = os.path.join(OUT, pick['slug'] + '.webp')
-        frame.convert('RGB').resize((1600, 1067), Image.LANCZOS).save(target, 'WEBP', quality=82, method=6)
+        relight(frame.convert('RGB').resize(OUT_SIZE, Image.LANCZOS), base).save(target, 'WEBP', quality=82, method=6)
         print(pick['slug'], os.path.getsize(target) // 1024, 'KB', flush=True)
 
         credits.append({

@@ -9,8 +9,6 @@ export const Z = {
   base: 0,
   gridlines: 10,
   nav: 20,
-  // Back-to-top keycap: above the page, below anything modal.
-  floating: 30,
   // Above the sign-in panel it dissolves, below the loader. One fixed
   // full-viewport canvas shared by every particle job (components/fx).
   particles: 45,

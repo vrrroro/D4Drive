@@ -2,7 +2,6 @@
 
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { EasterEgg } from '@/components/ui/EasterEgg';
 import { Wordmark } from '@/components/ui/Wordmark';
 import { useFilm } from './FilmContext';
 
@@ -37,14 +36,13 @@ function Line({
  * The landing's opening frame: the slogan at the top, the whole wordmark at
  * the bottom, and a blank band between them.
  *
- * A black slab fades in out of that band (drawn by FilmStage), and as the
- * visitor scrolls it opens to the whole screen with the film rising out of
- * it. Its edges push the type out of the way: the slogan up, the wordmark
- * and the red dot down (`--hero-up`, `--hero-down`, written by FilmStage),
- * transform only.
+ * The film fades in out of that band by itself (drawn by FilmStage), and as
+ * the visitor scrolls it opens to the whole screen. Its edges push the type
+ * out of the way: the slogan up, the wordmark down (`--hero-up`,
+ * `--hero-down`, written by FilmStage), transform only.
  */
 export function FilmHero({ images }: { images: string[] }) {
-  const { ready, reduced } = useFilm();
+  const { ready } = useFilm();
 
   return (
     <div data-chapter="hero" className="film-chapter film-hero absolute inset-0">
@@ -53,7 +51,7 @@ export function FilmHero({ images }: { images: string[] }) {
           <Line from="near" delay={0} className="hero-line-1 text-[var(--ink)]">
             Drive easy.
           </Line>
-          <Line from="left" delay={0.35} className="hero-line-2 italic text-[var(--accent-text)]">
+          <Line from="left" delay={0.35} className="hero-line-2 italic text-[var(--color-carmine)]">
             Book smart.
           </Line>
           <Line from="right" delay={0.65} className="hero-line-3 text-[var(--ink)]">
@@ -63,15 +61,6 @@ export function FilmHero({ images }: { images: string[] }) {
       </div>
 
       <div className="hero-base">
-        <motion.div
-          className="hero-egg"
-          data-film-decor
-          initial={reduced ? false : { scale: 0 }}
-          animate={ready ? { scale: 1 } : undefined}
-          transition={{ delay: 1.7, duration: 0.8, ease: EXPO }}
-        >
-          <EasterEgg />
-        </motion.div>
         <div className="hero-wordmark" data-hero-wordmark>
           <Wordmark text="D4Drive" images={images} play={ready} delay={0.8} className="pointer-events-auto text-[var(--ink)]" />
         </div>

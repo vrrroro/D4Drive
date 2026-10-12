@@ -49,6 +49,8 @@ Thumbs.db
 
 # Misc
 .cache/
+.venv/
 *.tsbuildinfo
 
 smoke-shots/
+__pycache__/

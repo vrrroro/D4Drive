@@ -1,17 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  APPEAR_IN,
   CHAPTERS,
   FADE_OUT,
   LAST_BEAT,
   SEGMENTS,
   WINDOW_OPEN,
+  appearAlpha,
   beatAt,
   bootSet,
   chapterOpacity,
-  closedSlab,
+  closedWindow,
   easeInOut,
-  filmAlpha,
   filmFrame,
   filmPhase,
   fitModeFor,
@@ -20,8 +21,6 @@ import {
   heroPush,
   loadOrder,
   placeFrame,
-  slabAlpha,
-  stageTone,
   windowRect,
 } from '../components/film/timeline.ts';
 
@@ -60,38 +59,42 @@ test('segments tile 0 to 1 with no gaps and join on the same beat', () => {
   }
 });
 
-test('the film holds still on each finished shot while its copy is up', () => {
-  const holds = SEGMENTS.filter((s) => s.beats[0] === s.beats[1] && s.from > 0.1);
-  assert.ok(holds.length >= 4, 'four holds: side on, head-on, three-quarter, smoke');
-  for (const hold of holds) {
-    const a = beatAt(hold.from + 1e-6);
-    const b = beatAt(hold.to - 1e-6);
-    assert.equal(a, b, `film moved during the hold at ${hold.from}`);
-  }
-  // Each of the four chapters is fully shown for the whole of a hold.
-  for (const range of Object.values(CHAPTERS)) {
-    const hold = holds.find((h) => h.from >= range[0] && h.from <= range[1]);
-    assert.ok(hold, `no hold under the chapter at ${range[1]}`);
-    // The last hold carries on through the fade; its copy stays until the
-    // fade begins, then goes with the film.
-    const end = Math.min(hold.to, FADE_OUT[0]);
-    assert.ok(range[1] <= hold.from && range[2] >= end, 'the copy leaves before its hold ends');
+test('the film never stops while the page scrolls through it: no holds', () => {
+  const run = SEGMENTS.find((s) => s.beats[0] !== s.beats[1])!;
+  assert.equal(SEGMENTS.filter((s) => s.beats[0] !== s.beats[1]).length, 1, 'one moving segment, start to end');
+  assert.deepEqual(run.beats, [0, LAST_BEAT]);
+  // From the window opening to the fade, every stretch of scroll moves the film.
+  for (let p = WINDOW_OPEN[1]; p < FADE_OUT[0]; p += 0.005) {
+    assert.ok(beatAt(p + 0.005) - beatAt(p) > 0.5, `the film stalls at p=${p.toFixed(3)}`);
   }
 });
 
-test('the car eases into a hold rather than stopping dead', () => {
-  const moving = SEGMENTS.find((s) => s.beats[0] === 12 && s.beats[1] === 80)!;
-  const nearEnd = beatAt(moving.to - 0.001);
-  const atEnd = beatAt(moving.to);
-  const midStep = beatAt((moving.from + moving.to) / 2 + 0.001) - beatAt((moving.from + moving.to) / 2);
-  assert.ok(atEnd - nearEnd < midStep, 'last scroll pixel should move the film less than one mid-segment');
+test('the film starts and stops smoothly but runs at an even pace between', () => {
+  const run = SEGMENTS.find((s) => s.beats[0] !== s.beats[1])!;
+  const speed = (p: number) => (beatAt(p + 0.001) - beatAt(p)) / 0.001;
+  const mid = speed((run.from + run.to) / 2);
+  assert.ok(speed(run.from) < mid / 4, 'it should pull away gently');
+  assert.ok(speed(run.to - 0.001) < mid / 4, 'it should settle gently');
+  // Even pace through the middle: the copy reads over a steady picture.
+  assert.ok(Math.abs(speed(0.3) - speed(0.6)) < 1e-6 * mid + 1e-3);
   assert.ok(Math.abs(easeInOut(0.5) - 0.5) < 1e-9);
   assert.equal(easeInOut(0), 0);
   assert.equal(easeInOut(1), 1);
+  assert.ok(Math.abs(easeInOut(0.5, 0.08) - 0.5) < 1e-9);
 });
 
-test('the car has left frame before the smoke starts to fade', () => {
-  assert.equal(beatAt(FADE_OUT[0]), LAST_BEAT);
+test('each chapter is up while its shot passes', () => {
+  // Side on at beat 80, head-on at 120, three-quarter at 176.
+  for (const [id, beat] of [['flank', 80], ['roast', 120], ['delivery', 176]] as const) {
+    const range = CHAPTERS[id];
+    assert.ok(beatAt(range[1]) <= beat && beatAt(range[2]) >= beat, `${id} is not fully shown at beat ${beat}`);
+  }
+  // The take-off copy is up as the car leaves through the smoke.
+  assert.ok(beatAt(CHAPTERS.takeoff[1]) > 200);
+});
+
+test('the film reaches its last frame by the time it has faded into the page', () => {
+  assert.equal(beatAt(FADE_OUT[1]), LAST_BEAT);
 });
 
 test('a chapter is invisible outside its window and fully shown inside', () => {
@@ -110,65 +113,57 @@ test('chapters never overlap one another', () => {
   }
 });
 
-test('the slab starts as blank space and appears by itself or with the first scroll', () => {
-  assert.equal(slabAlpha(0, 0), 0);
-  assert.equal(slabAlpha(0, 1), 1);
-  assert.equal(slabAlpha(WINDOW_OPEN[0], 0), 1);
-  // The film only rises out of the black once the slab is opening.
-  assert.equal(filmAlpha(0), 0);
-  assert.equal(filmAlpha(WINDOW_OPEN[1]), 1);
+test('the film starts as blank space and appears by itself or with the first scroll', () => {
+  assert.equal(appearAlpha(0, 0), 0);
+  assert.ok(appearAlpha(0, 0.5) > 0 && appearAlpha(0, 0.5) < 1, 'it fades in, it does not pop');
+  assert.equal(appearAlpha(0, 1), 1);
+  assert.equal(appearAlpha(APPEAR_IN[1], 0), 1);
+  assert.equal(appearAlpha(WINDOW_OPEN[1], 0), 1);
 });
 
-test('the slab sits in the gap between the slogan and the wordmark', () => {
-  const slab = closedSlab(1440, 900, 86, { top: 360, bottom: 560 });
-  assert.ok(slab.y > 360 && slab.y + slab.height < 560);
-  assert.equal(slab.x, 86);
-  assert.equal(slab.width, 1440 - 172);
+test('the film appears in the gap between the slogan and the wordmark', () => {
+  const win = closedWindow(1440, 900, 86, { top: 360, bottom: 560 });
+  assert.ok(win.y > 360 && win.y + win.height < 560);
+  assert.equal(win.x, 86);
+  assert.equal(win.width, 1440 - 172);
 });
 
-test('as it opens, the slab pushes the slogan up and the wordmark down off the screen', () => {
+test('as it opens, the window pushes the slogan up and the wordmark down off the screen', () => {
   for (const [w, h, gap] of [
     [1440, 900, { top: 360, bottom: 560 }],
     [390, 844, { top: 200, bottom: 600 }],
   ] as const) {
     const mode = fitModeFor(w, h);
-    const closed = closedSlab(w, h, 24, gap);
+    const closed = closedWindow(w, h, 24, gap);
     assert.deepEqual(heroPush(0, gap, h), { up: -0, down: 0 });
     const open = heroPush(1, gap, h);
     // The slogan's bottom moves above the top of the screen, and the
     // wordmark's top below the bottom, in landscape and portrait alike.
     assert.ok(gap.top + open.up < 0);
     assert.ok(gap.bottom + open.down > h);
-    // All the way, the slab's edges stay ahead of the type: it pushes.
+    // All the way, the window's edges stay ahead of the type: it pushes.
     for (let i = 0; i <= 50; i += 1) {
       const p = WINDOW_OPEN[0] + ((WINDOW_OPEN[1] - WINDOW_OPEN[0]) * i) / 50;
       const rect = windowRect(p, mode, w, h, closed);
       const push = heroPush(p, gap, h);
-      assert.ok(gap.top + push.up <= rect.y + 0.5, `slogan inside the slab at p=${p}`);
-      assert.ok(gap.bottom + push.down >= rect.y + rect.height - 0.5 || mode === 'band', `wordmark inside the slab at p=${p}`);
+      assert.ok(gap.top + push.up <= rect.y + 0.5, `slogan inside the window at p=${p}`);
+      assert.ok(gap.bottom + push.down >= rect.y + rect.height - 0.5 || mode === 'band', `wordmark inside the window at p=${p}`);
     }
   }
 });
 
-test('the slab opens out to the full film rectangle', () => {
+test('the window opens out to the full film rectangle', () => {
   for (const [w, h] of [
     [1440, 900],
     [390, 844],
   ] as const) {
     const mode = fitModeFor(w, h);
-    const closed = closedSlab(w, h, 24);
+    const closed = closedWindow(w, h, 24);
     const shut = windowRect(0, mode, w, h, closed);
     const open = windowRect(1, mode, w, h, closed);
     assert.ok(shut.width < w && shut.height < h);
     assert.deepEqual(open, filmFrame(mode, w, h));
   }
-});
-
-test('the stage is grey only while the film plays', () => {
-  assert.equal(stageTone(0), 0);
-  assert.equal(stageTone(0.4), 1);
-  assert.equal(stageTone(FADE_OUT[1]), 0);
-  assert.equal(stageTone(1), 0);
 });
 
 test('the phase moves hero, film, after', () => {
@@ -203,9 +198,9 @@ test('the band follows the car but never shows past the frame edge', () => {
 
 test('hero framing eases from the close-up to the film placement', () => {
   const at = placeFrame('cover', { x: 0, y: 0, width: 1440, height: 900 }, 1600, 900);
-  const closed = closedSlab(1440, 900, 86);
+  const closed = closedWindow(1440, 900, 86);
   const shut = heroFraming(0, windowRect(0, 'cover', 1440, 900, closed), at);
-  assert.ok(shut.dw > at.dw, 'the narrow slab should be zoomed in');
+  assert.ok(shut.dw > at.dw, 'the narrow window should be zoomed in');
   assert.deepEqual(heroFraming(1, windowRect(1, 'cover', 1440, 900, closed), at), at);
 });
 

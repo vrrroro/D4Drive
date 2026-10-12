@@ -27,7 +27,17 @@ fleet reads as one shoot. `build.py` rebuilds all of them from `picks.json`.
    cars) on the same ground line.
 4. A gentle per-car levels stretch, so photos shot in haze match the rest.
 5. A contact shadow traced from the car's own bottom edge, plus a soft pool.
-6. 1600x1067 WebP at quality 82, about 65 KB each.
+6. Relit to the page grey (`relight()`): every pixel is multiplied by page
+   grey over the backdrop's own colour there, so the backdrop becomes exactly
+   `#BDBCBA` (the site's `--color-ground`), the shadow keeps its depth, and
+   the car takes the same light. A car stands on the page with no box.
+7. 1600x1067 WebP at quality 82, about 60 KB each.
+
+If the page grey changes, set `PAGE` in `build.py` to match. To relight the
+finished photos without rebuilding them (numpy and pillow only, no cutout
+model), run `python scripts/fleet-photos/build.py --relight-only`. It skips a
+photo whose backdrop is already the page grey, so running it twice is safe;
+to relight to a new grey, restore the photos from git first.
 
 ## Rebuilding
 

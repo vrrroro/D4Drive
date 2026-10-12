@@ -18,19 +18,21 @@ interface CarPhotoProps {
  * A fleet photograph, or a clearly labelled slot where one will go.
  *
  * The seeded fleet's photos are studio composites on the same cyclorama as
- * the hero film (public/cars, credited on /credits). A car added from the
+ * the hero film (public/cars, credited on /credits), relit so the backdrop
+ * is exactly the page grey: a car stands on the page with no box around it.
+ * A car added from the
  * admin without a photo gets a slot that says so in words, never a stock
  * image or a CSS-drawn shape; `data-placeholder` lets an audit find them.
  */
 export function CarPhoto({ src, name, aspect = 'aspect-[3/2]', priority = false, decorative = false, className = '' }: CarPhotoProps) {
-  const frame = `relative block ${aspect} overflow-hidden bg-[var(--studio)] ${className}`;
+  const frame = `relative block ${aspect} overflow-hidden ${className}`;
 
   if (!src) {
     return (
       <span
         {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': `Photograph of the ${name} not yet available` })}
         data-placeholder="car-photo"
-        className={`${frame} flex items-end text-[var(--ink)]`}
+        className={`${frame} flex items-end border border-[var(--ink)]/20 text-[var(--ink)]`}
       >
         <span className="t-label p-6">Photograph pending</span>
       </span>

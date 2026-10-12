@@ -9,11 +9,6 @@ let instance: Lenis | null = null;
 /** Set by popstate: back and forward keep the browser's restored position. */
 let restoring = false;
 
-/** The live Lenis instance, or null under reduced motion. */
-export function getLenis(): Lenis | null {
-  return instance;
-}
-
 /**
  * Smooth, inertial wheel scrolling for the whole site.
  *
