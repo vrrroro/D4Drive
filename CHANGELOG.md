@@ -7,6 +7,62 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-12: Phase 15, one grey (branch `feature/one-grey`, stacked on PR #26)
+
+The owner's next list, after seeing Phase 14 (most likely in dark mode, where
+the slab was a light grey rectangle on a near-black page).
+
+#### Changed
+- **One grey, everywhere.** The page is the film's own studio grey,
+  `#BDBCBA` (measured off the stills: the backdrop runs `#AAAAAA` to
+  `#C7C7C7`); `--color-studio` is the same, `.tone-studio` is flat, the
+  studio gradient is gone. Muted text `#45423E` (5.3:1); small accent text
+  is carmine-deep (5.5:1), carmine itself only for large type (3.8:1).
+  Closed selects are transparent; open lists `#CFCECC`.
+- **No dark mode** (the owner chose it when asked): both dark blocks gone,
+  `color-scheme: light`, theme colour `#BDBCBA`.
+- **The film appears out of the page.** The black slab (a grey rectangle in
+  dark mode) is gone: the picture itself fades in inside the hero's gap
+  (`appearAlpha`), framed on the red door panel (`HERO_FOCUS.y` 0.69 to 0.84;
+  higher up the window seal read as a black bar), then opens as before.
+  `closedSlab` and `SLAB_ENTRANCE` renamed `closedWindow`, `APPEAR_ENTRANCE`;
+  `filmAlpha` removed.
+- **One fluid scroll, no holds.** `SEGMENTS` is one eased run from beat 0 to
+  263 over 0.012 to 0.94 (8% ease at each end); chapters re-centred on the
+  moments their shots pass (side on, head-on, three-quarter, smoke); fade
+  0.88 to 0.95; track 760vh (640vh portrait), about 12px of wheel a still.
+- **No grey toning layer.** `.film-tone` and `stageTone` removed: the film
+  sits on a page of its own colour and fades into it.
+- **Header island.** The header is a centred, floating pane of frosted glass
+  (square corners, per the system) with the wordmark, Fleet, Sign in and the
+  "Let's ___" link, or the account menu, which hangs from it in the same
+  glass. The logo shows on every screen, the landing's first included.
+- **Fleet grid.** The deck is replaced by the grid the owner preferred: three
+  across, no cards, the photo standing on the page, name, specs and price
+  beneath; hover lifts and greys the car.
+- **Fleet photographs relit to the page grey.** `build.py` gains `relight()`
+  (every pixel times page over backdrop: the backdrop becomes exactly the
+  page colour, shadows keep their depth) and `--relight-only`, which did the
+  ten committed photos without a new cutout (backdrop matched within one
+  level). Cars read a little dimmer, lit like the film. No mask, no frame.
+- The car page's photo has no shadow; a missing photo is an outlined slot.
+
+#### Removed
+- The red dot easter egg (`EasterEgg`), the back-to-top arrow (`BackToTop`,
+  `getLenis`, `Z.floating`), and the wordmark at the end of the page
+  (`LocationsSection`).
+
+#### Verified
+- `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip; the film
+  tests rewritten: no holds, an even pace, chapters over their shots, the
+  film appearing by itself), `build`, `npm run smoke` 51/51 against
+  `next start` (new: the film fades in in the gap, page and stage the same
+  grey, the island, no red dot or back-to-top, no wordmark at the end, the
+  grid three across, no card boxes). Screens at 1440x900 and 390x844.
+  `npm run db:setup` afterwards. Not run: `test:db`, `check:leaks` (no
+  database or API code changed).
+- `.venv/` added to `.gitignore` (the photo README creates it there).
+
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
 #### Phase 14 verified (2026-10-12)

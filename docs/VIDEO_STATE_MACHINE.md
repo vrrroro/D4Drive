@@ -1,17 +1,19 @@
 # The Landing Film: Scroll-Scrub Contract
 
-The landing page is the film. A red 911 on a white studio cyclorama: a close-up
+The landing page is the film. A red 911 on a grey studio cyclorama: a close-up
 of the door, the camera pulling back along the flank, the car turning to face
 you and away, then a burnout and a take-off through its own smoke. The visitor's
 scroll is the playhead. Forward plays it, back rewinds it, stopping holds the
-frame. It opens out of a black slab in the blank space between the slogan and
-the wordmark, pauses on each finished shot while that shot's copy is read,
-plays on a grey stage, and when the car has gone the smoke fades back into the
-page and on into the sign-in panel.
+frame. The film itself fades in, out of the page, in the blank space between
+the slogan and the wordmark, opens to the screen, and plays as one long fluid
+run while its copy comes and goes; when the car has gone the smoke fades back
+into the page, which is the same grey, and on into the sign-in panel.
 
-Revised 2026-10-12 (Phase 14, the owner's items 1, 2, 4 and 5): the slab
-replaces the old peeking window, the four holds and the grey stage are new,
-and the film is cut at 60 stills a second.
+Revised 2026-10-12, twice. Phase 14 (the owner's items 1, 2, 4, 5) cut the
+film at 60 stills a second. Phase 15 (the owner's next list) took out the
+black slab (the picture fades in by itself), the four holds (one unbroken
+run) and the grey toning layer (the whole site is now the studio grey, so the
+film needs no toning to match it).
 
 This document is the contract for `components/film/`. It replaces the earlier
 autoplaying intro (loader, frozen frame, sign-in gate, film, landing), which is
@@ -37,7 +39,8 @@ film ships instead as a numbered sequence of stills drawn into a canvas:
   on a grey set) and writes that, smoothed, to `lib/film-manifest.ts`, along
   with the count and sizes.
 - It cuts the engine rev and burnout from the soundtrack (6.6s to 10s, where
-  the RMS climbs from -23 dB to -12 dB) for the easter egg.
+  the RMS climbs from -23 dB to -12 dB). Only the red-dot easter egg played
+  it, and that was removed on 2026-10-12; the clip is still cut, unused.
 
 The output folder is versioned (`public/film/v2`) and served immutable. Change
 the film, bump `VERSION` in the script.
@@ -46,9 +49,8 @@ the film, bump `VERSION` in the script.
 
 ## 2. Geometry
 
-The film is pinned (`position: sticky`) inside a track 1000vh tall (850vh on
-portrait). About half of it plays the film; the rest is the four holds and the
-fades.
+The film is pinned (`position: sticky`) inside a track 760vh tall (640vh on
+portrait). Almost all of it plays the film, in one run.
 
 Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
 
@@ -57,23 +59,23 @@ Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
 | `cover` | aspect at least 1.1 | Fills the viewport, crops symmetrically |
 | `band` | portrait | A horizontal band (46% of the height), cropped to keep the car centred using the manifest's per-frame focus, never past the frame's own edges. The band's top and bottom dissolve into the page. |
 
-**The hero and the slab.** The first screen is type only: the slogan at the
-top, the whole `D4DRIVE` wordmark at the bottom (sized to the height left,
+**The hero and the window.** The first screen is type only: the slogan at
+the top, the whole `D4DRIVE` wordmark at the bottom (sized to the height left,
 never cropped), and a blank band between them. FilmStage measures that band
 from the layout (`[data-hero-slogan]`, `[data-hero-wordmark]`) and puts the
-closed slab in its middle (`timeline.closedSlab`). The slab fades in by itself
-1.5s after the slogan lands (`SLAB_ENTRANCE`), or with the first scroll, and
-waits. Scrolling opens it to the film rectangle while the film rises out of
-its black (`filmAlpha`), framed on the door at 1.12x and easing back to the
-film's own framing as a short dolly out. Its opening pushes the slogan up and
-the wordmark down (`heroPush`, written as `--hero-up` and `--hero-down`,
-transform only) until both are off the screen, in either fit mode.
+closed window in its middle (`timeline.closedWindow`). Nothing is drawn there
+at first. 1.5s after the slogan lands (`APPEAR_ENTRANCE`), or with the first
+scroll, the film itself fades in inside it (`appearAlpha`): no slab, no fill,
+the picture appears out of the page, framed on the red door panel at 1.12x
+(`HERO_FOCUS`), so what appears is a ribbon of the car's paint. Scrolling
+opens the window to the film rectangle, easing back to the film's own framing
+as a short dolly out. Its opening pushes the slogan up and the wordmark down
+(`heroPush`, written as `--hero-up` and `--hero-down`, transform only) until
+both are off the screen, in either fit mode.
 
-**The grey stage.** While the film plays, a layer of the studio grey
-(`.film-tone`, `#E2DED9`, `mix-blend-mode: multiply`) sits over the canvas and
-under the copy, so the white studio stops glaring and the charcoal copy keeps
-its contrast. Its opacity is `timeline.stageTone`: up as the slab opens, down
-with the smoke. Before and after the film the page is its own ground.
+**One grey.** The page is the film's own studio grey (`#BDBCBA`, measured off
+the stills), so the film needs no toning layer: it sits on the page, and when
+it fades out at the end the page behind it is the same colour.
 
 ## 3. The timeline
 
@@ -83,39 +85,32 @@ scales them to however many stills the manifest has.
 
 | p | Beats | Beat |
 |---|---|---|
-| 0 to 0.012 | 0 | The slab fades in (if the entrance has not already shown it) |
-| 0.012 to 0.07 | 0 to 12 | The slab opens; the film rises out of the black |
-| 0.07 to 0.19 | 12 to 80 | Pull back along the flank |
-| 0.19 to 0.28 | 80 | **Hold**: the whole car side on |
-| 0.28 to 0.40 | 80 to 120 | The car turns to face you |
-| 0.40 to 0.49 | 120 | **Hold**: head-on |
-| 0.49 to 0.59 | 120 to 176 | It keeps turning |
-| 0.59 to 0.68 | 176 | **Hold**: three-quarter, facing right |
-| 0.68 to 0.80 | 176 to 263 | Burnout and take-off |
-| 0.80 to 1 | 263 | **Hold** on the smoke; from 0.90 to 0.97 the film and the grey fade into the page |
+| 0 to 0.012 | 0 | The film fades in, in the hero's gap (if the entrance has not already shown it) |
+| 0.012 to 0.94 | 0 to 263 | One run: the window opens (to 0.07), the pull back along the flank, the turn to face you and away, the burnout and take-off |
+| 0.94 to 1 | 263 | Gone into the page; from 0.88 to 0.95 the film fades into the grey |
 
-Moving segments ease in and out (`easeInOut`: quadratic over the first and
-last 18%, linear between), so the car settles into each hold rather than
-stopping on one scroll pixel. The mapping is monotonic: scrolling forward
-never plays the film backward.
+The run eases in and out (`easeInOut` with an 8% edge: quadratic at each end,
+linear between), so the film pulls away gently and settles gently, and moves
+at an even pace everywhere else. There are no holds: it never stops while the
+page scrolls (tested). The mapping is monotonic: scrolling forward never
+plays the film backward.
 
-Copy (`CHAPTERS`, as fade-in-from, fully-in, start-out, gone), each fully shown
-for the whole of its hold:
+Copy (`CHAPTERS`, as fade-in-from, fully-in, start-out, gone), each centred on
+the moment its shot passes, over a moving picture:
 
-| Chapter | Window | Space it uses |
-|---|---|---|
-| Flank | 0.165 to 0.30 | The band above the car; body top right; the "not for rent" note at the roof |
-| Roast | 0.375 to 0.51 | The flanks while the car faces the camera; body on the floor |
-| Delivery | 0.565 to 0.70 | The band above; tiers top right; body on the floor |
-| Take-off | 0.775 to 0.94 | The smoke, until the fade begins |
+| Chapter | Window | Passing | Space it uses |
+|---|---|---|---|
+| Flank | 0.235 to 0.36 | side on, beat 80 | The band above the car; body top right; the "not for rent" note at the roof |
+| Roast | 0.385 to 0.49 | head-on, beat 120 | The flanks while the car faces the camera; body on the floor |
+| Delivery | 0.54 to 0.68 | three-quarter, beat 176 | The band above; tiers top right; body on the floor |
+| Take-off | 0.76 to 0.92 | the smoke | The smoke, going with the film |
 
 No two chapters are ever on screen at once (tested). Opacity follows the scroll
 exactly; each chapter's drift is on a spring, so copy keeps settling for a
 moment after the wheel stops. That trailing settle is the system's heading lag.
 
 `filmPhase` (`hero`, `film`, `after`) is written onto the track as
-`data-film-phase`: the header hides its wordmark during `hero`, and the hero
-stops catching the pointer once the film plays.
+`data-film-phase`: the hero stops catching the pointer once the film plays.
 
 On portrait, copy stacks above and below the band; the delivery tiers and the
 roast body drop out there (`.ch-landscape-only`).
@@ -129,14 +124,13 @@ the draw path touches React state.
 
 Each draw:
 
-1. Sets the canvas opacity from the fade (`FADE_OUT`, 0.9 to 0.97) and the
-   tone layer's opacity from `stageTone`. Always, even when the frame has not
-   changed: the last still holds while it fades.
+1. Sets the canvas opacity from the fade (`FADE_OUT`, 0.88 to 0.95). Always,
+   even when the frame has not changed.
 2. Writes the hero push (`--hero-up`, `--hero-down`) when it changed.
-3. Works out the fractional frame and the slab. Skips if nothing moved.
-4. Fills the slab black at `slabAlpha`, then draws the exact still, or the
-   nearest loaded one, clipped to it at `filmAlpha`. If the playhead sits
-   between two stills, blends the next one in by the fraction.
+3. Works out the fractional frame and the window. Skips if nothing moved.
+4. Draws the exact still, or the nearest loaded one, clipped to the window at
+   `appearAlpha`, with nothing behind it. If the playhead sits between two
+   stills, blends the next one in by the fraction.
 5. In band mode, fades the band's edges into the page ground (to the ground
    colour at zero alpha, not to transparent black, which draws a grey bar).
 6. Asks the loader to decode the next eight stills in the direction of travel
@@ -191,11 +185,11 @@ or with reduced motion, CSS hides it.
 
 ## 7. The hand-over to sign-in
 
-The take-off chapter ("Your turn.") sits in the smoke. From 0.9 the canvas and
-the grey stage fade together and the smoke becomes the page ground; at the end
-of the track the stage scrolls away, already the same colour as the page, and
-the sign-in panel (`AuthPanel`, light) follows straight on, then the branch
-list (`LocationsSection`) on the same ground. A signed-in visitor gets
+The take-off chapter ("Your turn.") sits in the smoke. From 0.88 the canvas
+fades and the smoke becomes the page, the same grey; at the end of the track
+the stage scrolls away and the sign-in panel (`AuthPanel`, light) follows
+straight on, then the branch list (`LocationsSection`) on the same ground, and
+the slim footer line. There is no wordmark at the end. A signed-in visitor gets
 `WelcomePanel` there instead: no form, the fleet and their bookings.
 
 Signing in from the panel turns its type into sand (the particle stage in
