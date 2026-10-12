@@ -31,20 +31,18 @@ export const SEGMENTS: ReadonlyArray<{ from: number; to: number; beats: [number,
   { from: 0.94, to: 1, beats: [LAST_BEAT, LAST_BEAT] },
 ];
 
-/** The film fades in over this range, if the entrance has not already shown it. */
-export const APPEAR_IN: readonly [number, number] = [0, 0.012];
-
-/** The window opens out to the full film rectangle between these two points. */
-export const WINDOW_OPEN: readonly [number, number] = [0.012, 0.07];
-
 /**
- * What the window looks at while it is still narrow: the red door panel
- * below the glass (higher up, the window seal reads as a black bar), a touch
- * closer than the film's own framing. So the first thing to appear between
- * the slogan and the wordmark is a ribbon of the car's paint. It eases back
- * to the film's framing as it opens, which plays as a short dolly out.
+ * The film blooms out of the blank grey between the slogan and the wordmark
+ * between these two points: nothing at the very top of the page, then a
+ * soft-edged pool of picture that spreads until it fills the screen.
  */
-export const HERO_FOCUS = { x: 0.42, y: 0.84, zoom: 1.12 } as const;
+export const BLOOM: readonly [number, number] = [0.004, 0.075];
+
+/** Share of the bloom's radius that is solid picture; the rest feathers into the page. */
+export const BLOOM_CORE = 0.45;
+
+/** How much closer the film starts than its own framing, settling as it opens. */
+export const BLOOM_ZOOM = 1.06;
 
 /** The film fades into the page (the same grey) over this range. */
 export const FADE_OUT: readonly [number, number] = [0.88, 0.95];
@@ -123,7 +121,7 @@ export function chapterOpacity(p: number, [a, b, c, d]: readonly [number, number
 export type FilmPhase = 'hero' | 'film' | 'after';
 
 export function filmPhase(p: number): FilmPhase {
-  if (p < WINDOW_OPEN[0]) return 'hero';
+  if (p < BLOOM[0]) return 'hero';
   if (p < FADE_OUT[1]) return 'film';
   return 'after';
 }
@@ -159,63 +157,79 @@ export function filmFrame(mode: FitMode, vw: number, vh: number): Rect {
   return { x: 0, y: (vh - height) * 0.47, width: vw, height };
 }
 
+/** The blank band between the slogan's bottom and the wordmark's top, in px. */
+export interface Gap {
+  top: number;
+  bottom: number;
+}
+
+/** The fallback gap, matching the server-rendered layout until it is measured. */
+export function defaultGap(vh: number): Gap {
+  return { top: vh * 0.43, bottom: vh * 0.6 };
+}
+
+/** 0 at the top of the page, 1 once the film fills its rectangle. */
+export function bloomAmount(p: number): number {
+  return ease((p - BLOOM[0]) / (BLOOM[1] - BLOOM[0]));
+}
+
 /**
- * The window before it opens: the middle of the blank space between the
- * slogan and the wordmark, the width of the content. `gap` is that space as
- * measured on the page (FilmStage reads it from the hero's layout); without
- * it, the fallback matches the server-rendered layout.
+ * How visible the film is: nothing at the top of the page, so the space
+ * between the slogan and the wordmark is plain grey; it comes up over the
+ * first part of the bloom, so it appears out of the page rather than popping.
  */
-export function closedWindow(vw: number, vh: number, gutter: number, gap?: { top: number; bottom: number }): Rect {
-  const top = gap?.top ?? vh * 0.43;
-  const bottom = gap?.bottom ?? vh * 0.6;
-  const space = Math.max(24, bottom - top);
-  const height = Math.max(18, space * 0.5);
-  return { x: gutter, y: top + (space - height) / 2, width: Math.max(1, vw - gutter * 2), height };
+export function bloomAlpha(p: number): number {
+  return ease((p - BLOOM[0]) / ((BLOOM[1] - BLOOM[0]) * 0.55));
 }
 
-/** 0 while the window is closed, 1 once it is the full film rectangle. */
-export function windowOpenness(p: number): number {
-  return ease((p - WINDOW_OPEN[0]) / (WINDOW_OPEN[1] - WINDOW_OPEN[0]));
+/**
+ * The soft ellipse the film is seen through while it blooms: solid inside
+ * BLOOM_CORE of its radii, feathering to nothing at the edge, so there is
+ * never a hard edge or a rectangle. It starts small in the middle of the
+ * gap and grows, its centre drifting to the film's, until its solid core
+ * covers the whole film rectangle. `null` once it does: draw unmasked.
+ */
+export interface BloomShape {
+  cx: number;
+  cy: number;
+  rx: number;
+  ry: number;
 }
 
-/** The window at progress p, opening from `closed` to the full film rectangle. */
-export function windowRect(p: number, mode: FitMode, vw: number, vh: number, closed = closedWindow(vw, vh, 0)): Rect {
-  const full = filmFrame(mode, vw, vh);
-  const t = windowOpenness(p);
+export function bloomShape(p: number, mode: FitMode, vw: number, vh: number, gap: Gap = defaultGap(vh)): BloomShape | null {
+  const t = bloomAmount(p);
+  if (t >= 1) return null;
+  const frame = filmFrame(mode, vw, vh);
+  const space = Math.max(24, gap.bottom - gap.top);
+  const start = { cx: vw / 2, cy: gap.top + space / 2, rx: vw * 0.24, ry: Math.max(30, space * 0.45) };
+  // Radii whose solid core reaches the frame's corners: (1/sqrt2, 1/sqrt2)
+  // of each half-size lies exactly on the core's ellipse.
+  const end = {
+    cx: frame.x + frame.width / 2,
+    cy: frame.y + frame.height / 2,
+    rx: (Math.SQRT2 * frame.width) / 2 / BLOOM_CORE,
+    ry: (Math.SQRT2 * frame.height) / 2 / BLOOM_CORE,
+  };
+  // The radii grow slowly at first, so the film is seen gathering in the gap
+  // before it spreads; the centre moves evenly.
+  const grow = t ** 1.6;
+  const mix = (a: number, b: number, k: number) => a + (b - a) * k;
   return {
-    x: closed.x + (full.x - closed.x) * t,
-    y: closed.y + (full.y - closed.y) * t,
-    width: closed.width + (full.width - closed.width) * t,
-    height: closed.height + (full.height - closed.height) * t,
+    cx: mix(start.cx, end.cx, t),
+    cy: mix(start.cy, end.cy, t),
+    rx: mix(start.rx, end.rx, grow),
+    ry: mix(start.ry, end.ry, grow),
   };
 }
 
 /**
- * How visible the film is in the hero's gap: nothing at first, then it fades
- * in by itself after the hero's entrance (`entrance`, 0 to 1, time based) or
- * with the first scroll, whichever comes first. There is no frame or fill
- * around it: the picture itself appears out of the page.
+ * The bloom pushes the type out of its way: by the time the film fills the
+ * screen the slogan has gone off the top and the wordmark off the bottom,
+ * `margin` px clear, whether the film opens to the whole screen (landscape)
+ * or to a band (portrait). Transform only, so nothing reflows.
  */
-export function appearAlpha(p: number, entrance: number): number {
-  return Math.max(clamp01(entrance), ease((p - APPEAR_IN[0]) / (APPEAR_IN[1] - APPEAR_IN[0])));
-}
-
-/**
- * The opening window pushes the type around it out of its way: by the time
- * it is fully open the slogan has gone off the top of the screen and the
- * wordmark off the bottom, `margin` px clear, whether the film opens to the
- * whole screen (landscape) or to a band (portrait). The window's edges always
- * stay ahead of the type, so it reads as pushed. Transform only, so nothing
- * reflows. `gap` is the blank band it starts in (the slogan's bottom, the
- * wordmark's top).
- */
-export function heroPush(
-  p: number,
-  gap: { top: number; bottom: number },
-  vh: number,
-  margin = 24,
-): { up: number; down: number } {
-  const t = windowOpenness(p);
+export function heroPush(p: number, gap: Gap, vh: number, margin = 24): { up: number; down: number } {
+  const t = bloomAmount(p);
   return {
     up: -(gap.top + margin) * t,
     down: Math.max(0, vh - gap.bottom + margin) * t,
@@ -225,22 +239,20 @@ export function heroPush(
 type Placement = { dx: number; dy: number; dw: number; dh: number };
 
 /**
- * While the window is closed, frame the film on HERO_FOCUS (centred in the
- * window, slightly zoomed); as it opens, ease to the film's own placement.
+ * While it blooms the film sits a touch closer (BLOOM_ZOOM, about the
+ * bloom's centre) and settles to its own placement as it opens: a short,
+ * gentle dolly out.
  */
-export function heroFraming(p: number, win: Rect, at: Placement): Placement {
-  const open = windowOpenness(p);
-  if (open >= 1) return at;
-  const dw = at.dw * HERO_FOCUS.zoom;
-  const dh = at.dh * HERO_FOCUS.zoom;
-  const closed: Placement = {
-    dw,
-    dh,
-    dx: win.x + win.width / 2 - HERO_FOCUS.x * dw,
-    dy: win.y + win.height / 2 - HERO_FOCUS.y * dh,
+export function bloomFraming(p: number, at: Placement, centre: { x: number; y: number }): Placement {
+  const t = bloomAmount(p);
+  if (t >= 1) return at;
+  const zoom = BLOOM_ZOOM + (1 - BLOOM_ZOOM) * t;
+  return {
+    dw: at.dw * zoom,
+    dh: at.dh * zoom,
+    dx: centre.x + (at.dx - centre.x) * zoom,
+    dy: centre.y + (at.dy - centre.y) * zoom,
   };
-  const mix = (a: number, b: number) => a + (b - a) * open;
-  return { dx: mix(closed.dx, at.dx), dy: mix(closed.dy, at.dy), dw: mix(closed.dw, at.dw), dh: mix(closed.dh, at.dh) };
 }
 
 /**

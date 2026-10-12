@@ -73,17 +73,22 @@ function watch(page, label) {
   };
   ok('the film starts on its first frame', (await frame()) === 0, `beat=${await frame()}`);
 
-  // Before any scroll the film fades in by itself in the gap between the
-  // slogan and the wordmark: no slab, the picture itself.
+  // At the top of the page the gap between the slogan and the wordmark is
+  // plain grey: nothing is drawn until the page moves.
   await page.waitForTimeout(3200);
-  const appeared = await page.evaluate(() => {
-    const c = document.querySelector('[data-film-canvas]');
-    const s = document.querySelector('[data-hero-slogan]').getBoundingClientRect();
-    const m = document.querySelector('[data-hero-wordmark]').getBoundingClientRect();
-    const r = c.width / c.clientWidth;
-    return c.getContext('2d').getImageData(Math.round((innerWidth / 2) * r), Math.round(((s.bottom + m.top) / 2) * r), 1, 1).data[3];
-  });
-  ok('the film fades in by itself between the slogan and the wordmark', appeared > 200, `alpha=${appeared}`);
+  const alphaAt = (where) =>
+    page.evaluate((w) => {
+      const c = document.querySelector('[data-film-canvas]');
+      const s = document.querySelector('[data-hero-slogan]').getBoundingClientRect();
+      const m = document.querySelector('[data-hero-wordmark]').getBoundingClientRect();
+      const r = c.width / c.clientWidth;
+      const x = w === 'corner' ? 2 : innerWidth / 2;
+      const y = w === 'corner' ? 2 : (s.bottom + m.top) / 2;
+      return c.getContext('2d').getImageData(Math.round(x * r), Math.round(y * r), 1, 1).data[3];
+    }, where);
+  ok('the top of the page is blank grey between the slogan and the wordmark', (await alphaAt('centre')) === 0, `alpha=${await alphaAt('centre')}`);
+  const mark = await page.locator('[data-hero-wordmark]').boundingBox();
+  ok('the wordmark sits at the bottom right', mark.x > 1440 * 0.35 && mark.x + mark.width > 1440 * 0.85, `x=${Math.round(mark.x)} w=${Math.round(mark.width)}`);
 
   // One grey: the page, the film's stage and the ground all match.
   const greys = await page.evaluate(() =>
@@ -91,11 +96,31 @@ function watch(page, label) {
   );
   ok('the page and the film stage are the same grey', greys.every((g) => g === 'rgb(189, 188, 186)'), greys.join(' '));
 
-  // The header is a floating island with the logo in it.
-  const island = await page.locator('#site-header').boundingBox();
-  ok('the header is a floating island', island.y > 4 && island.width < 1440 - 100, `x=${island.x} y=${island.y} w=${island.width}`);
-  ok('the island carries the logo', (await opacityOf('.header-logo')) > 0.9);
+  // At the top: no island. The logo top left, the links top right, no glass.
+  const header = page.locator('#site-header');
+  const logoBox = async () => page.locator('.header-logo').boundingBox();
+  const linksBox = async () => page.locator('[data-island-links]').boundingBox();
+  const glassOpacity = () => opacityOf('[data-island-glass]');
+  ok('at the top the header is open: logo left, links right, no glass',
+    (await header.getAttribute('data-docked')) === 'false' && (await logoBox()).x < 200 && (await linksBox()).x + (await linksBox()).width > 1440 - 200 && (await glassOpacity()) < 0.05,
+    `logo=${Math.round((await logoBox()).x)} glass=${(await glassOpacity()).toFixed(2)}`);
   ok('the red dot and the back-to-top button are gone', (await page.locator('[data-easter-egg]').count()) === 0 && (await page.getByRole('button', { name: 'Back to top' }).count()) === 0);
+
+  // A little scroll: the film blooms out of the gap with no hard edge, and
+  // the header docks into the glass island around the logo and the links.
+  await scrubTo(0.02);
+  const centre = await alphaAt('centre');
+  const corner = await alphaAt('corner');
+  ok('the film blooms out of the gap, soft at the edges', centre > 100 && corner < centre, `centre=${centre} corner=${corner}`);
+  ok('scrolling docks the header into the island', (await header.getAttribute('data-docked')) === 'true' && (await glassOpacity()) > 0.95 && (await logoBox()).x > 300,
+    `logo=${Math.round((await logoBox()).x)} glass=${(await glassOpacity()).toFixed(2)}`);
+  const glassWidth = () => page.locator('[data-island-glass]').evaluate((el) => Math.round(el.getBoundingClientRect().width));
+  const widths = new Set();
+  for (let i = 0; i < 12; i += 1) {
+    widths.add(await glassWidth());
+    await page.waitForTimeout(300);
+  }
+  ok('the island grows and shrinks with the typed word', widths.size > 2, `${widths.size} widths`);
 
   await scrubTo(0.42);
   const middle = await frame();
@@ -146,6 +171,20 @@ let reference = '';
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   watch(page, 'customer');
+  // Deep into the film, click the header's Fleet while the wheel is still
+  // coasting: the fleet must open at its top, not wherever the coast ends.
+  await page.goto(BASE + '/');
+  await page.locator('[data-film-ready="true"]').waitFor({ timeout: 15000 });
+  await page.mouse.move(720, 450);
+  for (let d = 0; d < 3600; d += 120) {
+    await page.mouse.wheel(0, 120);
+    await page.waitForTimeout(16);
+  }
+  await page.locator('header a[href="/cars"]').first().click();
+  await page.waitForURL('**/cars');
+  await page.waitForTimeout(1500);
+  ok('the header link opens the fleet at its top', (await page.evaluate(() => window.scrollY)) === 0, `scrollY=${await page.evaluate(() => window.scrollY)}`);
+
   await page.goto(BASE + '/login?next=/cars');
   await page.getByRole('button', { name: 'Create one' }).click();
   const email = `smoke.${Date.now()}@example.in`;
@@ -164,7 +203,7 @@ let reference = '';
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
   ok('every car in the fleet has a photograph', slots === 0, `slots=${slots}`);
 
-  // The grid: three across, no card boxes, and pointing at a car greys exactly that car.
+  // The grid: three across, no card boxes, and pointing at a car turns exactly that car red.
   const rowTops = await cards.evaluateAll((els) => els.slice(0, 3).map((el) => Math.round(el.getBoundingClientRect().top)));
   ok('the fleet is a grid, three across', new Set(rowTops).size === 1, rowTops.join(','));
   const boxed = await page.locator('.fleet-grid li, .fleet-link').evaluateAll((els) =>
@@ -175,8 +214,11 @@ let reference = '';
   await page.waitForTimeout(600);
   await cards.nth(0).hover();
   await page.waitForTimeout(800);
-  const greyed = await page.locator('.fleet-grey').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
-  ok('pointing at a car greys exactly that car', greyed === 1, `greyed=${greyed}`);
+  const glowing = await page.locator('.fleet-glow').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
+  const nameColour = await cards.nth(0).locator('.fleet-name').evaluate((el) => getComputedStyle(el).color);
+  ok('pointing at a car pools a red shadow under exactly that car', glowing === 1, `glowing=${glowing}`);
+  ok('pointing at a car turns its name red', nameColour === 'rgb(168, 37, 25)', nameColour);
+  ok('no photo credits link in the footer', (await page.locator('footer a[href="/credits"]').count()) === 0);
   ok('a signed-in visitor gets no sign-in panel at the end of the fleet', (await page.locator('#sign-in').count()) === 0);
   await page.screenshot({ path: `${SHOTS}/04-catalog.png` });
 
@@ -184,8 +226,18 @@ let reference = '';
   ok('fuel filter narrows the catalog', (await cards.count()) === 2, `electric=${await cards.count()}`);
 
   await page.goto(BASE + '/cars');
-  await cards.first().click();
+  await page.waitForTimeout(600);
+  // Scroll down the grid and click while the wheel is still coasting: the
+  // car page must still open at its top.
+  await page.mouse.move(720, 450);
+  for (let d = 0; d < 1200; d += 120) {
+    await page.mouse.wheel(0, 120);
+    await page.waitForTimeout(16);
+  }
+  await cards.nth(4).click();
   await page.waitForURL(/\/cars\/\d+$/);
+  await page.waitForTimeout(1500);
+  ok('a car opens at the top of its page', (await page.evaluate(() => window.scrollY)) === 0, `scrollY=${await page.evaluate(() => window.scrollY)}`);
   await page.getByRole('link', { name: /Reserve this car/ }).first().click();
   await page.waitForURL(/\/booking\/\d+$/);
   // Every run books the same car, so a random window can overlap a booking
@@ -205,6 +257,9 @@ let reference = '';
   }
   reference = page.url().split('/').pop();
   ok('booking confirms with a reference', /^D4[A-Z0-9]{8}$/.test(reference), reference);
+  await page.waitForTimeout(1500);
+  const confirmedBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  ok('the confirmation turns the whole page carmine', confirmedBg === 'rgb(125, 26, 18)', confirmedBg);
   await page.screenshot({ path: `${SHOTS}/06-confirmation.png`, fullPage: true });
 
   await page.goto(BASE + '/bookings');

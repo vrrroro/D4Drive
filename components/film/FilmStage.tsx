@@ -5,30 +5,36 @@ import type { MotionValue } from 'motion/react';
 import { FILM_MANIFEST } from '@/lib/film-manifest';
 import { FrameLoader } from './frame-loader';
 import {
+  BLOOM_CORE,
   FADE_OUT,
   LAST_BEAT,
-  appearAlpha,
-  closedWindow,
+  bloomAlpha,
+  bloomAmount,
+  bloomFraming,
+  bloomShape,
+  defaultGap,
   ease,
   filmFrame,
   fitModeFor,
   frameAt,
-  heroFraming,
   heroPush,
   placeFrame,
-  windowOpenness,
-  windowRect,
   type FitMode,
-  type Rect,
+  type Gap,
 } from './timeline';
 
 interface FilmStageProps {
   progress: MotionValue<number>;
-  /** 0 to 1: the film fading in on its own after the hero's entrance. */
-  entrance: MotionValue<number>;
   stageRef: RefObject<HTMLDivElement | null>;
   onBootProgress: (fraction: number) => void;
 }
+
+/** The bloom's falloff past its solid core: [share of the way out, alpha], smoothstep. */
+const FEATHER = [
+  [0.25, 0.84],
+  [0.5, 0.5],
+  [0.75, 0.16],
+] as const;
 
 /** Layout position of `el` inside `ancestor`, ignoring transforms. */
 function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; left: number } {
@@ -46,17 +52,20 @@ function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; le
 /**
  * The canvas the film is drawn into.
  *
- * Drawing is driven by events, not a loop: a change in scroll progress or in
- * the film's entrance, a frame arriving, or a resize each request one
- * animation frame, and that frame draws once. Nothing here touches React
+ * Drawing is driven by events, not a loop: a change in scroll progress, a
+ * frame arriving, or a resize each request one animation frame, and that
+ * frame draws once. Nothing here touches React
  * state; the progress value and the loader live outside the render cycle.
  *
  * The page is the film's own studio grey, so nothing is drawn behind the
- * picture: it fades in straight out of the page in the hero's gap, opens to
- * the screen, and at the end fades back into the same grey. Each draw also
- * writes the push on the hero (`--hero-up`, `--hero-down`).
+ * picture. At the top of the page nothing is drawn at all; the first scroll
+ * blooms the film out of the blank grey between the slogan and the wordmark,
+ * seen through a soft ellipse with no edge (timeline.bloomShape) that grows
+ * until the film fills the screen. At the end it fades back into the same
+ * grey. Each draw also writes the push on the hero (`--hero-up`,
+ * `--hero-down`).
  */
-export function FilmStage({ progress, entrance, stageRef, onBootProgress }: FilmStageProps) {
+export function FilmStage({ progress, stageRef, onBootProgress }: FilmStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bootRef = useRef(onBootProgress);
   bootRef.current = onBootProgress;
@@ -71,8 +80,7 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
     let vh = 0;
     let dpr = 1;
     let mode: FitMode = 'cover';
-    let closed: Rect = closedWindow(1, 1, 0);
-    let gap = { top: 0, bottom: 1 };
+    let gap: Gap = defaultGap(1);
     let ground = 'rgb(189, 188, 186)';
     let groundClear = 'rgba(189, 188, 186, 0)';
     let raf = 0;
@@ -93,14 +101,12 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
     const draw = () => {
       raf = 0;
       const p = progress.get();
-      const e = entrance.get();
 
       // The film fades back into the page: opacity only, and whether or not
       // the frame itself changed.
       const fade = ease((p - FADE_OUT[0]) / (FADE_OUT[1] - FADE_OUT[0]));
       canvas.style.opacity = String(1 - fade);
 
-      const win = windowRect(p, mode, vw, vh, closed);
       const push = heroPush(p, gap, vh);
       const pushKey = `${push.up.toFixed(1)}|${push.down.toFixed(1)}`;
       if (pushKey !== lastPush) {
@@ -109,14 +115,16 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
         lastPush = pushKey;
       }
 
-      const alpha = appearAlpha(p, e);
+      const alpha = bloomAlpha(p);
+      const bloom = bloomShape(p, mode, vw, vh, gap);
       const f = frameAt(p, FILM_MANIFEST.count);
       const i0 = Math.floor(f);
       const t = f - i0;
-      const key = `${f.toFixed(3)}|${win.y.toFixed(1)}|${win.height.toFixed(1)}|${alpha.toFixed(3)}|${vw}x${vh}`;
+      const key = `${f.toFixed(3)}|${bloomAmount(p).toFixed(4)}|${alpha.toFixed(3)}|${vw}x${vh}`;
       if (key === lastKey) return;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, vw, vh);
       lastKey = key;
       if (alpha <= 0) return;
@@ -125,12 +133,12 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
       if (base) {
         const frameRect = filmFrame(mode, vw, vh);
         const focus = FILM_MANIFEST.focus[Math.min(FILM_MANIFEST.count - 1, Math.round(f))] ?? 0.5;
-        const at = heroFraming(p, win, placeFrame(mode, frameRect, FILM_MANIFEST.width, FILM_MANIFEST.height, focus));
+        const placed = placeFrame(mode, frameRect, FILM_MANIFEST.width, FILM_MANIFEST.height, focus);
+        const at = bloom ? bloomFraming(p, placed, { x: bloom.cx, y: bloom.cy }) : placed;
 
-        // The picture itself, in the window, appearing out of the page.
         ctx.save();
         ctx.beginPath();
-        ctx.rect(win.x, win.y, win.width, win.height);
+        ctx.rect(frameRect.x, frameRect.y, frameRect.width, frameRect.height);
         ctx.clip();
         ctx.globalAlpha = alpha;
         ctx.drawImage(base, at.dx, at.dy, at.dw, at.dh);
@@ -143,10 +151,32 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
         }
         ctx.restore();
 
+        // While it blooms, keep only what lies inside the soft ellipse:
+        // solid in the core, feathering out to nothing, so the film comes
+        // out of the grey with no edge anywhere.
+        if (bloom) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'destination-in';
+          ctx.translate(bloom.cx, bloom.cy);
+          const squash = bloom.ry / bloom.rx;
+          ctx.scale(1, squash);
+          const mask = ctx.createRadialGradient(0, 0, 0, 0, 0, bloom.rx);
+          mask.addColorStop(0, 'rgba(0, 0, 0, 1)');
+          mask.addColorStop(BLOOM_CORE, 'rgba(0, 0, 0, 1)');
+          // A smoothstep falloff in a few stops, so the edge draws no line.
+          for (const [along, a] of FEATHER) {
+            mask.addColorStop(BLOOM_CORE + (1 - BLOOM_CORE) * along, `rgba(0, 0, 0, ${a})`);
+          }
+          mask.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.fillStyle = mask;
+          ctx.fillRect(-bloom.cx - 2, (-bloom.cy - 2) / squash, vw + 4, (vh + 4) / squash);
+          ctx.restore();
+        }
+
         // On portrait the band dissolves into the page above and below it.
         // The clear end of each gradient is the ground colour at zero alpha:
         // fading to transparent black would draw a dark bar through the middle.
-        if (mode === 'band' && windowOpenness(p) >= 1) {
+        if (mode === 'band' && !bloom) {
           ctx.globalAlpha = 1;
           const edge = frameRect.height * 0.12;
           const top = ctx.createLinearGradient(0, frameRect.y, 0, frameRect.y + edge);
@@ -177,17 +207,13 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
     }
 
     /** The blank space between the slogan and the wordmark, as laid out. */
-    const measureGap = () => {
+    const measureGap = (): Gap => {
       const slogan = stage.querySelector<HTMLElement>('[data-hero-slogan]');
       const mark = stage.querySelector<HTMLElement>('[data-hero-wordmark]');
-      if (!slogan || !mark) {
-        gap = { top: vh * 0.43, bottom: vh * 0.6 };
-        return closedWindow(vw, vh, vw * 0.06, gap);
-      }
+      if (!slogan || !mark) return defaultGap(vh);
       const s = offsetWithin(slogan, stage);
       const m = offsetWithin(mark, stage);
-      gap = { top: s.top + slogan.offsetHeight, bottom: m.top };
-      return closedWindow(vw, vh, s.left, gap);
+      return { top: s.top + slogan.offsetHeight, bottom: m.top };
     };
 
     let alive = true;
@@ -208,7 +234,7 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
         ground = `rgb(${r}, ${g}, ${b})`;
         groundClear = `rgba(${r}, ${g}, ${b}, 0)`;
       }
-      closed = measureGap();
+      gap = measureGap();
 
       // Publish the geometry so the chapters line up with the canvas exactly,
       // whatever the viewport.
@@ -228,7 +254,6 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
     void document.fonts?.ready.then(resize);
     window.addEventListener('resize', resize);
     const offProgress = progress.on('change', () => request());
-    const offEntrance = entrance.on('change', () => request());
     loader.start();
 
     return () => {
@@ -236,11 +261,10 @@ export function FilmStage({ progress, entrance, stageRef, onBootProgress }: Film
       observer.disconnect();
       window.removeEventListener('resize', resize);
       offProgress();
-      offEntrance();
       loader.dispose();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [progress, entrance, stageRef]);
+  }, [progress, stageRef]);
 
   return <canvas ref={canvasRef} aria-hidden="true" data-film-canvas className="film-canvas absolute inset-0" />;
 }

@@ -76,7 +76,6 @@ export function AccountMenu({ name, isAdmin }: AccountMenuProps) {
           { href: '/admin/reports', label: 'Reports' },
         ]
       : []),
-    { href: '/credits', label: 'Photo credits' },
   ];
 
   return (

@@ -6,6 +6,10 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 
 let instance: Lenis | null = null;
 
+function createLenis(): Lenis {
+  return new Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 1, anchors: true, autoRaf: true });
+}
+
 /** Set by popstate: back and forward keep the browser's restored position. */
 let restoring = false;
 
@@ -29,7 +33,7 @@ export function SmoothScroll() {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const start = () => {
       if (instance || media.matches) return;
-      instance = new Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 1, anchors: true, autoRaf: true });
+      instance = createLenis();
     };
     const stop = () => {
       instance?.destroy();
@@ -52,10 +56,13 @@ export function SmoothScroll() {
   }, []);
 
   // A new page. Lenis still holds the old page's eased target, and if the
-  // wheel was still coasting when the link was clicked it keeps easing toward
-  // it, which dragged the new page down to its end (the fleet link landing on
-  // the footer). Jump it, without easing, to the top of the new page before
-  // it paints. Back and forward keep the position the browser restored, and a
+  // wheel was still coasting when the link was clicked it keeps writing it
+  // on every frame, which dragged the new page down to its end (the fleet
+  // link from the header, or a car from the grid, landing at the bottom).
+  // Even a forced immediate scrollTo did not hold against the coast, so the
+  // old instance is thrown away: jump to the top of the new page before it
+  // paints, then start a fresh Lenis from there with nothing in flight.
+  // Back and forward keep the position the browser restored, and a
   // #fragment is left to the anchor.
   const firstPath = useRef(true);
   useLayoutEffect(() => {
@@ -64,14 +71,13 @@ export function SmoothScroll() {
       firstPath.current = false;
       return;
     }
-    const lenis = instance;
     const keep = restoring || window.location.hash !== '';
     restoring = false;
+    const hadLenis = instance !== null;
+    instance?.destroy();
+    instance = null;
     if (!keep) window.scrollTo(0, 0);
-    if (lenis) {
-      lenis.resize();
-      lenis.scrollTo(keep ? window.scrollY : 0, { immediate: true, force: true });
-    }
+    if (hadLenis) instance = createLenis();
   }, [pathname]);
 
   return null;

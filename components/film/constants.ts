@@ -29,13 +29,6 @@ export const LOADER_FADE_MS = 700;
  */
 export const PROGRESS_SPRING = { stiffness: 260, damping: 42, mass: 0.35, restDelta: 0.00005 } as const;
 
-/**
- * The film fades in by itself in the space between the slogan and the
- * wordmark, after the slogan's lines have landed, then waits for the scroll
- * to open it. Scrolling first shows it at once (timeline.appearAlpha).
- */
-export const APPEAR_ENTRANCE ={ delay: 1.5, duration: 1.1, ease: [0.25, 0.46, 0.45, 0.94] } as const;
-
 /** Session flag: the hero's entrance has played once this session. */
 export const ENTRANCE_SEEN_KEY = 'd4drive:entrance-seen';
 

@@ -1,27 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  APPEAR_IN,
+  BLOOM,
+  BLOOM_CORE,
   CHAPTERS,
   FADE_OUT,
   LAST_BEAT,
   SEGMENTS,
-  WINDOW_OPEN,
-  appearAlpha,
   beatAt,
+  bloomAlpha,
+  bloomAmount,
+  bloomFraming,
+  bloomShape,
   bootSet,
   chapterOpacity,
-  closedWindow,
   easeInOut,
   filmFrame,
   filmPhase,
   fitModeFor,
   frameAt,
-  heroFraming,
   heroPush,
   loadOrder,
   placeFrame,
-  windowRect,
 } from '../components/film/timeline.ts';
 
 /**
@@ -64,7 +64,7 @@ test('the film never stops while the page scrolls through it: no holds', () => {
   assert.equal(SEGMENTS.filter((s) => s.beats[0] !== s.beats[1]).length, 1, 'one moving segment, start to end');
   assert.deepEqual(run.beats, [0, LAST_BEAT]);
   // From the window opening to the fade, every stretch of scroll moves the film.
-  for (let p = WINDOW_OPEN[1]; p < FADE_OUT[0]; p += 0.005) {
+  for (let p = BLOOM[1]; p < FADE_OUT[0]; p += 0.005) {
     assert.ok(beatAt(p + 0.005) - beatAt(p) > 0.5, `the film stalls at p=${p.toFixed(3)}`);
   }
 });
@@ -113,57 +113,81 @@ test('chapters never overlap one another', () => {
   }
 });
 
-test('the film starts as blank space and appears by itself or with the first scroll', () => {
-  assert.equal(appearAlpha(0, 0), 0);
-  assert.ok(appearAlpha(0, 0.5) > 0 && appearAlpha(0, 0.5) < 1, 'it fades in, it does not pop');
-  assert.equal(appearAlpha(0, 1), 1);
-  assert.equal(appearAlpha(APPEAR_IN[1], 0), 1);
-  assert.equal(appearAlpha(WINDOW_OPEN[1], 0), 1);
+test('the top of the page is blank grey: the film only appears once the page moves', () => {
+  assert.equal(bloomAlpha(0), 0);
+  assert.equal(bloomAmount(0), 0);
+  const early = bloomAlpha(BLOOM[0] + (BLOOM[1] - BLOOM[0]) * 0.1);
+  assert.ok(early > 0 && early < 1, 'it fades in, it does not pop');
+  assert.equal(bloomAlpha(BLOOM[1]), 1);
 });
 
-test('the film appears in the gap between the slogan and the wordmark', () => {
-  const win = closedWindow(1440, 900, 86, { top: 360, bottom: 560 });
-  assert.ok(win.y > 360 && win.y + win.height < 560);
-  assert.equal(win.x, 86);
-  assert.equal(win.width, 1440 - 172);
+/** Alpha of the bloom's mask at a point, as FilmStage draws it (smoothstep past the core). */
+function maskAt(shape: { cx: number; cy: number; rx: number; ry: number }, x: number, y: number): number {
+  const r = Math.hypot((x - shape.cx) / shape.rx, (y - shape.cy) / shape.ry);
+  if (r <= BLOOM_CORE) return 1;
+  if (r >= 1) return 0;
+  const u = (r - BLOOM_CORE) / (1 - BLOOM_CORE);
+  return 1 - u * u * (3 - 2 * u);
+}
+
+test('the film blooms out of the middle of the gap, with no hard edge', () => {
+  const gap = { top: 360, bottom: 560 };
+  const shape = bloomShape(BLOOM[0] + 0.001, 'cover', 1440, 900, gap)!;
+  assert.ok(shape, 'a bloom while it opens');
+  assert.equal(shape.cx, 720);
+  assert.ok(Math.abs(shape.cy - 460) < 2, 'centred in the gap');
+  // Solid at its heart, nothing at the screen's corners: a soft pool, not a box.
+  assert.equal(maskAt(shape, shape.cx, shape.cy), 1);
+  assert.equal(maskAt(shape, 0, 0), 0);
+  assert.equal(maskAt(shape, 1440, 900), 0);
+  // The falloff is gradual: half way across the feather it is half seen.
+  const mid = maskAt(shape, shape.cx + shape.rx * (BLOOM_CORE + (1 - BLOOM_CORE) / 2), shape.cy);
+  assert.ok(Math.abs(mid - 0.5) < 1e-9);
 });
 
-test('as it opens, the window pushes the slogan up and the wordmark down off the screen', () => {
-  for (const [w, h, gap] of [
-    [1440, 900, { top: 360, bottom: 560 }],
-    [390, 844, { top: 200, bottom: 600 }],
-  ] as const) {
-    const mode = fitModeFor(w, h);
-    const closed = closedWindow(w, h, 24, gap);
-    assert.deepEqual(heroPush(0, gap, h), { up: -0, down: 0 });
-    const open = heroPush(1, gap, h);
-    // The slogan's bottom moves above the top of the screen, and the
-    // wordmark's top below the bottom, in landscape and portrait alike.
-    assert.ok(gap.top + open.up < 0);
-    assert.ok(gap.bottom + open.down > h);
-    // All the way, the window's edges stay ahead of the type: it pushes.
-    for (let i = 0; i <= 50; i += 1) {
-      const p = WINDOW_OPEN[0] + ((WINDOW_OPEN[1] - WINDOW_OPEN[0]) * i) / 50;
-      const rect = windowRect(p, mode, w, h, closed);
-      const push = heroPush(p, gap, h);
-      assert.ok(gap.top + push.up <= rect.y + 0.5, `slogan inside the window at p=${p}`);
-      assert.ok(gap.bottom + push.down >= rect.y + rect.height - 0.5 || mode === 'band', `wordmark inside the window at p=${p}`);
-    }
-  }
-});
-
-test('the window opens out to the full film rectangle', () => {
+test('the bloom grows until it covers the whole film, then the mask goes', () => {
   for (const [w, h] of [
     [1440, 900],
     [390, 844],
   ] as const) {
     const mode = fitModeFor(w, h);
-    const closed = closedWindow(w, h, 24);
-    const shut = windowRect(0, mode, w, h, closed);
-    const open = windowRect(1, mode, w, h, closed);
-    assert.ok(shut.width < w && shut.height < h);
-    assert.deepEqual(open, filmFrame(mode, w, h));
+    const frame = filmFrame(mode, w, h);
+    let previous = 0;
+    for (let i = 0; i < 40; i += 1) {
+      const shape = bloomShape(BLOOM[0] + ((BLOOM[1] - BLOOM[0]) * i) / 40, mode, w, h)!;
+      assert.ok(shape.rx >= previous, 'it never shrinks while the page moves down');
+      previous = shape.rx;
+    }
+    // Just before it lets go of the mask, every corner of the film is already fully seen.
+    const last = bloomShape(BLOOM[1] - 1e-6, mode, w, h)!;
+    for (const [x, y] of [
+      [frame.x, frame.y],
+      [frame.x + frame.width, frame.y + frame.height],
+    ] as const) {
+      assert.ok(maskAt(last, x, y) > 0.999, `corner ${x},${y} not covered`);
+    }
+    assert.equal(bloomShape(BLOOM[1], mode, w, h), null);
   }
+});
+
+test('as it blooms it pushes the slogan up and the wordmark down off the screen', () => {
+  for (const [h, gap] of [
+    [900, { top: 360, bottom: 560 }],
+    [844, { top: 200, bottom: 600 }],
+  ] as const) {
+    assert.deepEqual(heroPush(0, gap, h), { up: -0, down: 0 });
+    const open = heroPush(1, gap, h);
+    assert.ok(gap.top + open.up < 0);
+    assert.ok(gap.bottom + open.down > h);
+  }
+});
+
+test('the bloom starts a touch close and settles on the film framing', () => {
+  const at = placeFrame('cover', { x: 0, y: 0, width: 1440, height: 900 }, 1600, 900);
+  const centre = { x: 720, y: 460 };
+  const close = bloomFraming(BLOOM[0], at, centre);
+  assert.ok(close.dw > at.dw, 'closer at first');
+  assert.deepEqual(bloomFraming(BLOOM[1], at, centre), at);
 });
 
 test('the phase moves hero, film, after', () => {
@@ -194,14 +218,6 @@ test('the band follows the car but never shows past the frame edge', () => {
   assert.ok(Math.abs(right.dx + right.dw - (band.x + band.width)) < 1e-9);
   const centre = placeFrame('band', band, 1600, 900, 0.5);
   assert.ok(centre.dx < left.dx && centre.dx > right.dx);
-});
-
-test('hero framing eases from the close-up to the film placement', () => {
-  const at = placeFrame('cover', { x: 0, y: 0, width: 1440, height: 900 }, 1600, 900);
-  const closed = closedWindow(1440, 900, 86);
-  const shut = heroFraming(0, windowRect(0, 'cover', 1440, 900, closed), at);
-  assert.ok(shut.dw > at.dw, 'the narrow window should be zoomed in');
-  assert.deepEqual(heroFraming(1, windowRect(1, 'cover', 1440, 900, closed), at), at);
 });
 
 test('every frame is loaded exactly once, the first one first', () => {

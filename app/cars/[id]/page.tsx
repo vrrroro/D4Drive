@@ -59,44 +59,46 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
         Back to the fleet
       </Link>
 
-      <div className="mt-10 grid grid-cols-1 gap-x-12 gap-y-12 lg:grid-cols-12 lg:items-start">
+      {/* The photo first, then everything about the car fitted beside it.
+          The fleet's photo lands in data-car-hero (CarLink); the words
+          arrive just after it (`.car-arrive`). */}
+      <div className="mt-8 grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-12 lg:items-center">
         <div className="lg:col-span-7">
-          {/* Level at rest, tilting toward the pointer only while it is on
-              the photo. data-car-hero is where the fleet's photo lands. */}
+          {/* Level at rest, tilting toward the pointer only while it is on the photo. */}
           <div className="car-tilt" data-car-hero={car.id}>
             <CarPhoto src={car.image_url} name={`${car.brand} ${car.model}, ${car.year}`} aspect="aspect-[3/2]" priority />
           </div>
-          <PhotoCreditLine image={car.image_url} className="mt-6 max-w-[60ch]" />
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="car-arrive lg:col-span-5">
           <p className="t-eyebrow text-[var(--muted)]">{car.brand}</p>
-          <h1 id="car-title" className="t-mega mt-4 text-[clamp(3.25rem,8.4vw,9rem)]">
+          <h1 id="car-title" className="t-display mt-3 text-[clamp(2.25rem,3.6vw,3.75rem)]">
             {car.model}
           </h1>
-          <p className="t-sub mt-8">
+          <p className="mt-5 font-display text-[clamp(1.5rem,2vw,2rem)] font-light">
             {formatCurrency(rate)}
             <span className="t-body text-[var(--muted)]"> a day</span>
           </p>
-          {car.description && <p className="t-body mt-6 max-w-[42ch]">{car.description}</p>}
+          {car.description && <p className="t-body mt-4 max-w-[46ch]">{car.description}</p>}
 
-          <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-[var(--ink)]/25 pt-8">
+          <dl className="mt-6 grid grid-cols-3 gap-x-6 gap-y-4 border-t border-[var(--ink)]/25 pt-5">
             <Spec label="Year" value={String(car.year)} />
             <Spec label="Seats" value={String(car.seats)} />
             <Spec label="Fuel" value={car.fuel_type} />
             <Spec label="Gearbox" value={car.transmission} />
             <Spec label="Kept at" value={branch} />
           </dl>
+          <PhotoCreditLine image={car.image_url} className="mt-6 max-w-[60ch]" />
         </div>
       </div>
 
-      {/* How it reaches the customer: part of the car's page, not a card of
-          its own, read on the way down to the one Reserve button. */}
-      <section aria-labelledby="getting-it" className="mt-[clamp(4rem,8vw,7rem)] border-t border-[var(--ink)]/25 pt-[clamp(2.5rem,5vw,4rem)]">
-        <h2 id="getting-it" className="t-display max-w-[16ch]">
+      {/* How it reaches the customer, straight under the photo and the
+          details, on the way down to the one Reserve button. */}
+      <section aria-labelledby="getting-it" className="car-arrive mt-[clamp(2.5rem,4vw,3.5rem)] border-t border-[var(--ink)]/25 pt-[clamp(2rem,3.5vw,3rem)]">
+        <h2 id="getting-it" className="t-sub max-w-[16ch]">
           How it gets to you.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-14 lg:grid-cols-12">
+        <div className="mt-8 grid grid-cols-1 gap-14 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <p className="t-eyebrow text-[var(--muted)]">Collect it</p>
             <p className="t-sub mt-4">{branch}</p>
@@ -150,7 +152,7 @@ function Spec({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <dt className="t-label text-[var(--muted)]">{label}</dt>
-      <dd className="mt-2 font-display text-xl font-light capitalize">{value}</dd>
+      <dd className="mt-1.5 font-display text-lg font-light capitalize">{value}</dd>
     </div>
   );
 }
