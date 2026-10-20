@@ -133,7 +133,7 @@ export default async function CarsPage({
 
       {!session && (
         <>
-          <AuthPanel id="sign-in" tone="light" next="/cars" dissolve />
+          <AuthPanel id="sign-in" tone="light" next="/cars" />
           <LocationsSection showFleetLink={false} />
         </>
       )}

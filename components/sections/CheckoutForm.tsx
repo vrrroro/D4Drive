@@ -282,7 +282,7 @@ export function CheckoutForm({ carId, ratePerDay, branch, branches }: CheckoutFo
               tilt={-6}
               arrow="swoop"
               arrowClassName="-mt-3 h-auto w-16 -translate-x-[14.5rem] -scale-x-100 rotate-[48deg] text-[var(--accent-text)]"
-              className="absolute right-0 top-3 hidden w-64 flex-col items-end text-right text-[var(--accent-text)] xl:flex"
+              className="absolute -right-6 top-3 hidden w-64 flex-col items-end text-right text-[var(--accent-text)] xl:flex"
             >
               {'relax, nobody\ngets charged yet.'}
             </Annotation>

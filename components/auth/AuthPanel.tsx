@@ -7,7 +7,6 @@ import { Annotation } from '@/components/ui/Annotation';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Field, type FieldTone } from '@/components/ui/Field';
-import { useParticleDissolve, usePrewarmCapture } from '@/components/fx/use-particles';
 import { refreshSession } from '@/lib/api-client';
 import { readCsrfToken } from '@/lib/csrf';
 import { usePrefersReducedMotion } from '@/components/motion/use-prefers-reduced-motion';
@@ -23,8 +22,6 @@ interface AuthPanelProps {
   headingLevel?: 'h1' | 'h2';
   /** Try the refresh token before asking for a password. */
   tryRefresh?: boolean;
-  /** Turn the panel's type to sand on success, the way the car left. */
-  dissolve?: boolean;
   /** Swing in from the left, tilted, like a card dealt onto the table. */
   swing?: boolean;
   id?: string;
@@ -53,7 +50,7 @@ const COPY: Record<Mode, { title: string; body: string; submit: string; switchLe
  * Used twice: at the end of the landing film, where the smoke fades into it,
  * and on /login, where protected pages send visitors with a `next` path.
  */
-export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false, dissolve = false, swing = false, id }: AuthPanelProps) {
+export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false, swing = false, id }: AuthPanelProps) {
   const router = useRouter();
   const reduced = usePrefersReducedMotion();
   const plateRef = useRef<HTMLDivElement>(null);
@@ -62,13 +59,6 @@ export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false,
   const [formError, setFormError] = useState<string | null>(null);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [done, setDone] = useState(false);
-
-  const { dissolve: runDissolve } = useParticleDissolve(
-    plateRef,
-    { duration: 1.4, spread: 260, gravity: -0.12, swirl: 74, stagger: 0.72, sweep: 0.6, sweepAngle: 0, size: 1.1, fade: 0.9 },
-    400,
-  );
-  usePrewarmCapture(plateRef, dissolve);
 
   useEffect(() => {
     router.prefetch(next);
@@ -120,10 +110,6 @@ export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false,
       }
 
       setDone(true);
-      // The focused field is about to turn to sand. Leaving focus on an
-      // invisible input would strand a keyboard user.
-      if (plateRef.current?.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
-      if (dissolve) await runDissolve();
       // refresh() so Server Components re-read the new session cookie.
       router.push(next);
       router.refresh();
