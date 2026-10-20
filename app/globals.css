@@ -1076,6 +1076,209 @@ select optgroup {
 }
 
 /* ==========================================================================
+   The car advisor (components/advisor/CarAdvisor.tsx). A keycap-square
+   launcher at the bottom right and, above it, a pane in the header island's
+   glass. Square, like everything else. It opens with transform and opacity
+   (Motion); hover and focus change colour only.
+   ========================================================================== */
+
+.advisor {
+  position: fixed;
+  right: clamp(1rem, 2.5vw, 2rem);
+  bottom: clamp(1rem, 2.5vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.advisor > * {
+  pointer-events: auto;
+}
+
+.advisor-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.1rem;
+  color: var(--color-paper);
+  background-color: var(--color-ink);
+  box-shadow: 0 14px 30px -14px rgb(26 26 26 / 0.6);
+  transition:
+    background-color 200ms ease,
+    opacity 300ms ease,
+    transform 300ms var(--ease-expo-out);
+}
+
+.advisor-launcher:hover,
+.advisor-launcher:focus-visible,
+.advisor-launcher[aria-expanded='true'] {
+  background-color: var(--btn-hover-bg);
+}
+
+/* On the landing's first screen the wordmark owns the bottom right; the
+   launcher waits until the first scroll has pushed it away. Under reduced
+   motion the film never leaves its hero phase, so it is always shown. */
+@media (prefers-reduced-motion: no-preference) {
+  body:has(.film-track[data-film-phase='hero']) .advisor-launcher[aria-expanded='false'] {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    pointer-events: none;
+  }
+}
+
+/* Without script it cannot answer, so it is not offered. */
+@media (scripting: none) {
+  .advisor {
+    display: none;
+  }
+}
+
+.advisor-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(25rem, calc(100vw - 2rem));
+  height: min(38rem, calc(100dvh - 7.5rem));
+  transform-origin: 100% 100%;
+  color: var(--ink);
+  /* The page's own grey, nearly opaque: a car photo (relit to that grey)
+     stands on the pane with no box, as it does on the page. */
+  background-color: rgb(189 188 186 / 0.96);
+  -webkit-backdrop-filter: blur(30px) saturate(2.1);
+  backdrop-filter: blur(30px) saturate(2.1);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.6),
+    0 28px 60px -24px rgb(26 26 26 / 0.55);
+}
+
+.advisor-list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.25rem;
+}
+
+.advisor-mine {
+  max-width: 85%;
+  padding: 0.6rem 0.85rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--color-paper);
+  background-color: var(--color-ink);
+}
+
+.advisor-suggestion {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  border: 1px solid rgb(26 26 26 / 0.2);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+.advisor-suggestion:hover,
+.advisor-suggestion:focus-visible {
+  color: var(--color-paper);
+  background-color: var(--color-carmine);
+  border-color: var(--color-carmine);
+}
+
+/* A suggested car stands on the pane like it stands on the page: no box. */
+.advisor-car {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.advisor-car-name {
+  transition: color 200ms ease;
+}
+
+.advisor-car:hover .advisor-car-name,
+.advisor-car:focus-visible .advisor-car-name {
+  color: var(--accent-text);
+}
+
+.advisor-input {
+  flex: 1;
+  resize: none;
+  padding: 0.35rem 0;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  background: transparent;
+  border-bottom: 1px solid rgb(26 26 26 / 0.45);
+  outline: none;
+  transition: border-color 200ms ease;
+}
+
+.advisor-input:focus {
+  border-color: var(--accent-text);
+}
+
+.advisor-send,
+.advisor-icon-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.advisor-send {
+  color: var(--color-paper);
+  background-color: var(--color-ink);
+}
+
+.advisor-send:hover:not(:disabled),
+.advisor-send:focus-visible {
+  background-color: var(--btn-hover-bg);
+}
+
+.advisor-send:disabled {
+  opacity: 0.35;
+}
+
+.advisor-icon-button:hover,
+.advisor-icon-button:focus-visible {
+  color: var(--color-paper);
+  background-color: var(--color-carmine);
+}
+
+@keyframes advisor-dot {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.advisor-dots span {
+  animation: advisor-dot 1.2s ease-in-out infinite;
+}
+
+.advisor-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.advisor-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ==========================================================================
    Reduced motion. Transforms and scroll-linked motion collapse; colour
    transitions survive, because they give feedback without moving anything.
    ========================================================================== */

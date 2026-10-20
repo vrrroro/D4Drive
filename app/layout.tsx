@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Inter, Shadows_Into_Light_Two, Six_Caps } from 'next/font/google';
+import { CarAdvisor } from '@/components/advisor/CarAdvisor';
 import { CursorHalo } from '@/components/motion/CursorHalo';
 import { SmoothScroll } from '@/components/motion/SmoothScroll';
 import { Grain } from '@/components/ui/Grain';
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
           <SiteFooter />
+          <CarAdvisor />
         </ToastProvider>
         <CursorHalo />
         <Grain />

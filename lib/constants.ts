@@ -9,6 +9,9 @@ export const Z = {
   base: 0,
   gridlines: 10,
   nav: 20,
+  // The car advisor's launcher and pane: over the page and the header,
+  // under the boot loader (which covers it on the landing until the film is in).
+  advisor: 40,
   // Above the sign-in panel it dissolves, below the loader. One fixed
   // full-viewport canvas shared by every particle job (components/fx).
   particles: 45,
