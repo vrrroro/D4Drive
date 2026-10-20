@@ -16,6 +16,7 @@
 | Headers | `helmet`-equivalent via `next.config` headers plus a strict CSP | The film's stills, engine clip and video need explicit `img-src` and `media-src`, so CSP has to be authored, not defaulted. |
 | PDF | `pdfkit` | Invoice generation, server-side only. |
 | Icons | `lucide-react` at `strokeWidth 1.5` | Named by the design brief. |
+| AI advisor | `qwen2.5:3b` served by Ollama on localhost (`/api/chat`), called from `/api/advisor` with plain `fetch` | The floating car advisor. Free, no key, no new package, nothing leaves the server. The model can only call two read-only tools (`lib/advisor/tools.ts`), so the SQL stays parameterised and hand-written. |
 | Map | `leaflet` 1.9.4 over OpenStreetMap tiles; Nominatim through `/api/geocode` | The checkout's address picker. Free, no key; the geocoder is called from the server so the CSP keeps `connect-src 'self'`. |
 | Asset scripts | `ffmpeg-static`, `sharp` (dev) | Film stills and the engine clip (`build:frames`); the fleet photo pipeline is Python (`scripts/fleet-photos/`). |
 
@@ -61,6 +62,7 @@ D4Drive/
 │   ├── admin/                     operations, fleet, bookings and deliveries, reports, database
 │   └── api/                       auth, cars, bookings, admin (Route Handlers)
 ├── components/
+│   ├── advisor/                   the floating car advisor (CarAdvisor), the AI chat
 │   ├── film/                      the scroll-scrubbed landing film (docs/VIDEO_STATE_MACHINE.md)
 │   ├── motion/                    SmoothScroll, StackPanel, CursorHalo, BackToTop
 │   ├── auth/                      AuthPanel, WelcomePanel
@@ -69,6 +71,7 @@ D4Drive/
 │   └── ui/                        header, footer, fields, buttons, notes, wordmark
 ├── lib/
 │   ├── db.ts                      mysql2 pool, single instance
+│   ├── advisor/                   the AI advisor: prompt, tool schemas, tools, the tool-calling loop
 │   ├── auth/                      hashing, jose sign/verify, cookies, refresh store
 │   ├── validation/                zod schemas, one file per boundary
 │   ├── services/                  pricing, distance, availability, cars, bookings, branches, users
@@ -219,6 +222,7 @@ is banned.
 |---|---|
 | Base content | 0 |
 | Header island | 20 |
+| Car advisor | 40 |
 | Particle canvas | 45 |
 | Boot loader | 50 |
 | Toasts | 60 |
@@ -228,3 +232,34 @@ is banned.
 The grain sits above content because it is a material applied to the whole
 surface; the cursor halo above that. Both are `pointer-events-none`. Stacked
 panels need no z-index: later panels paint over earlier ones in document order.
+
+---
+
+## 8. The car advisor (the AI feature, Phase 18)
+
+A chat at the bottom right of every public page that helps a visitor pick a
+car. The model is `qwen2.5:3b`, run locally by Ollama; the server talks to it
+on `OLLAMA_HOST` (default `http://127.0.0.1:11434`).
+
+```
+CarAdvisor (browser) --POST /api/advisor--> route: rate limit, zod
+   route --/api/chat--> Ollama (system prompt, two tool definitions)
+   Ollama --tool_calls--> lib/advisor/tools.ts --parameterised SELECT, fn_car_available--> MySQL
+   rows --tool message--> Ollama --draft--> grounding checks --> reply + linked cars
+```
+
+- **The model never writes SQL.** It names `search_fleet` or
+  `check_availability` and their arguments; zod checks them; they are bound
+  into fixed queries (`lib/services/advisor-fleet.ts`).
+- **Grounding is enforced by the server, not trusted to the model.** A 3B
+  model will invent cars and prices if it can (the first live run did). A
+  draft that names prices or cars before any search, or quotes a rupee amount
+  no tool returned, is sent back with a correction (twice at most); links in
+  the model's text are stripped, and only cars a tool returned are linked.
+- **Ids are only trusted from this turn's search.** The chat history is text,
+  so a later turn names cars, not ids; `check_availability` takes a car by
+  name (`LIKE ?`, wildcards escaped) and ignores a guessed id.
+- **Read only and stateless.** The widget sends the text of the conversation;
+  the route rebuilds the request each turn and changes nothing in MySQL.
+- Without Ollama (or the model), the route answers 503 and the widget says
+  the advisor is off; the rest of the site is unaffected.

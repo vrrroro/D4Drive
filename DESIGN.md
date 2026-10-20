@@ -161,6 +161,7 @@ film is scrubbed by the scroll, forward and back (`docs/VIDEO_STATE_MACHINE.md`)
 | Confirmation | A carmine wash slides up over the whole screen and stays, footer included; the booking rises in after it | `.hot-wash` |
 | Between pages | None: pages swap straight onto the same grey (a fade from nothing, and the loading placeholders, flashed bare grey) | |
 | Cursor | A carmine halo trails the pointer on a spring | `CursorHalo.tsx` |
+| Car advisor | The pane rises from the launcher at the bottom right and settles (transform and opacity); the launcher waits out the landing's first screen, where the wordmark owns that corner | `components/advisor/CarAdvisor.tsx` |
 | Hover | Fleet names, wordmark letters, the detail photo's tilt, keycaps | CSS and Motion |
 
 Rules:
@@ -249,6 +250,7 @@ condition for keeping them.
 | `SiteHeader` | The condensed `D4DRIVE` wordmark, Fleet, Sign in and the typed "Let's ___" link (signed out only), or "Signed in as *Name*" with `AccountMenu` (whose menu hangs from it in glass). Open at the top of a page; docked into a centred island of frosted glass (square, like everything else) once the page moves (`IslandDock`: an IntersectionObserver for the dock, ResizeObservers for the fit, transforms only). Skip link. |
 | `SiteFooter` | The slim line on every page: year, simulated payment, "This Was Bloomed By Rohit". (Photo credits left the footer and the account menu at the owner's request; each photo is credited under it on its car page, and `/credits` still lists them all.) |
 | `LocationsSection` | Real branches from the database, "Browse the fleet" with its note. Landing and signed-out fleet only. |
+| `CarAdvisor` | The "Which car?" launcher (ink, square, red on hover) and a pane of the page's own grey with a frosted edge. Visitor messages in ink blocks, replies as plain text, suggested cars as photo, name and price with no card. Escape closes it and returns focus; scrolling inside it is kept from Lenis. Not shown on admin pages or without script. |
 | `AuthPanel` | Sign in and register as one three-column panel (brand, heading, form). Light at the end of the film, hot and swinging in on `/login`. |
 | `FleetIndex` | The grid: three across on a laptop, two on a tablet, one on a phone. No cards: the photo stands on the grey, the name, specs and price beneath. Hover lifts the car a little, pools a soft carmine shadow under it (a multiplied radial gradient at the photos' ground line, opacity only) and turns its words red. |
 | `CarLink` | A link to a car that carries its photo into the car page with a View Transition where the browser has one. |

@@ -367,6 +367,16 @@ The same walkthrough is on `/admin/database`, generated from
 | Effect | Read only |
 | Result | Revenue, utilisation, rankings, customers, the dispatch list, the audit trail |
 
+### 6.15 Ask the car advisor (the AI feature)
+
+| | |
+|---|---|
+| Operation | A visitor asks the "Which car?" advisor in plain words (`POST /api/advisor`); a local language model (qwen2.5:3b in Ollama) answers by calling two tools |
+| Tables | `cars`, `branches`, `bookings` |
+| Component | Tool `search_fleet`: `SELECT ... FROM cars JOIN branches WHERE c.is_active = 1 AND c.seats >= ? ...` (filters bound, sort allowlisted). Tool `check_availability`: the car by id or by name (`LIKE ?`, wildcards escaped), then `SELECT fn_car_available(?, ?, ?)` |
+| Effect | Read only. The model never writes SQL: it names a tool and its arguments, zod checks them, and they are bound into fixed queries |
+| Result | A short recommendation and up to three linked cars, every price taken from the rows (the server sends back any draft that quotes a price no tool returned) |
+
 ### A five minute demonstration
 
 1. `npm run db:setup`, `npm run dev`, sign in as `admin@d4drive.in`. Open

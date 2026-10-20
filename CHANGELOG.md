@@ -7,6 +7,57 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-21: Phase 18, the AI car advisor (branch `feature/ai-car-advisor`, stacked on PR #29)
+
+The course asks for an AI feature, explained, demonstrated and presented.
+The owner asked for a small floating chatbot that helps pick a car.
+
+#### Added
+- **The car advisor.** A "Which car?" button at the bottom right of every
+  public page opens a chat (`components/advisor/CarAdvisor.tsx`). The visitor
+  asks in plain words; `POST /api/advisor` runs a local language model,
+  `qwen2.5:3b` served by Ollama, which answers by calling two read-only tools
+  over MySQL: `search_fleet` (bound filters, allowlisted sort) and
+  `check_availability` (by id or by name, through `fn_car_available`). Replies
+  link up to three real cars. Nothing leaves the server; no API key; no new
+  package (Ollama's REST API through `fetch`). Without Ollama the advisor says
+  it is off.
+- **Grounding checks on the server** (`lib/advisor/reply.ts`, `run.ts`): a
+  draft that names cars or prices before any search, or quotes a rupee amount
+  no tool returned, goes back to the model with a correction; links in its
+  text are stripped; only cars a tool returned are linked; an id is trusted
+  only if this turn's search returned it.
+- `tests/advisor.test.ts` (8 tests, one against MySQL) and smoke section 6
+  (7 checks, one a live answer). `docs/DATABASE.md` 6.15, the walkthrough
+  entry on `/admin/database`, `ARCHITECTURE.md` section 8.
+- **The deck**: `docs/presentation/D4Drive-AI-Car-Advisor.pptx`, 7 slides with
+  speaker notes, real screenshots, real tool output and the limits.
+
+#### Changed
+- The 2026-10-15 working-tree edits, committed on their own: the sign-in
+  dissolve removed (`components/fx` is now unused), the flank note smaller
+  and higher, the checkout note further right.
+
+#### Found on the way
+- The first live run invented an Ertiga, a Safari and an i20 with made-up
+  prices and links; a later one priced the Honda City at the Swift's rate (a
+  guessed id), one added a petrol filter nobody asked for, one promised
+  delivery to Coorg. Each is now caught or prevented (above, and a
+  closest-cars fallback, and the Bengaluru-only delivery rule in the prompt).
+- A DB test failed once across midnight on stale data from earlier runs;
+  `npm run db:setup` then 72 of 72.
+- Tried first and dropped: Claude (no key on the machine), then Gemini's free
+  tier (`generateContent` on `gemini-3.8-flash` timed out for the owner's
+  key; `gemini-2.5-flash` is closed to new users). `GEMINI_API_KEY` in the
+  owner's `.env` is now unused.
+
+#### Verified
+- `lint`, `lint:copy`, `typecheck`, `npm test` (54 pass, 5 skip),
+  `test:db` (72), `build`, `npm run smoke` against `next start` (68 of 69 in
+  one run; the Escape check waited too little for the exit animation, fixed,
+  passing on its own). Live conversations checked against the rows; replies
+  take 10 to 27 s on the laptop's CPU. `npm run db:setup` afterwards.
+
 ### 2026-10-12: Phase 17, the film master and the cut (branch `feature/film-master`, stacked on PR #28)
 
 The owner's request after Phase 16, with a new master of the film,

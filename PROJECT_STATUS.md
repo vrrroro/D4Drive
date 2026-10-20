@@ -1,8 +1,8 @@
 # Project Status and Milestones
 
-**Current phase:** 17, the film master and the cut (done in code 2026-10-12, branch `feature/film-master`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 17 verified
-**Last updated:** 2026-10-12
+**Current phase:** 18, the AI car advisor (done in code 2026-10-21, branch `feature/ai-car-advisor`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 18 verified
+**Last updated:** 2026-10-21
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here and in the
@@ -30,11 +30,34 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
 | 8 | 15: One grey (the owner's next list) | Done 2026-10-12, PR #27 |
 | 9 | 16: The island and the bloom (the owner's list after 15) | Done 2026-10-12, PR #28 |
-| 10 | 17: The film master and the cut | Done in code 2026-10-12, branch `feature/film-master` |
+| 10 | 17: The film master and the cut | Done 2026-10-12, PR #29 |
+| 11 | 18: The AI car advisor | Done in code 2026-10-21, PR #30 |
 
 ---
 
-### Phase 17: The film master and the cut (done in code 2026-10-12, branch `feature/film-master`)
+### Phase 18: The AI car advisor (done in code 2026-10-21, branch `feature/ai-car-advisor`)
+
+The owner's request of 2026-10-20 (a course requirement): integrate a suitable
+AI feature, explain it, demonstrate it, and present it in a 6 to 7 slide deck.
+The owner asked for a small floating chatbot that helps choose a car from the
+fleet. Provider decisions, in order: no Anthropic key, so Gemini's free tier
+(its `generateContent` timed out for the owner's key, and `gemini-2.5-flash`
+is closed to new users), then, at the owner's request, a local model in Ollama.
+
+- [x] The uncommitted 2026-10-15 edits (sign-in dissolve removed, two notes refitted) committed on their own first
+- [x] Widget `components/advisor/CarAdvisor.tsx` in the root layout: launcher, glass-grey pane, suggestions, replies with linked cars, Escape and focus return, Lenis kept out, hidden on admin pages, no script and the landing's first screen
+- [x] `POST /api/advisor`: rate limit (20 per 10 minutes), zod on the conversation (roles, alternation, turns, length), 400/429/502/503 mapped, no internals leaked
+- [x] Two read-only tools over MySQL (`search_fleet`, `check_availability` by id or by name, through `fn_car_available`), arguments checked by zod, parameterised SQL, wildcards escaped
+- [x] The tool-calling loop on Ollama's `/api/chat` with `qwen2.5:3b` (`lib/advisor/run.ts`), no new package
+- [x] Found on the way, live: the 3B model invented cars, prices and links; guessed a car id (a real but different car); added filters nobody asked for; claimed delivery to Coorg. Fixed with server-side grounding checks (no car or price before a search, every rupee amount from the rows, links stripped, ids trusted only from this turn's search), a closest-cars fallback for empty searches, and a Bengaluru-only delivery rule in the prompt
+- [x] Tests: `tests/advisor.test.ts` (8, one against MySQL); smoke section 6 (7 checks, one a live answer whose links must be real car pages)
+- [x] `docs/DATABASE.md` 6.15, `/admin/database` walkthrough entry, `ARCHITECTURE.md` section 8, `DESIGN.md` rows
+- [x] Deck `docs/presentation/D4Drive-AI-Car-Advisor.pptx`: 7 slides, speaker notes, real screenshots and real tool output, the limits stated
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (54 pass, 5 skip), `test:db` (72), `build`, `smoke` (68 of 69 in the full run; the Escape check fixed and passing on its own)
+- [ ] A larger model (`qwen2.5:7b`) or a GPU for better and faster answers (needs the owner's RAM decision)
+- [ ] `check:leaks` with the advisor route added
+
+### Phase 17: The film master and the cut (done 2026-10-12, PR #29)
 
 The owner's request of 2026-10-12, after Phase 16, with a new 60 a second
 master of the film (`D4DRIVEMAIN.mp4`, in the repo root, gitignored).
