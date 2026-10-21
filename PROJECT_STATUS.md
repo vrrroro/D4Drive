@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** 19, a faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 19 verified
+**Current phase:** 20, the admin's header and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 20 verified
 **Last updated:** 2026-10-21
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -33,8 +33,20 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 10 | 17: The film master and the cut | Done 2026-10-12, PR #29 |
 | 11 | 18: The AI car advisor | Done in code 2026-10-21, PR #30 |
 | 12 | 19: A faster car advisor | Done in code 2026-10-21, PR #31 |
+| 13 | 20: The admin's header, and where the advisor appears | Done in code 2026-10-21, PR #32 |
 
 ---
+
+### Phase 20: The admin's header, and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`)
+
+The owner's list of 2026-10-21.
+
+- [x] The advisor's launcher appears on the landing only after the film has been scrolled right through (phase `after`), and hides again inside the film
+- [x] No advisor for a signed-in admin, on any page (`AdvisorGate`)
+- [x] The admin's controls in the header island itself, no dropdown: Operations, Fleet admin, Bookings admin, Reports, Database, Sign out (`AdminNav`); no My bookings, no public Fleet
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (58 pass, 5 skip), `build`; in Chrome at 1440x900 and 390x844: the launcher hidden on the first screen, mid film and while it fades, shown after it and gone again on scrolling back; no advisor for the admin on `/`, `/cars`, `/admin`, `/admin/fleet`, back after sign-out; the admin header's six controls, the current page marked, a link and Sign out working; the customer's menu with My bookings, Fleet, Sign out
+- [ ] Not run this phase: `test:db` and `smoke` (both rewrite the seed data)
+- [ ] On a phone only the first two admin links show until the row is swiped sideways; the owner may prefer shorter labels or a second row
 
 ### Phase 19: A faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`)
 

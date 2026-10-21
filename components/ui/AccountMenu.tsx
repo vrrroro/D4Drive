@@ -1,28 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { readCsrfToken } from '@/lib/csrf';
+import { useSignOut } from './use-sign-out';
 
 interface AccountMenuProps {
   name: string;
-  isAdmin: boolean;
 }
 
 /**
- * "Signed in as Name", with the account's places in a menu beneath it.
+ * A customer's "Signed in as Name", with their places in a menu beneath it.
+ * An admin gets AdminNav instead: every control in the header itself.
  *
  * A disclosure button rather than an ARIA menu: the items are ordinary links
  * and one button, reached with Tab like everything else. Escape, a click
  * outside, or a new page closes it.
  */
-export function AccountMenu({ name, isAdmin }: AccountMenuProps) {
-  const router = useRouter();
+export function AccountMenu({ name }: AccountMenuProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const { signOut, busy } = useSignOut(() => setOpen(false));
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuId = useId();
@@ -48,34 +47,12 @@ export function AccountMenu({ name, isAdmin }: AccountMenuProps) {
     };
   }, [open]);
 
-  async function signOut() {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST', headers: { 'x-csrf-token': readCsrfToken() } });
-      setOpen(false);
-      router.push('/');
-      // refresh() so Server Components re-render without the session cookie.
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const item =
     't-label flex w-full items-center px-5 py-3.5 text-left text-[var(--ink)] transition-colors duration-200 hover:bg-[var(--color-carmine)] hover:text-[var(--color-paper)] focus-visible:bg-[var(--color-carmine)] focus-visible:text-[var(--color-paper)] focus-visible:outline-none';
 
   const links = [
     { href: '/bookings', label: 'My bookings' },
     { href: '/cars', label: 'Fleet' },
-    ...(isAdmin
-      ? [
-          { href: '/admin', label: 'Operations' },
-          { href: '/admin/fleet', label: 'Fleet admin' },
-          { href: '/admin/bookings', label: 'Bookings admin' },
-          { href: '/admin/reports', label: 'Reports' },
-        ]
-      : []),
   ];
 
   return (

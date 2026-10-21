@@ -368,6 +368,19 @@ main > .panel:not(.panel ~ .panel) {
   transform: translate3d(var(--links-x, calc(100vw - var(--gutter) - 100%)), 0, 0);
 }
 
+/* An admin's six controls are wider than a phone: below 640px the row
+   scrolls sideways inside the island instead of running off the screen. */
+@media (max-width: 639px) {
+  .admin-nav {
+    max-width: calc(100vw - 11rem);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* The rule between the logo and the links belongs to the island. */
 .header-divider {
   opacity: 0;
@@ -1117,11 +1130,12 @@ select optgroup {
   background-color: var(--btn-hover-bg);
 }
 
-/* On the landing's first screen the wordmark owns the bottom right; the
-   launcher waits until the first scroll has pushed it away. Under reduced
-   motion the film never leaves its hero phase, so it is always shown. */
+/* On the landing the film owns the screen: the launcher waits until the
+   film has played right through and faded into the page (phase `after`),
+   and goes again if the visitor scrolls back into it. Under reduced motion
+   the film never leaves its hero phase, so it is always shown. */
 @media (prefers-reduced-motion: no-preference) {
-  body:has(.film-track[data-film-phase='hero']) .advisor-launcher[aria-expanded='false'] {
+  body:has(.film-track:not([data-film-phase='after'])) .advisor-launcher[aria-expanded='false'] {
     opacity: 0;
     transform: translate3d(0, 12px, 0);
     pointer-events: none;

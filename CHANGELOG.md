@@ -7,6 +7,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-21: Phase 20, the admin's header and where the advisor appears (branch `feature/admin-hud`, stacked on PR #31)
+
+The owner's list: the advisor only after the landing's film has been
+scrolled right through; no advisor for an admin; an admin's controls in the
+header island itself, not a dropdown, without My bookings or the public fleet.
+
+#### Changed
+- **The advisor waits for the end of the film.** On the landing the launcher
+  stays hidden through the hero and the whole film, and appears once the
+  film has faded into the page (`data-film-phase='after'`); scrolling back
+  into the film hides it again. Other pages show it at once. Reduced motion
+  is unchanged (always shown).
+- **No advisor for an admin**, on any page: `AdvisorGate` (a Server
+  Component in the root layout) reads the session and does not mount it.
+- **The admin's header** (`components/ui/AdminNav.tsx`): Operations, Fleet
+  admin, Bookings admin, Reports, Database and Sign out, inline in the
+  island, the current page marked (`aria-current`, red). No dropdown, no My
+  bookings, no public Fleet. On a phone the row scrolls sideways inside the
+  island. Customers keep their menu, now just My bookings, Fleet, Sign out.
+- Sign-out logic shared by both (`components/ui/use-sign-out.ts`).
+
 ### 2026-10-21: Phase 19, a faster car advisor (branch `feature/advisor-speed`, stacked on PR #30)
 
 The owner found the advisor too slow when giving the number of people and a
