@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** 18, the AI car advisor (done in code 2026-10-21, branch `feature/ai-car-advisor`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 18 verified
+**Current phase:** 19, a faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 19 verified
 **Last updated:** 2026-10-21
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -32,8 +32,27 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 9 | 16: The island and the bloom (the owner's list after 15) | Done 2026-10-12, PR #28 |
 | 10 | 17: The film master and the cut | Done 2026-10-12, PR #29 |
 | 11 | 18: The AI car advisor | Done in code 2026-10-21, PR #30 |
+| 12 | 19: A faster car advisor | Done in code 2026-10-21, PR #31 |
 
 ---
+
+### Phase 19: A faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`)
+
+The owner's report of 2026-10-21: the chat takes too long when given the
+number of people and a place. Timed live at 43 s (model load 5.5 s,
+instructions re-read 11.5 s, a thrown-away draft, search, a 10 s answer, all
+on the CPU; Ollama does not use the Radeon 780M). Five fixes offered; the
+owner chose 1 to 4.
+
+- [x] Keep the model loaded (`keep_alive` 24 h) and warm it at server start (`instrumentation.ts`, `warmAdvisor`)
+- [x] Fix: invented cars with no price slipped past the checks (`unknownCars`); `"brand": "all"` searched for a brand named all (now no filter)
+- [x] Stream the reply, a checked sentence at a time (`application/x-ndjson`; a failed sentence withdraws the draft); the model stops when the visitor leaves
+- [x] Shorter replies (under 80 words, `num_predict` 320)
+- [x] Found on the way: "5 people near Whitefield" was answered with "How many seats?"; such a reply is now sent back, and the prompt maps people to seats and gives branches without claiming they are near
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (58 pass, 5 skip), `build`; live through the route (10 to 16 s, first words at 6 to 8 s; 25 s with a correction) and in Chrome (streams, 3 car links, Escape, no console errors)
+- [ ] Not run this phase: `test:db` and `smoke` (both rewrite the seed data; run `npm run db:setup` after)
+- [ ] Option 5, not chosen: Ollama on the Radeon 780M GPU (not officially supported; would need testing)
+- [ ] Known: the model may still say a branch is "near" the visitor when it is not; the server does not check that claim
 
 ### Phase 18: The AI car advisor (done in code 2026-10-21, branch `feature/ai-car-advisor`)
 

@@ -49,6 +49,77 @@ export function soundsFactual(reply: string): boolean {
   return /₹|\b\d+\s*seats?\b|\bper day\b|\ba day\b/i.test(reply);
 }
 
+const COUNT = '(?:\\d+|two|three|four|five|six|seven|eight|nine)';
+const PARTY = new RegExp(
+  `\\b${COUNT}\\s+(?:people|persons|adults|passengers|friends|of us|seats?|seater)\\b|\\b(?:family|group|party) of ${COUNT}\\b`,
+  'i',
+);
+
+/**
+ * Has the visitor said how many are coming? Then a reply that only asks
+ * them something back is a wasted turn: a live run answered "5 people near
+ * Whitefield" with "How many seats do you need?".
+ */
+export function givesPartySize(message: string): boolean {
+  return PARTY.test(message);
+}
+
+/** A reply that asks the visitor something rather than answering. */
+export function asksBack(reply: string): boolean {
+  return reply.includes('?');
+}
+
+/**
+ * Car makers sold in India, for spotting a car a reply names. Not a fleet:
+ * the fleet is in MySQL. This is only the vocabulary for noticing "Toyota
+ * Innova" in a draft when no tool returned an Innova (a live run did that).
+ * Longest first, so "Maruti Suzuki" is read before "Maruti".
+ */
+const MAKERS = [
+  'Maruti Suzuki', 'Mercedes-Benz', 'Land Rover', 'Volkswagen', 'Mahindra', 'Mercedes', 'Hyundai', 'Citroen',
+  'Renault', 'Porsche', 'Jaguar', 'Maruti', 'Suzuki', 'Toyota', 'Nissan', 'Lexus', 'Skoda', 'Honda', 'Volvo',
+  'Isuzu', 'Tata', 'Jeep', 'Ford', 'Audi', 'BMW', 'BYD', 'Kia', 'MG',
+];
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Cars a reply names, maker and model ("Toyota Innova"), that no tool
+ * returned this turn. A maker counts only when a model name follows it (a
+ * capital or a digit), so "both Tata cars" is not a car. The makers of the
+ * cars seen are added, for a brand this list does not know.
+ */
+export function unknownCars(reply: string, seen: Iterable<AdvisorCar>): string[] {
+  const cars = [...seen];
+  const makers = [...new Set([...MAKERS, ...cars.map((c) => c.brand)])].sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(`\\b(${makers.map(escapeRegExp).join('|')})\\s+([A-Za-z0-9][\\w-]*)`, 'g');
+  const strangers: string[] = [];
+  for (const [, maker, word] of reply.matchAll(pattern)) {
+    // "MG Road" is a street in Bengaluru, not an MG.
+    if (!/^[A-Z0-9]|\d/.test(word!) || /^(road|cars?|models?)$/i.test(word!)) continue;
+    const known = cars.some((c) => {
+      const brand = c.brand.toLowerCase();
+      const m = maker!.toLowerCase();
+      const sameMaker = brand.includes(m) || m.includes(brand);
+      return sameMaker && c.model.toLowerCase().split(/\s+/)[0] === word!.toLowerCase();
+    });
+    const name = `${maker} ${word}`;
+    if (!known && !strangers.includes(name)) strangers.push(name);
+  }
+  return strangers;
+}
+
+/**
+ * The part of a growing draft that ends in a finished sentence (or line),
+ * the unit the server checks and then streams to the visitor. Empty until
+ * the first sentence ends.
+ */
+export function completeSentences(text: string): string {
+  let cut = 0;
+  for (const m of text.matchAll(/[.!?](?=\s)|\n/g)) cut = m.index! + 1;
+  return text.slice(0, cut);
+}
+
 /**
  * The cars a reply actually recommends: those the tools returned this turn
  * whose model the reply names, in the order it names them, at most three.

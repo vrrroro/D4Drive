@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent 
 import { ArrowUp, MessagesSquare, X } from 'lucide-react';
 import { CarPhoto } from '@/components/ui/CarPhoto';
 import { usePrefersReducedMotion } from '@/components/motion/use-prefers-reduced-motion';
-import { MAX_TURNS, MAX_USER_CHARS, type AdvisorCar, type AdvisorReply } from '@/lib/advisor/schema';
+import { MAX_TURNS, MAX_USER_CHARS, type AdvisorCar, type AdvisorEvent, type AdvisorReply } from '@/lib/advisor/schema';
 import { Z } from '@/lib/constants';
 import { formatCurrency } from '@/lib/services/pricing';
 
@@ -21,13 +21,46 @@ const SUGGESTIONS = [
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+const NO_ANSWER = 'The advisor could not answer just now. Try again in a moment.';
+
+/**
+ * Reads /api/advisor's stream, one JSON event a line, passing each draft
+ * (the checked reply so far) to `onDraft`, and returns the final reply.
+ */
+async function readReply(response: Response, onDraft: (text: string) => void): Promise<AdvisorReply> {
+  if (!response.ok || !response.body) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? NO_ANSWER);
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffered = '';
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffered += value;
+    let newline: number;
+    while ((newline = buffered.indexOf('\n')) >= 0) {
+      const line = buffered.slice(0, newline).trim();
+      buffered = buffered.slice(newline + 1);
+      if (!line) continue;
+      const event = JSON.parse(line) as AdvisorEvent;
+      if (event.type === 'draft') onDraft(event.text);
+      else if (event.type === 'error') throw new Error(event.error);
+      else return { reply: event.reply, cars: event.cars };
+    }
+  }
+  throw new Error(NO_ANSWER);
+}
+
 /**
  * The car advisor: a small chat that floats at the bottom right of every
  * public page and helps a visitor pick a car.
  *
  * It sends the conversation, text only, to /api/advisor, where a local
  * language model (Ollama) answers from the live fleet through two database tools (lib/advisor). A
- * reply can carry up to three cars; each links to its page.
+ * reply can carry up to three cars; each links to its page. The reply
+ * streams in a sentence at a time, each checked by the server first; the
+ * growing draft is hidden from screen readers, which hear the finished reply.
  *
  * Mounted once in the root layout, so a conversation survives moving
  * between pages. The panel opens with transform and opacity only; under
@@ -41,6 +74,7 @@ export function CarAdvisor() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [draft, setDraft] = useState('');
   const [pending, setPending] = useState(false);
+  const [live, setLive] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const launcherRef = useRef<HTMLButtonElement>(null);
@@ -58,7 +92,7 @@ export function CarAdvisor() {
   useEffect(() => {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
-  }, [entries, pending, error]);
+  }, [entries, pending, error, live]);
 
   // The operations pages have their own tools; the advisor is for customers.
   if (pathname.startsWith('/admin')) return null;
@@ -85,11 +119,8 @@ export function CarAdvisor() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages }),
       });
-      const body = (await response.json().catch(() => ({}))) as Partial<AdvisorReply> & { error?: string };
-      if (!response.ok || typeof body.reply !== 'string') {
-        throw new Error(body.error ?? 'The advisor could not answer just now. Try again in a moment.');
-      }
-      setEntries([...next, { role: 'assistant', content: body.reply, cars: body.cars ?? [] }]);
+      const result = await readReply(response, setLive);
+      setEntries([...next, { role: 'assistant', content: result.reply, cars: result.cars }]);
     } catch (caught) {
       // Give the message back, so trying again is one press.
       setEntries(entries);
@@ -97,6 +128,7 @@ export function CarAdvisor() {
       setError(caught instanceof TypeError ? 'Could not reach the server. Check your connection.' : (caught as Error).message);
     } finally {
       setPending(false);
+      setLive('');
     }
   }
 
@@ -204,7 +236,12 @@ export function CarAdvisor() {
                 </ol>
               )}
 
-              {pending && (
+              {pending && live && (
+                <p aria-hidden="true" className="mt-5 whitespace-pre-line font-body text-[0.95rem] font-light leading-relaxed" data-advisor-draft>
+                  {live}
+                </p>
+              )}
+              {pending && !live && (
                 <p className="advisor-thinking mt-5 font-body text-sm text-[var(--muted)]" data-advisor-pending>
                   Looking through the fleet<span aria-hidden="true" className="advisor-dots"><span>.</span><span>.</span><span>.</span></span>
                 </p>
