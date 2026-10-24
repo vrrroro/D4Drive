@@ -47,6 +47,8 @@ The owner's list of 2026-10-21.
 - [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (58 pass, 5 skip), `build`; in Chrome at 1440x900 and 390x844: the launcher hidden on the first screen, mid film and while it fades, shown after it and gone again on scrolling back; no advisor for the admin on `/`, `/cars`, `/admin`, `/admin/fleet`, back after sign-out; the admin header's six controls, the current page marked, a link and Sign out working; the customer's menu with My bookings, Fleet, Sign out
 - [ ] Not run this phase: `test:db` and `smoke` (both rewrite the seed data)
 - [ ] On a phone only the first two admin links show until the row is swiped sideways; the owner may prefer shorter labels or a second row
+- [x] 2026-10-25: the AI advisor deck's wording edited in two passes (humanizer, humanize-text); facts unchanged
+- [ ] The deck still describes the Phase 18 advisor (`stream: false`, 10 to 27 s); updating it for Phase 19 (warm model, streaming, 10 to 16 s) needs new screenshots and is the owner's call
 
 ### Phase 19: A faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`)
 

@@ -7,6 +7,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-25: the AI advisor deck's wording (branch `feature/admin-hud`)
+
+#### Changed
+- `docs/presentation/D4Drive-AI-Car-Advisor.pptx`: slide text and speaker
+  notes edited in two passes (the humanizer and humanize-text skills) for
+  staged phrasing: "No filters to learn", "no key, no quota, no data...",
+  "Real answers, nothing scripted", "Safety first", "Honest limits". Slide 7
+  is now "Guardrails, tests and limits" (it had no "what is next"). Facts,
+  numbers, screenshots and layout unchanged, apart from more room between
+  slide 4's blocks. The deck still describes the Phase 18 advisor (no
+  streaming, 10 to 27 s a reply).
+
 ### 2026-10-21: Phase 20, the admin's header and where the advisor appears (branch `feature/admin-hud`, stacked on PR #31)
 
 The owner's list: the advisor only after the landing's film has been
