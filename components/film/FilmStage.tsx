@@ -5,13 +5,11 @@ import type { MotionValue } from 'motion/react';
 import { FILM_MANIFEST } from '@/lib/film-manifest';
 import { FrameLoader } from './frame-loader';
 import {
-  BLOOM_CORE,
   FADE_OUT,
   LAST_BEAT,
-  bloomAlpha,
-  bloomAmount,
-  bloomFraming,
-  bloomShape,
+  cutAmount,
+  cutEdges,
+  cutFraming,
   defaultGap,
   ease,
   filmFrame,
@@ -28,13 +26,6 @@ interface FilmStageProps {
   stageRef: RefObject<HTMLDivElement | null>;
   onBootProgress: (fraction: number) => void;
 }
-
-/** The bloom's falloff past its solid core: [share of the way out, alpha], smoothstep. */
-const FEATHER = [
-  [0.25, 0.84],
-  [0.5, 0.5],
-  [0.75, 0.16],
-] as const;
 
 /** Layout position of `el` inside `ancestor`, ignoring transforms. */
 function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; left: number } {
@@ -59,11 +50,11 @@ function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; le
  *
  * The page is the film's own studio grey, so nothing is drawn behind the
  * picture. At the top of the page nothing is drawn at all; the first scroll
- * blooms the film out of the blank grey between the slogan and the wordmark,
- * seen through a soft ellipse with no edge (timeline.bloomShape) that grows
- * until the film fills the screen. At the end it fades back into the same
- * grey. Each draw also writes the push on the hero (`--hero-up`,
- * `--hero-down`).
+ * cuts the blank grey between the slogan and the wordmark open across the
+ * whole width (timeline.cutEdges), and the cut's edges move apart until the
+ * film fills its rectangle. At the end it fades back into the same grey.
+ * Each draw also writes the push on the hero (`--hero-up`, `--hero-down`),
+ * so the type rides on the cut's edges.
  */
 export function FilmStage({ progress, stageRef, onBootProgress }: FilmStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -107,7 +98,7 @@ export function FilmStage({ progress, stageRef, onBootProgress }: FilmStageProps
       const fade = ease((p - FADE_OUT[0]) / (FADE_OUT[1] - FADE_OUT[0]));
       canvas.style.opacity = String(1 - fade);
 
-      const push = heroPush(p, gap, vh);
+      const push = heroPush(p, mode, vw, vh, gap);
       const pushKey = `${push.up.toFixed(1)}|${push.down.toFixed(1)}`;
       if (pushKey !== lastPush) {
         stage.style.setProperty('--hero-up', `${push.up.toFixed(1)}px`);
@@ -115,69 +106,51 @@ export function FilmStage({ progress, stageRef, onBootProgress }: FilmStageProps
         lastPush = pushKey;
       }
 
-      const alpha = bloomAlpha(p);
-      const bloom = bloomShape(p, mode, vw, vh, gap);
+      const opened = cutAmount(p);
+      const cut = cutEdges(p, mode, vw, vh, gap);
       const f = frameAt(p, FILM_MANIFEST.count);
       const i0 = Math.floor(f);
       const t = f - i0;
-      const key = `${f.toFixed(3)}|${bloomAmount(p).toFixed(4)}|${alpha.toFixed(3)}|${vw}x${vh}`;
+      const key = `${f.toFixed(3)}|${opened.toFixed(4)}|${vw}x${vh}`;
       if (key === lastKey) return;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, vw, vh);
       lastKey = key;
-      if (alpha <= 0) return;
+      // Closed: the gap is plain page.
+      if (cut && cut.bottom - cut.top < 0.5) return;
 
       const base = loader.exact(i0) ?? loader.nearest(i0);
       if (base) {
         const frameRect = filmFrame(mode, vw, vh);
         const focus = FILM_MANIFEST.focus[Math.min(FILM_MANIFEST.count - 1, Math.round(f))] ?? 0.5;
         const placed = placeFrame(mode, frameRect, FILM_MANIFEST.width, FILM_MANIFEST.height, focus);
-        const at = bloom ? bloomFraming(p, placed, { x: bloom.cx, y: bloom.cy }) : placed;
+        const at = cut ? cutFraming(p, placed, { x: vw / 2, y: (cut.top + cut.bottom) / 2 }) : placed;
 
+        // The film is seen through the cut: a clean edge, the whole width,
+        // between its two edges; once open, through its own rectangle.
         ctx.save();
         ctx.beginPath();
-        ctx.rect(frameRect.x, frameRect.y, frameRect.width, frameRect.height);
+        if (cut) ctx.rect(0, cut.top, vw, cut.bottom - cut.top);
+        else ctx.rect(frameRect.x, frameRect.y, frameRect.width, frameRect.height);
         ctx.clip();
-        ctx.globalAlpha = alpha;
+        ctx.globalAlpha = 1;
         ctx.drawImage(base, at.dx, at.dy, at.dw, at.dh);
         // Between two stills, blend the next one in by the fraction. At 60
         // stills a second of film this reads as continuous motion.
         const next = t > 0.04 ? (loader.exact(i0 + step) ?? loader.exact(i0 + 1)) : null;
         if (next && next !== base) {
-          ctx.globalAlpha = alpha * t;
+          ctx.globalAlpha = t;
           ctx.drawImage(next, at.dx, at.dy, at.dw, at.dh);
         }
         ctx.restore();
 
-        // While it blooms, keep only what lies inside the soft ellipse:
-        // solid in the core, feathering out to nothing, so the film comes
-        // out of the grey with no edge anywhere.
-        if (bloom) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'destination-in';
-          ctx.translate(bloom.cx, bloom.cy);
-          const squash = bloom.ry / bloom.rx;
-          ctx.scale(1, squash);
-          const mask = ctx.createRadialGradient(0, 0, 0, 0, 0, bloom.rx);
-          mask.addColorStop(0, 'rgba(0, 0, 0, 1)');
-          mask.addColorStop(BLOOM_CORE, 'rgba(0, 0, 0, 1)');
-          // A smoothstep falloff in a few stops, so the edge draws no line.
-          for (const [along, a] of FEATHER) {
-            mask.addColorStop(BLOOM_CORE + (1 - BLOOM_CORE) * along, `rgba(0, 0, 0, ${a})`);
-          }
-          mask.addColorStop(1, 'rgba(0, 0, 0, 0)');
-          ctx.fillStyle = mask;
-          ctx.fillRect(-bloom.cx - 2, (-bloom.cy - 2) / squash, vw + 4, (vh + 4) / squash);
-          ctx.restore();
-        }
-
         // On portrait the band dissolves into the page above and below it.
         // The clear end of each gradient is the ground colour at zero alpha:
         // fading to transparent black would draw a dark bar through the middle.
-        if (mode === 'band' && !bloom) {
-          ctx.globalAlpha = 1;
+        // The fades come up over the end of the cut, not all at once after it.
+        if (mode === 'band' && opened > 0.7) {
+          ctx.globalAlpha = (opened - 0.7) / 0.3;
           const edge = frameRect.height * 0.12;
           const top = ctx.createLinearGradient(0, frameRect.y, 0, frameRect.y + edge);
           top.addColorStop(0, ground);
@@ -213,7 +186,10 @@ export function FilmStage({ progress, stageRef, onBootProgress }: FilmStageProps
       if (!slogan || !mark) return defaultGap(vh);
       const s = offsetWithin(slogan, stage);
       const m = offsetWithin(mark, stage);
-      return { top: s.top + slogan.offsetHeight, bottom: m.top };
+      // The slogan's crushed leading lets its descenders (the y of "you.")
+      // hang below its box; the cut must clear them too.
+      const descender = parseFloat(getComputedStyle(slogan.querySelector('h1') ?? slogan).fontSize) * 0.3 || 0;
+      return { top: s.top + slogan.offsetHeight + descender, bottom: m.top };
     };
 
     let alive = true;

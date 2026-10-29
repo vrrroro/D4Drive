@@ -2,6 +2,7 @@
 
 import { motion, useSpring, useTransform } from 'motion/react';
 import type { ReactNode } from 'react';
+import { FILM_MANIFEST } from '@/lib/film-manifest';
 import { useFilm } from './FilmContext';
 import { CHAPTERS, chapterOpacity, type ChapterId } from './timeline';
 
@@ -43,7 +44,7 @@ export function FilmChapter({ id, className = '', children, still }: FilmChapter
         // Only the reduced-motion document shows these; lazy, so the
         // scrubbing layout never downloads them.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={still.src} alt={still.alt} loading="lazy" decoding="async" className="film-still" width={1600} height={900} />
+        <img src={still.src} alt={still.alt} loading="lazy" decoding="async" className="film-still" width={FILM_MANIFEST.width} height={FILM_MANIFEST.height} />
       )}
       {children}
     </motion.div>

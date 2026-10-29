@@ -60,7 +60,7 @@ export function FilmOnRequest() {
           playsInline
           preload="none"
           poster={VIDEO_SOURCES.poster}
-          className="aspect-video w-full"
+          className="aspect-[640/331] w-full"
           onLoadedMetadata={(event) => {
             event.currentTarget.currentTime = POSTER_TIME;
           }}

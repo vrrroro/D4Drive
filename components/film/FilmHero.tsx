@@ -36,14 +36,14 @@ function Line({
  * The landing's opening frame: the slogan at the top left, the whole
  * wordmark at the bottom right, and blank grey between them.
  *
- * The first scroll blooms the film out of that grey (drawn by FilmStage)
- * until it fills the screen, pushing the type out of the way: the slogan up,
- * the wordmark down (`--hero-up`, `--hero-down`, written by FilmStage),
- * transform only.
+ * The first scroll cuts that grey open across the width (drawn by
+ * FilmStage), and the cut's edges part until the film fills the screen,
+ * pushing the type ahead of them: the slogan up, the wordmark down
+ * (`--hero-up`, `--hero-down`, written by FilmStage), transform only.
  *
  * The wordmark is already in place when the page opens: the boot loader
- * fills the same letters, at the same spot, from grey to ink, and fades off
- * them.
+ * springs the same letters up into the same spot one by one, fills them
+ * from grey to ink, and fades off them.
  */
 export function FilmHero({ images }: { images: string[] }) {
   return (

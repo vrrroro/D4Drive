@@ -54,3 +54,6 @@ Thumbs.db
 
 smoke-shots/
 __pycache__/
+
+# The owner's film master (20 MB). Build stills from it; never commit it.
+/D4DRIVEMAIN.mp4

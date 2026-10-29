@@ -149,10 +149,10 @@ film is scrubbed by the scroll, forward and back (`docs/VIDEO_STATE_MACHINE.md`)
 | Element | Motion | Driven by |
 |---|---|---|
 | Whole site | Inertial wheel scrolling (Lenis, lerp 0.085). Touch stays native. | `components/motion/SmoothScroll.tsx` |
-| Landing film | 523 stills drawn to a canvas from the scroll position, one unbroken run with no holds | `components/film/FilmStage.tsx` |
+| Landing film | 524 stills (a real 60 a second) drawn to a canvas from the scroll position, one run that slows to about a third of its pace for each piece of copy and never stops | `components/film/FilmStage.tsx` |
 | Film chapters | Fade with the scroll over the moving film, drift on a spring: the heading lag | `FilmChapter.tsx` |
-| Loader | The hero's wordmark, in place, filling grey to ink from the bottom as the film arrives; fades onto the hero's own | `BootLoader.tsx` |
-| Hero | After the loader the slogan's lines slide in from either side; the wordmark is already there. The first scroll blooms the film out of the grey between them through a soft ellipse with no edge, pushing the type away | `FilmHero.tsx`, `FilmStage.tsx` |
+| Loader | The hero's wordmark, in place: grey letters spring up one by one, then fill grey to ink from the bottom as the film arrives; fades onto the hero's own | `BootLoader.tsx` |
+| Hero | After the loader the slogan's lines slide in from either side; the wordmark is already there. The first scroll cuts the grey between them open across the width, and the cut's edges part, pushing the type away | `FilmHero.tsx`, `FilmStage.tsx` |
 | Panels | Dealt in: scale 0.9 to 1, plus or minus 0.7 degrees to 0, as the top reaches the screen top. Pinned until the next slides over. | `components/motion/StackPanel.tsx` |
 | Notes | Arrow strokes draw themselves once, on view | `HandArrow.tsx` |
 | Header | At the top of a page, logo top left and links top right, no glass; once the page moves both glide together (760ms) and the glass island closes in around them, and it grows and shrinks with the typed word. Tint follows the panel beneath | `IslandDock.tsx`, `HeaderTone.tsx` |
@@ -199,7 +199,7 @@ page ends with a slim footer line; the branch list (`LocationsSection`) flows on
 from the sign-in panel on the landing and the signed-out fleet, on the same
 ground, never as a card of its own, and with no wordmark after it.
 
-The landing is different: a 760vh track (640vh on portrait) with the film pinned
+The landing is different: a 1200vh track (1000vh on portrait) with the film pinned
 inside it, copy placed in the space the film leaves at each moment (the clear
 band above the car, the floor below it, the flanks while it faces the camera,
 the smoke once it has gone), ending on the sign-in panel. On portrait screens the
@@ -211,7 +211,7 @@ film sits in a band that follows the car, with copy above and below.
 
 1. **Fraunces at 12vw, light, crushed.**
 2. **Six Caps wordmarks**: the hero's, whole, at the bottom right (the
-   loader fills the same letters grey to ink); the header's.
+   loader springs the same letters up, then fills them grey to ink); the header's.
 3. **Letters as photo windows**: hover a letter of the hero wordmark and a fleet
    photograph shows through the glyph.
 4. **Red-pen notes** with self-drawing arrows. One SVG arrow, rotated and flipped

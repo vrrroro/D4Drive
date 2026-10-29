@@ -62,7 +62,7 @@ export default async function HomePage() {
       <FilmStory label="The D4Drive film">
         <FilmHero images={photos} />
 
-        <FilmChapter id="flank" still={{ src: still(80), alt: 'A red sports coupe side on, in a white studio.' }}>
+        <FilmChapter id="flank" still={{ src: still(70), alt: 'A red sports coupe side on, in a white studio.' }}>
           <h2 className="ch-top-left ch-head t-display absolute text-[var(--ink)]">
             We bring the car.
             <br />

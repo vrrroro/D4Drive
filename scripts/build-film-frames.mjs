@@ -30,10 +30,17 @@
  * of three stills in every ten, and a slow scroll felt the car stop and
  * lurch. Now every still moves the car the same distance.
  *
+ * v4 (2026-10-12) cuts from the owner's new master, D4DRIVEMAIN.mp4: the
+ * same film and soundtrack to the frame, but shot at a real 60 a second,
+ * 2560x1324 (a little wider than 16:9) and far sharper. Nothing is invented
+ * any more: every still is a real frame. The master holds two single
+ * repeated frames past the fade (5.0s and 9.55s), and a repeat is a dead
+ * spot on a slow scroll, so `mpdecimate` drops them and `minterpolate` fills
+ * just those two gaps (it copies every frame that lands on a real one).
+ *
  * Usage:
- *   npm run build:frames
- *   npm run build:frames -- --input ~/Downloads/D4Drive.mp4
- *   npm run build:frames -- --input ~/Downloads/D4Drive.mp4 --fps 30   (30 a second, from the 24 real frames)
+ *   npm run build:frames -- --input D4DRIVEMAIN.mp4
+ *   npm run build:frames -- --input D4DRIVEMAIN.mp4 --fps 30   (every other frame, no interpolation)
  */
 
 import { execFile } from 'node:child_process';
@@ -46,11 +53,12 @@ import sharp from 'sharp';
 
 const run = promisify(execFile);
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 /** Seconds into the source where the scrub begins: past the fade up from black. */
 const FILM_START = 1.25;
 const WIDTH = 1600;
-const HEIGHT = 900;
+/** The master's own shape, 2560x1324. */
+const HEIGHT = 828;
 const QUALITY = 70;
 /** The engine rev and burnout, measured off the soundtrack's RMS (-23 dB to -12 dB). */
 const AUDIO_FROM = 6.6;
@@ -59,7 +67,7 @@ const AUDIO_LENGTH = 3.4;
 const OUT = resolve('public/film', VERSION);
 const MANIFEST = resolve('lib/film-manifest.ts');
 
-/** Stills per second of film, interpolated from the source's 24 real frames. */
+/** Stills per second of film: the master's own 60, or every other one. */
 function parseFps() {
   const args = process.argv.slice(2);
   const index = args.indexOf('--fps');
@@ -144,15 +152,17 @@ async function main() {
   const scratch = await mkdtemp(join(tmpdir(), 'd4drive-frames-'));
   try {
     console.log(`\nExtracting frames from ${FILM_START}s of ${input} at ${fps} a second`);
-    // `decimate` first: drop the pulldown repeat in every five source frames,
-    // leaving the film's real 24 a second (see v3 above). Then interpolate on
-    // those, before scaling, so the motion search works on full detail.
-    // mci + aobmc + bidirectional search is the slow, clean mode: a few
-    // minutes for the nine-second film.
-    const interpolate = `decimate=cycle=5,minterpolate=fps=${fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,`;
+    // Drop the master's two repeated frames (see v4 above), then let
+    // minterpolate put a real in-between in each gap. Every other output
+    // frame lands exactly on a source frame and is copied through untouched.
+    // The thresholds are tight on purpose: only true repeats go.
+    const filter =
+      fps === 60
+        ? 'scale=1920:-2:flags=lanczos,mpdecimate=hi=64*4:lo=64*2:frac=0.33,minterpolate=fps=60:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1'
+        : 'fps=30,scale=1920:-2:flags=lanczos';
     await run(
       ffmpegPath,
-      ['-v', 'error', '-ss', String(FILM_START), '-i', input, '-an', '-vf', `${interpolate}scale=1920:1080:flags=lanczos`, '-q:v', '1', '-qmin', '1', join(scratch, 'f%03d.jpg')],
+      ['-v', 'error', '-ss', String(FILM_START), '-i', input, '-an', '-vf', filter, '-fps_mode', 'passthrough', '-q:v', '1', '-qmin', '1', join(scratch, 'f%03d.jpg')],
       { maxBuffer: 1024 * 1024 * 16 },
     );
     const frames = (await readdir(scratch)).filter((f) => f.endsWith('.jpg')).sort();

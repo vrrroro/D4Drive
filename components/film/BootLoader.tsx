@@ -13,9 +13,16 @@ interface BootLoaderProps {
   onFaded: () => void;
 }
 
+/** The hero wordmark's old entrance: each letter springs up, 90ms apart. */
+const LETTER_SPRING = { type: 'spring', stiffness: 210, damping: 13, mass: 0.9 } as const;
+const LETTER_STAGGER = 0.09;
+const WORD = [...'D4Drive'];
+
 /**
  * The first thing a visitor sees on the landing page: the wordmark, in the
- * very place the hero keeps it, filling from grey to ink as the film arrives.
+ * very place the hero keeps it. Its grey letters spring up into place one by
+ * one (the hero wordmark's old entrance); once the last has landed they fill
+ * from grey to ink as the film arrives.
  *
  * The ink is a second copy of the letters inside a window that rises from
  * the bottom: the window moves up by what is still to load and the letters
@@ -28,20 +35,28 @@ interface BootLoaderProps {
  */
 export function BootLoader({ progress, dismissed, onFaded }: BootLoaderProps) {
   const raw = useMotionValue(0);
-  const fill = useSpring(raw, { stiffness: 60, damping: 20, mass: 0.6, restDelta: 0.001 });
+  const fill = useSpring(raw, { stiffness: 80, damping: 22, mass: 0.6, restDelta: 0.001 });
   const windowY = useTransform(fill, (v) => `${(1 - Math.min(Math.max(v, 0), 1)) * 100}%`);
   const lettersY = useTransform(fill, (v) => `${-(1 - Math.min(Math.max(v, 0), 1)) * 100}%`);
 
   const [announced, setAnnounced] = useState(0);
   const [full, setFull] = useState(false);
+  // The fill waits for the letters: nothing pours into a letter still in flight.
+  const [landed, setLanded] = useState(false);
   const highWater = useRef(0);
+
+  // In case the last letter's animation never reports (a background tab).
+  useEffect(() => {
+    const id = window.setTimeout(() => setLanded(true), 2400);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     highWater.current = Math.max(highWater.current, dismissed ? 1 : progress);
-    raw.set(highWater.current);
+    if (landed) raw.set(highWater.current);
     const percent = Math.round(highWater.current * 100);
     setAnnounced((current) => (percent > current ? percent : current));
-  }, [progress, dismissed, raw]);
+  }, [progress, dismissed, landed, raw]);
 
   // Fade only once the ink has reached the top of the letters.
   useEffect(() => fill.on('change', (v) => v > 0.985 && setFull(true)), [fill]);
@@ -72,11 +87,27 @@ export function BootLoader({ progress, dismissed, onFaded }: BootLoaderProps) {
       >
         <div className="hero-wordmark relative">
           <p aria-hidden="true" className="t-condensed select-none whitespace-nowrap text-[var(--ink)]/15">
-            D4Drive
+            {WORD.map((letter, i) => (
+              <motion.span
+                key={`${letter}-${i}`}
+                data-loader-letter
+                className="inline-block"
+                initial={{ y: '115%' }}
+                animate={{ y: '0%' }}
+                transition={{ ...LETTER_SPRING, delay: i * LETTER_STAGGER }}
+                onAnimationComplete={i === WORD.length - 1 ? () => setLanded(true) : undefined}
+              >
+                {letter}
+              </motion.span>
+            ))}
           </p>
-          <motion.div aria-hidden="true" style={{ y: windowY }} className="absolute inset-0 overflow-hidden">
+          <motion.div aria-hidden="true" data-loader-ink style={{ y: windowY }} className="absolute inset-0 overflow-hidden">
             <motion.p style={{ y: lettersY }} className="t-condensed select-none whitespace-nowrap text-[var(--ink)]">
-              D4Drive
+              {WORD.map((letter, i) => (
+                <span key={`${letter}-${i}`} className="inline-block">
+                  {letter}
+                </span>
+              ))}
             </motion.p>
           </motion.div>
         </div>
