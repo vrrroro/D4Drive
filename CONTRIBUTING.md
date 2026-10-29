@@ -1,7 +1,6 @@
 # Contributing to D4Drive
 
-This project is built by multiple agents working concurrently in separate
-`git worktree` instances. The protocol below exists so that parallel work merges
+Work on this project runs in parallel in separate `git worktree` instances. The protocol below exists so that parallel work merges
 cleanly instead of producing conflicts in shared files.
 
 ---
@@ -23,14 +22,14 @@ Branch names are lowercase, hyphenated, and describe the outcome:
 `feature/intro-boot-loader`, not `feature/loader-stuff`.
 
 Every issue names its branch in the body. Use that name exactly, so worktree
-paths stay predictable across agents.
+paths stay predictable across tasks.
 
 ---
 
 ## 2. Worktrees
 
 A worktree gives each concurrent task its own working directory against the same
-repository, so two agents never fight over one checkout.
+repository, so two tasks never fight over one checkout.
 
 ```bash
 # From the repository root, once per task
@@ -53,7 +52,7 @@ git branch -d feature/intro-boot-loader
 `git worktree list` shows what is currently checked out where. Prune stale
 entries with `git worktree prune`.
 
-### Avoiding collisions between parallel agents
+### Avoiding collisions between parallel tasks
 
 Issues are grouped into waves in `PROJECT_STATUS.md`. Issues inside a wave touch
 disjoint file sets and are safe to run concurrently. Issues in a later wave

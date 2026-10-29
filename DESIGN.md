@@ -161,7 +161,7 @@ film is scrubbed by the scroll, forward and back (`docs/VIDEO_STATE_MACHINE.md`)
 | Confirmation | A carmine wash slides up over the whole screen and stays, footer included; the booking rises in after it | `.hot-wash` |
 | Between pages | None: pages swap straight onto the same grey (a fade from nothing, and the loading placeholders, flashed bare grey) | |
 | Cursor | A carmine halo trails the pointer on a spring | `CursorHalo.tsx` |
-| Car advisor | The pane rises from the launcher at the bottom right and settles (transform and opacity); the launcher waits out the landing's first screen, where the wordmark owns that corner | `components/advisor/CarAdvisor.tsx` |
+| Car advisor | The pane rises from the launcher at the bottom right and settles (transform and opacity); on the landing the launcher waits until the film has played right through and faded into the page (phase `after`), and leaves again if the visitor scrolls back into it; never shown to a signed-in admin (`AdvisorGate`) | `components/advisor/CarAdvisor.tsx` |
 | Hover | Fleet names, wordmark letters, the detail photo's tilt, keycaps | CSS and Motion |
 
 Rules:
@@ -247,7 +247,7 @@ condition for keeping them.
 
 | Component | Notes |
 |---|---|
-| `SiteHeader` | The condensed `D4DRIVE` wordmark, Fleet, Sign in and the typed "Let's ___" link (signed out only), or "Signed in as *Name*" with `AccountMenu` (whose menu hangs from it in glass). Open at the top of a page; docked into a centred island of frosted glass (square, like everything else) once the page moves (`IslandDock`: an IntersectionObserver for the dock, ResizeObservers for the fit, transforms only). Skip link. |
+| `SiteHeader` | The condensed `D4DRIVE` wordmark, Fleet, Sign in and the typed "Let's ___" link (signed out only), or, for a customer, "Signed in as *Name*" with `AccountMenu` (My bookings, Fleet, Sign out, in a menu that hangs from it in glass), or, for an admin, `AdminNav`: Operations, Fleet admin, Bookings admin, Reports, Database and Sign out laid out in the island itself, no menu, the current page in red (on a phone the row scrolls sideways inside the island). Open at the top of a page; docked into a centred island of frosted glass (square, like everything else) once the page moves (`IslandDock`: an IntersectionObserver for the dock, ResizeObservers for the fit, transforms only). Skip link. |
 | `SiteFooter` | The slim line on every page: year, simulated payment, "This Was Bloomed By Rohit". (Photo credits left the footer and the account menu at the owner's request; each photo is credited under it on its car page, and `/credits` still lists them all.) |
 | `LocationsSection` | Real branches from the database, "Browse the fleet" with its note. Landing and signed-out fleet only. |
 | `CarAdvisor` | The "Which car?" launcher (ink, square, red on hover) and a pane of the page's own grey with a frosted edge. Visitor messages in ink blocks, replies as plain text, suggested cars as photo, name and price with no card. Escape closes it and returns focus; scrolling inside it is kept from Lenis. Not shown on admin pages or without script. |

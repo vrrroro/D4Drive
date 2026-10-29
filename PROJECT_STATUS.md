@@ -1,12 +1,11 @@
 # Project Status and Milestones
 
-**Current phase:** 19, a faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 19 verified
+**Current phase:** 20, the admin's header and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 20 verified
 **Last updated:** 2026-10-21
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
-the work. When a phase is finished, set the next one as current here and in the
-"Current state" section of `CLAUDE.md`.
+the work. When a phase is finished, set the next one as current here.
 
 **Verified on 2026-10-05 (cloud sandbox, Ubuntu 24.04, Node 22, MySQL 8.0.46):**
 `npm ci`, `npm run db:setup`, `npm run lint:copy`, `npm run typecheck`,
@@ -33,8 +32,22 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 10 | 17: The film master and the cut | Done 2026-10-12, PR #29 |
 | 11 | 18: The AI car advisor | Done in code 2026-10-21, PR #30 |
 | 12 | 19: A faster car advisor | Done in code 2026-10-21, PR #31 |
+| 13 | 20: The admin's header, and where the advisor appears | Done in code 2026-10-21, PR #32 |
 
 ---
+
+### Phase 20: The admin's header, and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`)
+
+The owner's list of 2026-10-21.
+
+- [x] The advisor's launcher appears on the landing only after the film has been scrolled right through (phase `after`), and hides again inside the film
+- [x] No advisor for a signed-in admin, on any page (`AdvisorGate`)
+- [x] The admin's controls in the header island itself, no dropdown: Operations, Fleet admin, Bookings admin, Reports, Database, Sign out (`AdminNav`); no My bookings, no public Fleet
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (58 pass, 5 skip), `build`; in Chrome at 1440x900 and 390x844: the launcher hidden on the first screen, mid film and while it fades, shown after it and gone again on scrolling back; no advisor for the admin on `/`, `/cars`, `/admin`, `/admin/fleet`, back after sign-out; the admin header's six controls, the current page marked, a link and Sign out working; the customer's menu with My bookings, Fleet, Sign out
+- [ ] Not run this phase: `test:db` and `smoke` (both rewrite the seed data)
+- [ ] On a phone only the first two admin links show until the row is swiped sideways; the owner may prefer shorter labels or a second row
+- [x] 2026-10-25: the AI advisor deck's wording edited in two passes (humanizer, humanize-text); facts unchanged
+- [ ] The deck still describes the Phase 18 advisor (`stream: false`, 10 to 27 s); updating it for Phase 19 (warm model, streaming, 10 to 16 s) needs new screenshots and is the owner's call
 
 ### Phase 19: A faster car advisor (done in code 2026-10-21, branch `feature/advisor-speed`)
 
@@ -59,7 +72,7 @@ owner chose 1 to 4.
 The owner's request of 2026-10-20 (a course requirement): integrate a suitable
 AI feature, explain it, demonstrate it, and present it in a 6 to 7 slide deck.
 The owner asked for a small floating chatbot that helps choose a car from the
-fleet. Provider decisions, in order: no Anthropic key, so Gemini's free tier
+fleet. Provider decisions, in order: no key for a hosted model API, so Gemini's free tier
 (its `generateContent` timed out for the owner's key, and `gemini-2.5-flash`
 is closed to new users), then, at the owner's request, a local model in Ollama.
 
@@ -413,7 +426,7 @@ Found and fixed in this phase:
 - **Fleet photo colours:** two cars (Thar, Virtus GT) are red; no usable neutral photo of those exact models existed. Replace with the owner's own photos when available.
 - **Hidden scrollbar:** the reference system hides it site-wide; kept, with the back-to-top keycap. Easy to restore in `globals.css` if users miss it.
 
-- **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered and deliberately not decided by an agent.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
+- **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered; the owner decides.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
 - **Dark mode:** removed in Phase 15 (the owner's decision). The old dark-mode accent question is moot. On the grey, small accent text is carmine-deep (5.5:1) and carmine is kept for large type (3.8:1).
 - **Carmine sign-in:** `/login` is still carmine. Phase 15's "one grey" was read as covering the greys only; confirm. (The confirmation is settled: the owner asked in Phase 16 for the whole page to turn carmine.)
 - **Island corners:** square, per radius 0; a rounded pill is one line if wanted.
@@ -454,7 +467,7 @@ Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
 
 | Item | Why it is not done | Who |
 |---|---|---|
-| Review and merge PR #23 | Pushed 2026-10-07; agents do not merge their own work to `main` | Owner |
+| Review and merge PR #23 | Pushed 2026-10-07; nothing merges to `main` without review | Owner |
 | Review and merge PR #24 (Phase 12) | Stacked on PR #23; merge #23 first | Owner |
 | Own photos of the fleet | The current ones are Commons photos of the same models | Owner, optional |
 | Film scrubbing on real phones | Needs devices | Owner or a device cloud |

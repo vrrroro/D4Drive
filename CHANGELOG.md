@@ -7,6 +7,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-25: the AI advisor deck's wording (branch `feature/admin-hud`)
+
+#### Changed
+- `docs/presentation/D4Drive-AI-Car-Advisor.pptx`: slide text and speaker
+  notes edited in two passes (the humanizer and humanize-text skills) for
+  staged phrasing: "No filters to learn", "no key, no quota, no data...",
+  "Real answers, nothing scripted", "Safety first", "Honest limits". Slide 7
+  is now "Guardrails, tests and limits" (it had no "what is next"). Facts,
+  numbers, screenshots and layout unchanged, apart from more room between
+  slide 4's blocks. The deck still describes the Phase 18 advisor (no
+  streaming, 10 to 27 s a reply).
+
+### 2026-10-21: Phase 20, the admin's header and where the advisor appears (branch `feature/admin-hud`, stacked on PR #31)
+
+The owner's list: the advisor only after the landing's film has been
+scrolled right through; no advisor for an admin; an admin's controls in the
+header island itself, not a dropdown, without My bookings or the public fleet.
+
+#### Changed
+- **The advisor waits for the end of the film.** On the landing the launcher
+  stays hidden through the hero and the whole film, and appears once the
+  film has faded into the page (`data-film-phase='after'`); scrolling back
+  into the film hides it again. Other pages show it at once. Reduced motion
+  is unchanged (always shown).
+- **No advisor for an admin**, on any page: `AdvisorGate` (a Server
+  Component in the root layout) reads the session and does not mount it.
+- **The admin's header** (`components/ui/AdminNav.tsx`): Operations, Fleet
+  admin, Bookings admin, Reports, Database and Sign out, inline in the
+  island, the current page marked (`aria-current`, red). No dropdown, no My
+  bookings, no public Fleet. On a phone the row scrolls sideways inside the
+  island. Customers keep their menu, now just My bookings, Fleet, Sign out.
+- Sign-out logic shared by both (`components/ui/use-sign-out.ts`).
+
 ### 2026-10-21: Phase 19, a faster car advisor (branch `feature/advisor-speed`, stacked on PR #30)
 
 The owner found the advisor too slow when giving the number of people and a
@@ -84,7 +117,7 @@ The owner asked for a small floating chatbot that helps pick a car.
   closest-cars fallback, and the Bengaluru-only delivery rule in the prompt).
 - A DB test failed once across midnight on stale data from earlier runs;
   `npm run db:setup` then 72 of 72.
-- Tried first and dropped: Claude (no key on the machine), then Gemini's free
+- Tried first and dropped: a hosted model API (no key on the machine), then Gemini's free
   tier (`generateContent` on `gemini-3.8-flash` timed out for the owner's
   key; `gemini-2.5-flash` is closed to new users). `GEMINI_API_KEY` in the
   owner's `.env` is now unused.
@@ -575,7 +608,7 @@ Screens reviewed at 1440x900 and 390x844, in reduced motion, and in dark mode.
   run's booking holds the window (a correct 409), which made it flaky as
   bookings accumulated. Three consecutive runs: 35/35.
 - `integrate/combine-frontends` pushed; PR #23 now carries Phases 10, 11, and 9.
-  `CLAUDE.md` and `PROJECT_STATUS.md` record it.
+  `PROJECT_STATUS.md` records it.
 
 ### 2026-10-05: Phase 9, hardening
 
@@ -706,13 +739,13 @@ Screens reviewed at 1440x900 and 390x844, in reduced motion, and in dark mode.
   `frontend-react`), kept as reference for its WebGL particle intro. Excluded
   from typecheck and lint. `REFERENCE.md` lists what to port and what not to.
 - Intro film variants (`public/videos/`, about 7.5 MB) and poster stills
-  (`public/posters/`) are now committed, so a fresh clone or cloud session
+  (`public/posters/`) are now committed, so a fresh clone
   plays the intro without the 16 MB source.
 - `build:assets` accepts `--poster-time` so the poster matches `POSTER_TIME`;
   previously it cut the poster at the first non-black frame (0.373s), which
   was still too dark.
-- `CLAUDE.md`: "Current state" section, "If the user just says continue", and a
-  mandatory end-of-session update of CHANGELOG, PROJECT_STATUS, and Current state.
+- The project notes: a "Current state" section and a mandatory end-of-session
+  update of CHANGELOG and PROJECT_STATUS.
 
 #### Changed
 - `PROJECT_STATUS.md` rewritten to match the code: Phases 0 to 8 ticked where
@@ -757,7 +790,7 @@ Reconstructed from commit messages `3d0c7cc`, `4a71c27`, `468a03e`, `af746f0`.
   resolved conflicts between the design brief and the design skill's hard bans
 - `docs/VIDEO_STATE_MACHINE.md`: the intro sequence contract, including the
   buffer-driven loader, autoplay policy, and every recovery path
-- `CONTRIBUTING.md`: git, worktree, and review protocol for parallel agents
+- `CONTRIBUTING.md`: git, worktree, and review protocol for parallel work
 - `SECURITY.md`: threat model, security rules, and the Content Security Policy
 - `README.md`: setup and run instructions
 
@@ -771,7 +804,7 @@ Reconstructed from commit messages `3d0c7cc`, `4a71c27`, `468a03e`, `af746f0`.
   transaction and locking strategy specified
 - `PROJECT_STATUS.md` rephased into ten phases grouped into concurrency waves
 - `PRD.md` gained the entry sequence specification
-- `CLAUDE.md` rewritten around the new stack and the design skill's non-negotiables
+- The project notes rewritten around the new stack and the design non-negotiables
 
 #### Security
 - `.env` confirmed excluded from version control before the first commit

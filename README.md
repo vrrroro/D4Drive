@@ -103,7 +103,6 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 
 | File | Contents |
 |---|---|
-| `AGENTS.md` | The whole project in short sentences: start here, or hand it to any agent |
 | `PRD.md` | What the product does |
 | `ARCHITECTURE.md` | Stack, structure, request flow, double-booking logic, asset pipelines |
 | `DESIGN.md` | Design system: tokens, type, motion, components, hard bans |
@@ -113,7 +112,6 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 | `CONTRIBUTING.md` | Git, worktree, and review protocol |
 | `SECURITY.md` | Threat model and security rules |
 | `PROJECT_STATUS.md` | Phases and what is left |
-| `CLAUDE.md` | Agent instructions, current state, and next step |
 | `CHANGELOG.md` | Every change, newest first |
 | `scripts/fleet-photos/README.md` | How the fleet photographs were chosen and made |
 | `reference/vite-intro/` | Earlier Vite prototype; only the blocked logo loader is left |
@@ -121,6 +119,6 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 ## Status
 
 Complete in code, redesigned on 2026-10-08 (Phase 12). See `PROJECT_STATUS.md`
-for what is left and `CLAUDE.md` for the current state.
+for what is left.
 
 Payment is **simulated**. There is no real gateway and no card data is stored.

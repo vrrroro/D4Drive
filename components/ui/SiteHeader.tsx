@@ -4,6 +4,7 @@ import { Z } from '@/lib/constants';
 import { HeaderTone } from './HeaderTone';
 import { getFirstName } from '@/lib/services/users';
 import { AccountMenu } from './AccountMenu';
+import { AdminNav } from './AdminNav';
 import { IslandDock } from './IslandDock';
 import { LetsCta } from './LetsCta';
 
@@ -20,11 +21,14 @@ const HEADER_ID = 'site-header';
  * glide. Its tint follows the panel beneath (HeaderTone).
  *
  * A Server Component, so the signed-in state comes from the session cookie
- * during render instead of flashing in after a client fetch.
+ * during render instead of flashing in after a client fetch. A customer
+ * gets the fleet and an account menu; an admin gets the operations pages
+ * and Sign out laid out in the island (AdminNav), with no menu.
  */
 export async function SiteHeader() {
   const session = await getSession();
-  const name = session ? await getFirstName(session.userId).catch(() => null) : null;
+  const admin = session?.role === 'admin';
+  const name = session && !admin ? await getFirstName(session.userId).catch(() => null) : null;
   const link = 't-label whitespace-nowrap transition-colors duration-300 hover:text-[var(--header-accent)]';
 
   return (
@@ -49,11 +53,15 @@ export async function SiteHeader() {
 
         <div className="header-links gap-5 sm:gap-7" data-island-links>
           <span aria-hidden="true" className="header-divider h-5 w-px bg-current" />
-          <Link href="/cars" className={`${link} ${session ? 'max-sm:hidden' : ''}`}>
-            Fleet
-          </Link>
-          {session ? (
-            <AccountMenu name={name ?? 'you'} isAdmin={session.role === 'admin'} />
+          {admin ? (
+            <AdminNav className={link} />
+          ) : (
+            <Link href="/cars" className={`${link} ${session ? 'max-sm:hidden' : ''}`}>
+              Fleet
+            </Link>
+          )}
+          {admin ? null : session ? (
+            <AccountMenu name={name ?? 'you'} />
           ) : (
             <>
               <Link href="/login" className={link}>
