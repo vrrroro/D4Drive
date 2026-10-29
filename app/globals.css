@@ -270,7 +270,8 @@ body {
 
 .panel {
   padding-inline: var(--gutter);
-  padding-block: clamp(5rem, 9vw, 9rem);
+  /* Trimmed 2026-10-12 (the owner found pages too zoomed in). */
+  padding-block: clamp(3.5rem, 6.5vw, 6.5rem);
 }
 
 .tone-ground {
@@ -312,16 +313,60 @@ body {
 .site-header {
   --header-fg: var(--ink);
   --header-accent: var(--accent-text);
+  --header-glass: rgb(233 230 226 / 0.66);
+  border-bottom: 1px solid transparent;
+  transition:
+    color 300ms ease,
+    background-color 400ms ease,
+    border-color 400ms ease,
+    backdrop-filter 400ms ease;
 }
 
 .site-header[data-tone='hot'] {
   --header-fg: var(--color-blush);
   --header-accent: var(--color-paper);
+  --header-glass: rgb(125 26 18 / 0.5);
 }
 
 .site-header[data-tone='dark'] {
   --header-fg: var(--color-blush);
   --header-accent: #e8806f;
+  --header-glass: rgb(26 26 26 / 0.55);
+}
+
+/* Once the page has moved (HeaderTone), a frosted grey bar: whatever scrolls
+   by passes under it, softened, instead of colliding with the links. */
+.site-header[data-scrolled='true'] {
+  background-color: var(--header-glass);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
+  border-bottom-color: rgb(26 26 26 / 0.07);
+}
+
+:root:not([data-theme='light']) .site-header[data-tone='light'] {
+  @media (prefers-color-scheme: dark) {
+    --header-glass: rgb(29 28 26 / 0.7);
+  }
+}
+
+/* The landing's first screen shows the wordmark at full size, so the header
+   hides its own until the film starts (FilmStory sets the phase). Only when
+   the film can run: the reduced-motion document never sets a phase. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  body:has(.film-track[data-film-phase='hero']) .header-logo {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+/* Buttons go red on hover with white type (Button, ButtonLink, keycaps). On
+   a carmine panel the red is the deeper carmine, so the hover still shows. */
+:root {
+  --btn-hover-bg: var(--color-carmine);
+}
+
+.tone-hot {
+  --btn-hover-bg: var(--color-carmine-deep);
 }
 
 /* ==========================================================================
@@ -353,7 +398,8 @@ body {
   transform: translate(2px, 2px);
   border-color: transparent;
   box-shadow: -2px -2px 2px 1px rgb(0 0 0 / 0.12);
-  background-color: color-mix(in srgb, currentColor 8%, transparent);
+  background-color: var(--btn-hover-bg);
+  color: var(--color-paper);
 }
 
 .keycap:disabled,
@@ -370,7 +416,7 @@ body {
 
 .film-track {
   position: relative;
-  height: var(--film-track, 700vh);
+  height: var(--film-track, 1000vh);
 }
 
 .film-stage {
@@ -391,16 +437,36 @@ body {
   pointer-events: none;
 }
 
-/* Geometry published by FilmStage at runtime. These fallbacks match the
-   cover layout, so the server render already lines the type up with the
-   window it will overlap. */
+/* Geometry published by FilmStage at runtime; these fallbacks match the
+   cover layout for the server render. */
 .film-stage {
-  --win-x: 7vw;
-  --win-y: 33.5dvh;
-  --win-w: 60vw;
-  --win-h: 23.5dvh;
   --film-y: 0px;
   --film-h: 100dvh;
+  /* The slab that opens into the film: black on the light page, the studio
+     grey on the dark one, so it always appears out of the blank space. */
+  --film-slab: #121110;
+}
+
+:root:not([data-theme='light']) .film-stage {
+  @media (prefers-color-scheme: dark) {
+    --film-slab: #e9e6e2;
+  }
+}
+
+:root[data-theme='dark'] .film-stage {
+  --film-slab: #e9e6e2;
+}
+
+/* The film is a white studio in either colour scheme, so the copy laid over
+   it keeps the light scheme's charcoal even when the page is dark. Only while
+   the film runs: the reduced-motion document sets the same copy on the page
+   ground and keeps the page's own ink. */
+@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
+  .film-chapter:not(.film-hero) {
+    --ink: var(--color-ink);
+    --muted: #4f4b47;
+    --accent-text: var(--color-carmine);
+  }
 }
 
 /* The boot loader covers the page until the film is ready. Without script it
@@ -411,65 +477,79 @@ body {
   }
 }
 
-/* --- Hero ---------------------------------------------------------------- */
+/* --- Hero ----------------------------------------------------------------
+   The slogan at the top, the whole wordmark at the bottom, a blank band
+   between. FilmStage draws a black slab into that band and opens it; its
+   edges push the type away (--hero-up, --hero-down), transform only. */
+
+.hero-slogan {
+  position: absolute;
+  left: var(--gutter);
+  top: calc(var(--header-h) + 2.5dvh);
+  transform: translate3d(0, var(--hero-up, 0px), 0);
+}
 
 .hero-lines {
-  position: absolute;
-  inset: 0;
   margin: 0;
   font-size: clamp(2.6rem, min(7.4vw, 12.5dvh), 9.5rem);
 }
 
 .hero-line {
-  position: absolute;
   white-space: nowrap;
 }
 
-.hero-line-1 {
-  left: var(--win-x);
-  top: calc(var(--win-y) - 0.74em);
-}
-
 .hero-line-2 {
-  left: calc(var(--win-x) + 0.85em);
-  top: calc(var(--win-y) + var(--win-h) / 2 - 0.44em);
+  margin-left: 0.9em;
 }
 
 .hero-line-3 {
-  left: calc(var(--win-x) + 2.4em);
-  top: calc(var(--win-y) + var(--win-h) - 0.24em);
+  margin-left: 2.1em;
 }
 
-.hero-wordmark {
-  position: absolute;
-  right: var(--gutter);
-  bottom: 0;
-  margin-bottom: -0.3em;
-  font-size: clamp(9rem, 31vw, 38rem);
-  line-height: 0.76;
-}
-
-.hero-note-left {
+.hero-base {
   position: absolute;
   left: var(--gutter);
-  bottom: 13dvh;
+  right: var(--gutter);
+  bottom: 3dvh;
   display: flex;
   align-items: flex-end;
-  gap: 1.5rem;
+  justify-content: space-between;
+  gap: 2rem;
+  transform: translate3d(0, var(--hero-down, 0px), 0);
 }
 
-.hero-note-right {
-  position: absolute;
-  right: var(--gutter);
-  top: calc(var(--win-y) - 2dvh);
-  width: min(24vw, 22rem);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+/* Whole, never cropped: sized to the height that is left, not the width. */
+.hero-wordmark {
+  font-size: min(31vw, 46dvh);
+}
+
+/* Six Caps' glyphs stand taller than its crushed 0.76 line box; given only
+   that, the base of every letter was cut off by the screen edge. */
+.hero-wordmark .t-condensed {
+  line-height: 0.92;
 }
 
 .hero-egg {
-  margin-bottom: -1.5rem;
+  margin-bottom: 5dvh;
+}
+
+/* While the film plays the hero is out of the way; it must not catch the
+   pointer (its letters are hover targets). */
+.film-track[data-film-phase='film'] .film-hero *,
+.film-track[data-film-phase='after'] .film-hero * {
+  pointer-events: none !important;
+}
+
+/* The grey stage (timeline.stageTone): the studio grey multiplied over the
+   film and the page beneath the copy, so the white studio stops glaring.
+   The copy sits above it and keeps its charcoal. */
+.film-tone {
+  position: absolute;
+  inset: 0;
+  background-color: #e2ded9;
+  mix-blend-mode: multiply;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* --- Chapters -------------------------------------------------------------
@@ -527,47 +607,39 @@ body {
   /* A thumb covers ground faster than a wheel: a shorter track keeps the
      film's pace the same. */
   .film-track {
-    --film-track: 600vh;
+    --film-track: 850vh;
   }
 
   .film-stage {
     --film-h: min(46dvh, 115vw);
     --film-y: calc((100dvh - var(--film-h)) * 0.47);
-    --win-x: 6vw;
-    --win-w: 88vw;
-    --win-y: calc(var(--film-y) + var(--film-h) * 0.18);
-    --win-h: calc(var(--film-h) * 0.62);
   }
 
   .hero-lines {
     font-size: clamp(2.3rem, 11.5vw, 5.5rem);
   }
 
-  .hero-line-1 {
-    top: calc(var(--win-y) - 0.92em);
-  }
-
   .hero-line-2 {
-    left: calc(var(--win-x) + 0.35em);
+    margin-left: 0.4em;
   }
 
   .hero-line-3 {
-    left: var(--win-x);
-    top: calc(var(--win-y) + var(--win-h) + 0.06em);
+    margin-left: 0;
   }
 
+  /* Small enough to leave the red dot room on the same row, so the two
+     leave the screen together when the slab pushes them. */
   .hero-wordmark {
-    right: auto;
-    left: var(--gutter);
-    font-size: 54vw;
+    font-size: min(40vw, 26dvh);
   }
 
-  .hero-note-right {
-    display: none;
+  .hero-base {
+    bottom: 5dvh;
+    flex-direction: row-reverse;
   }
 
-  .hero-note-left {
-    bottom: 19dvh;
+  .hero-egg {
+    margin-bottom: 3dvh;
   }
 
   .ch-top-left,
@@ -617,12 +689,10 @@ body {
     padding: calc(var(--header-h) + 3rem) var(--gutter) 2rem !important;
   }
 
-  .hero-lines,
-  .hero-line,
-  .hero-wordmark,
-  .hero-note-left,
-  .hero-note-right {
+  .hero-slogan,
+  .hero-base {
     position: static !important;
+    transform: none !important;
     margin: 0 !important;
   }
 
@@ -630,13 +700,13 @@ body {
     white-space: normal;
   }
 
-  .hero-line-2 {
-    color: var(--accent-text) !important;
-  }
-
   .hero-wordmark {
     margin-top: 2rem !important;
     font-size: 30vw;
+  }
+
+  .film-tone {
+    display: none;
   }
 
   .film-chapter .ch-head {
@@ -700,202 +770,210 @@ body {
 }
 
 /* ==========================================================================
-   The fleet (components/sections/FleetIndex.tsx). Photo cards by default;
-   a ghost stack of names where there is a mouse and room for it.
+   The fleet (components/sections/FleetIndex.tsx): a deck of cards. Each card
+   pins under the header a little lower than the one before, so the next
+   slides up over it and a sliver of each stays in view. The pop as a card
+   arrives is FleetCard's scroll-linked scale and lift (transform only).
    ========================================================================== */
 
-.fleet-stack {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-  gap: 3.5rem 2.5rem;
+.fleet-cards {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.fleet-row-link {
+.fleet-card-slot {
+  position: sticky;
+  top: calc(var(--header-h) + 1rem + var(--i) * 0.8rem);
+  /* The scroll each card is read for before the next one covers it. */
+  padding-bottom: 14dvh;
+}
+
+.fleet-card-slot:last-child {
+  padding-bottom: 0;
+}
+
+.fleet-card {
+  background-color: var(--ground);
+  box-shadow:
+    0 -14px 40px -18px rgb(26 26 26 / 0.3),
+    0 24px 60px -30px rgb(26 26 26 / 0.35);
+}
+
+.fleet-card-link {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+  padding: clamp(1.25rem, 2.4vw, 2.5rem);
+  color: var(--ink);
+}
+
+@media (min-width: 1024px) {
+  .fleet-card-link {
+    grid-template-columns: 7fr 5fr;
+    gap: clamp(2rem, 4vw, 4rem);
+    height: min(70dvh, 38rem);
+  }
+}
+
+.fleet-card-photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  align-self: center;
+}
+
+/* The grey copy for the hover. The filter is static; only opacity moves. */
+.fleet-card-grey {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(0.92);
+  opacity: 0;
+  transition: opacity 500ms var(--ease-luxury);
+  pointer-events: none;
+}
+
+.fleet-card-text {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  color: var(--color-paper);
+  min-height: 100%;
 }
 
-.fleet-name {
-  font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(2rem, 6vw, 2.75rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
+.fleet-card-name {
+  margin-top: 0.5rem;
+  transition: color 400ms var(--ease-luxury);
 }
 
-.fleet-brand {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-family: var(--font-body);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  line-height: 1.3;
-  text-transform: uppercase;
-  color: var(--color-blush);
+.fleet-card-cta {
+  margin-top: 2rem;
+  align-self: flex-start;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid currentColor;
+  transition: color 300ms ease;
 }
 
-.fleet-specs {
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 300;
-  line-height: 1.5;
-  color: var(--color-blush);
+.fleet-card-link:hover .fleet-card-grey,
+.fleet-card-link:focus-visible .fleet-card-grey {
+  opacity: 1;
 }
 
-.fleet-row-link:hover .fleet-name,
-.fleet-row-link:focus-visible .fleet-name {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.12em;
+.fleet-card-link:hover .fleet-card-name,
+.fleet-card-link:focus-visible .fleet-card-name {
+  color: var(--muted);
 }
 
-.fleet-preview {
-  display: none;
+.fleet-card-link:hover .fleet-card-cta,
+.fleet-card-link:focus-visible .fleet-card-cta {
+  color: var(--accent-text);
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
-  .fleet {
-    min-height: 34rem;
-  }
-
-  .fleet-stack {
-    display: block;
-    position: relative;
-    padding-top: 0.75em;
-    font-size: clamp(3rem, 9.4vw, 10.5rem);
-  }
-
-  .fleet-row {
-    position: relative;
-    height: 0.2em;
-  }
-
-  /* Each link is exactly its own band of the stack, full width, and the
-     glyphs that spill below it ignore the pointer. Moving down the pile
-     therefore steps through the cars one band at a time, instead of the
-     tallest, boldest name swallowing the rows beneath it. */
-  .fleet-row-link {
-    display: block;
-    height: 0.2em;
-    white-space: nowrap;
-  }
-
-  .fleet-name {
-    display: block;
-    pointer-events: none;
-  }
-
-  .fleet-card-photo,
-  .fleet-specs,
-  .fleet-brand {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .fleet-name {
-    font-size: 1em;
-    line-height: 1;
-    letter-spacing: -0.035em;
-    color: rgb(255 255 255 / 0.42);
-    transition: color 300ms ease;
-  }
-
-  .fleet-row-link:hover .fleet-name,
-  .fleet-row-link:focus-visible .fleet-name {
-    text-decoration: none;
-  }
-
-  .fleet-row[data-active='true'] .fleet-name {
-    font-size: 0.8em;
-    font-weight: 900;
-    letter-spacing: -0.045em;
-    color: var(--color-paper);
-    text-shadow: 0.035em 0.035em 0 var(--color-oxblood);
-  }
-
-  .fleet-preview {
-    display: block;
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-
-  .fleet-photo-frame {
-    position: absolute;
-    right: 0;
-    top: -14%;
-    width: 38%;
-    aspect-ratio: 3 / 2;
-    perspective: 1400px;
-  }
-
-  .fleet-photo {
-    position: absolute;
-    inset: 0;
-    transform-style: preserve-3d;
-  }
-
-  .fleet-photo > img {
-    box-shadow: var(--shadow-float);
-    transform: rotateX(24deg) rotateY(-20deg) rotateZ(9deg);
-  }
-
-  .fleet-brief {
-    position: absolute;
-    right: 6%;
-    bottom: -4%;
-    width: min(22rem, 30%);
-  }
-
-  .fleet-note {
-    position: absolute;
-    right: 40%;
-    top: -18%;
-  }
-
-  .fleet-rest {
-    position: absolute;
-    left: 58%;
-    top: 34%;
+@media (prefers-reduced-motion: reduce) {
+  /* Without the motion the deck is a plain list: nothing pins or overlaps. */
+  .fleet-card-slot {
+    position: static;
+    padding-bottom: 3rem;
   }
 }
 
-@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (prefers-reduced-motion: reduce) {
-  .fleet-photo > img {
-    transform: none;
-  }
-}
-
-/* A photograph laid on the table at an angle; it straightens to face you on
-   hover or when anything inside it has focus. */
+/* A photograph that lies level and tilts toward you only while the pointer
+   is on it (the car page). */
 .car-tilt {
   perspective: 1400px;
 }
 
 .car-tilt > * {
-  transform: rotateX(9deg) rotateY(-14deg) rotateZ(-1.6deg);
   transition: transform 700ms var(--ease-expo-out);
 }
 
-.car-tilt:hover > *,
-.car-tilt:focus-within > * {
-  transform: none;
+@media (hover: hover) and (pointer: fine) {
+  .car-tilt:hover > * {
+    transform: rotateX(6deg) rotateY(-10deg) rotateZ(-1deg) scale(1.02);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .car-tilt > * {
+  .car-tilt:hover > * {
     transform: none;
   }
+}
+
+/* The car photo carried from the fleet into the car page (CarLink). */
+html[data-vt='car'] [data-car-hero] {
+  view-transition-name: car-photo;
+}
+
+::view-transition-group(car-photo) {
+  animation-duration: 650ms;
+  animation-timing-function: var(--ease-expo-out);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 420ms;
+}
+
+/* Every page arrives rather than snapping in (app/template.tsx). Not while a
+   view transition is carrying the page across: it animates that itself. */
+.page-enter {
+  animation: page-enter 650ms var(--ease-expo-out) both;
+}
+
+html[data-vt] .page-enter {
+  animation: none;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+}
+
+/* The checkout's map (AddressPicker). Its own stacking context, so Leaflet's
+   panes (z-index 400 and up) stay under the header; tiles in greyscale so
+   the carmine pin and route are the only colour on it. */
+.address-map {
+  isolation: isolate;
+  z-index: 0;
+  border: 1px solid rgb(26 26 26 / 0.15);
+}
+
+.address-map .leaflet-container {
+  font-family: var(--font-body);
+  background-color: var(--studio);
+}
+
+.address-map .leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.92) brightness(1.04);
+}
+
+/* Dropdowns. The closed select and its open list in the studio grey, so the
+   options read on every panel (white lists on carmine were unreadable). */
+select {
+  background-color: var(--select-bg);
+}
+
+select option,
+select optgroup {
+  background-color: var(--select-bg);
+  color: var(--ink);
+}
+
+:root {
+  --select-bg: #e2ded9;
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    --select-bg: #2a2825;
+  }
+}
+
+:root[data-theme='dark'] {
+  --select-bg: #2a2825;
 }
 
 /* ==========================================================================

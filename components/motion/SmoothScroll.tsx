@@ -2,9 +2,12 @@
 
 import Lenis from 'lenis';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 let instance: Lenis | null = null;
+
+/** Set by popstate: back and forward keep the browser's restored position. */
+let restoring = false;
 
 /** The live Lenis instance, or null under reduced motion. */
 export function getLenis(): Lenis | null {
@@ -39,22 +42,41 @@ export function SmoothScroll() {
     };
     const onChange = () => (media.matches ? stop() : start());
 
+    const onPopState = () => {
+      restoring = true;
+    };
+
     start();
     media.addEventListener('change', onChange);
+    window.addEventListener('popstate', onPopState);
     return () => {
       media.removeEventListener('change', onChange);
+      window.removeEventListener('popstate', onPopState);
       stop();
     };
   }, []);
 
-  // A new page has a new height, and Next has already moved the scroll
-  // position. Re-measure so the eased target matches where the page is.
-  useEffect(() => {
-    const raf = requestAnimationFrame(() => {
-      instance?.resize();
-      if (instance) instance.scrollTo(window.scrollY, { immediate: true, force: true });
-    });
-    return () => cancelAnimationFrame(raf);
+  // A new page. Lenis still holds the old page's eased target, and if the
+  // wheel was still coasting when the link was clicked it keeps easing toward
+  // it, which dragged the new page down to its end (the fleet link landing on
+  // the footer). Jump it, without easing, to the top of the new page before
+  // it paints. Back and forward keep the position the browser restored, and a
+  // #fragment is left to the anchor.
+  const firstPath = useRef(true);
+  useLayoutEffect(() => {
+    // The first render is a page load: the browser's own restoration stands.
+    if (firstPath.current) {
+      firstPath.current = false;
+      return;
+    }
+    const lenis = instance;
+    const keep = restoring || window.location.hash !== '';
+    restoring = false;
+    if (!keep) window.scrollTo(0, 0);
+    if (lenis) {
+      lenis.resize();
+      lenis.scrollTo(keep ? window.scrollY : 0, { immediate: true, force: true });
+    }
   }, [pathname]);
 
   return null;

@@ -168,11 +168,11 @@ export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false,
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5" aria-labelledby={id ? `${id}-title` : undefined}>
             {mode === 'register' && (
               <>
-                <Field label="Full name" name="fullName" autoComplete="name" placeholder="Ananya Krishnan" error={fields.fullName} tone={fieldTone} size="lg" required />
-                <Field label="Mobile" name="phone" inputMode="numeric" autoComplete="tel" placeholder="9731408852" error={fields.phone} tone={fieldTone} size="lg" required />
+                <Field label="Full name" name="fullName" autoComplete="name" error={fields.fullName} tone={fieldTone} size="lg" required />
+                <Field label="Mobile" name="phone" inputMode="numeric" autoComplete="tel" error={fields.phone} tone={fieldTone} size="lg" required />
               </>
             )}
-            <Field label="Email" name="email" type="email" autoComplete="email" placeholder="you@example.com" error={fields.email} tone={fieldTone} size="lg" required />
+            <Field label="Email" name="email" type="email" autoComplete="email" error={fields.email} tone={fieldTone} size="lg" required />
             <Field
               label="Password"
               name="password"
@@ -190,19 +190,22 @@ export function AuthPanel({ tone, next, headingLevel = 'h2', tryRefresh = false,
               {formError}
             </p>
 
-            <Button type="submit" size="lg" variant={tone === 'hot' ? 'blush' : 'primary'} loading={submitting || done} className="w-full">
-              {copy.submit}
-            </Button>
+            {/* The note hangs from the button: its arrow rises to the button's
+                lower edge, the words underneath. */}
+            <div className="relative">
+              <Button type="submit" size="lg" variant={tone === 'hot' ? 'blush' : 'primary'} loading={submitting || done} className="w-full">
+                {copy.submit}
+              </Button>
+              <Annotation
+                tilt={-7}
+                arrow="swoop"
+                arrowClassName={`order-first mr-[18%] h-auto w-[5.5rem] -scale-y-100 rotate-[-14deg] ${tone === 'hot' ? 'text-[var(--color-blush)]' : 'text-[var(--accent-text)]'}`}
+                className={`absolute right-0 top-[calc(100%+0.15rem)] hidden w-[19rem] flex-col items-end gap-1 text-right xl:flex ${tone === 'hot' ? 'text-[var(--color-blush)]' : 'text-[var(--accent-text)]'}`}
+              >
+                {'go on.\nyou know you want to.'}
+              </Annotation>
+            </div>
           </form>
-
-          <Annotation
-            tilt={-7}
-            arrow="swoop"
-            arrowClassName={`order-first ml-auto mr-10 h-auto w-24 -scale-y-100 rotate-[200deg] ${tone === 'hot' ? 'text-[var(--color-blush)]' : 'text-[var(--accent-text)]'}`}
-            className={`absolute right-0 top-full mt-2 hidden w-[19rem] flex-col text-right xl:flex ${tone === 'hot' ? 'text-[var(--color-blush)]' : 'text-[var(--accent-text)]'}`}
-          >
-            {'go on.\nyou know you want to.'}
-          </Annotation>
         </div>
       </div>
     </PanelShell>
@@ -268,8 +271,8 @@ function BrandBlock({ tone }: { tone: Tone }) {
         <span>Drive</span>
       </p>
       <div className="t-label flex flex-col gap-2 text-[var(--muted)]">
-        <span>Self-drive cars</span>
-        <span>Delivered in Bengaluru</span>
+        <span>Cars brought to you</span>
+        <span>Across Bengaluru</span>
       </div>
     </div>
   );

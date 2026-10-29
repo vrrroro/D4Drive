@@ -29,7 +29,7 @@ export default async function AdminDashboard() {
   ];
 
   return (
-    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="ops-title">
+    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="ops-title">
       <h1 id="ops-title" className="t-mega">
         Operations.
       </h1>

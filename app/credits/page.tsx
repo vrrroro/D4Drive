@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: 'Photo credits' };
  */
 export default function CreditsPage() {
   return (
-    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="credits-title">
+    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="credits-title">
       <h1 id="credits-title" className="t-mega">
         Photo credits.
       </h1>

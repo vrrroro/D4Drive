@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { Annotation } from '@/components/ui/Annotation';
@@ -10,33 +11,79 @@ import { useToast } from '@/components/ui/Toast';
 import { calculatePrice, formatCurrency } from '@/lib/services/pricing';
 import { quoteDelivery } from '@/lib/services/distance';
 import { apiFetch } from '@/lib/api-client';
+import type { Place } from './AddressPicker';
+
+// Leaflet touches `window` at import, and the map is only needed for
+// doorstep delivery: load it on demand, never on the server.
+const AddressPicker = dynamic(() => import('./AddressPicker').then((m) => m.AddressPicker), {
+  ssr: false,
+  loading: () => <p className="font-body text-sm text-[var(--muted)]">Loading the map...</p>,
+});
+
+interface Branch {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
 
 interface CheckoutFormProps {
   carId: number;
   ratePerDay: number;
-  branch: { name: string; latitude: number; longitude: number };
+  /** The car's own branch. */
+  branch: Branch;
+  /** Every open branch, for collection. */
+  branches: Branch[];
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+type Choice = `pickup:${number}` | 'doorstep';
 
-export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
+const today = () => new Date().toISOString().slice(0, 10);
+const short = (name: string) => name.replace(/^D4Drive\s+/, '');
+
+/**
+ * The checkout: dates, how the car reaches you, payment, and the summary,
+ * laid out to fit about one screen on a laptop.
+ *
+ * The quote is recomputed here for immediate feedback with the same pure
+ * functions the server mirrors (pricing, Haversine, the fee tiers). It is
+ * never trusted: sp_create_booking prices the booking again from the locked
+ * car row, so a tampered total changes nothing but this screen.
+ */
+export function CheckoutForm({ carId, ratePerDay, branch, branches }: CheckoutFormProps) {
   const router = useRouter();
   const toast = useToast();
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [mode, setMode] = useState<'self_pickup' | 'doorstep'>('self_pickup');
+  const [choice, setChoice] = useState<Choice>(`pickup:${branch.id}`);
+  const [place, setPlace] = useState<Place | null>(null);
+  const [addressLine, setAddressLine] = useState('');
+  const [pincode, setPincode] = useState('');
   const [method, setMethod] = useState<'card' | 'upi'>('card');
-  const [coords, setCoords] = useState<{ lat: string; lon: string }>({ lat: '', lon: '' });
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  /**
-   * The quote is recomputed on the client for immediate feedback, using the
-   * same pure functions the server uses. It is never trusted: the server
-   * recalculates from the locked car row, so a tampered client total changes
-   * nothing except what this screen displays.
-   */
+  /** Each other branch, with what collecting there costs (null: too far). */
+  const collection = useMemo(
+    () =>
+      branches.map((b) => {
+        if (b.id === branch.id) return { ...b, distanceKm: 0, fee: 0 as number | null };
+        const q = quoteDelivery(branch, b);
+        return { ...b, distanceKm: q.distanceKm, fee: q.available ? q.fee : null };
+      }),
+    [branches, branch],
+  );
+
+  const pickupId = choice.startsWith('pickup:') ? Number(choice.slice(7)) : null;
+  const pickup = collection.find((b) => b.id === pickupId) ?? null;
+
+  function choosePlace(next: Place) {
+    setPlace(next);
+    setAddressLine(next.addressLine);
+    setPincode(next.pincode ?? '');
+  }
+
   const quote = useMemo(() => {
     if (!startDate || !endDate || endDate <= startDate) return null;
 
@@ -44,18 +91,16 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
     let distance: number | null = null;
     let deliveryError: string | null = null;
 
-    if (mode === 'doorstep') {
-      const lat = Number(coords.lat);
-      const lon = Number(coords.lon);
-      if (!Number.isFinite(lat) || !Number.isFinite(lon) || (!lat && !lon)) {
-        return { pending: true } as const;
-      }
-      const d = quoteDelivery(branch, { latitude: lat, longitude: lon });
-      if (!d.available) {
-        deliveryError = d.reason ?? 'Delivery is not available to that address.';
-      }
+    if (choice === 'doorstep') {
+      if (!place) return { pending: true } as const;
+      const d = quoteDelivery(branch, { latitude: place.latitude, longitude: place.longitude });
+      if (!d.available) deliveryError = d.reason ?? 'Delivery is not available to that address.';
       deliveryFee = d.fee;
       distance = d.distanceKm;
+    } else if (pickup) {
+      if (pickup.fee === null) deliveryError = `${short(pickup.name)} is beyond 15 km of this car. Choose a nearer branch.`;
+      deliveryFee = pickup.fee ?? 0;
+      distance = pickup.id === branch.id ? null : pickup.distanceKm;
     }
 
     try {
@@ -69,7 +114,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
     } catch {
       return null;
     }
-  }, [startDate, endDate, mode, coords, ratePerDay, branch]);
+  }, [startDate, endDate, choice, place, pickup, ratePerDay, branch]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,20 +122,19 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
 
     setErrors({});
     setSubmitting(true);
-
     const form = new FormData(event.currentTarget);
 
     const delivery =
-      mode === 'doorstep'
+      choice === 'doorstep'
         ? {
             mode: 'doorstep' as const,
-            addressLine: String(form.get('addressLine') ?? ''),
-            city: String(form.get('city') ?? ''),
-            pincode: String(form.get('pincode') ?? ''),
-            latitude: Number(coords.lat),
-            longitude: Number(coords.lon),
+            addressLine,
+            city: place?.city ?? 'Bengaluru',
+            pincode,
+            latitude: place?.latitude ?? Number.NaN,
+            longitude: place?.longitude ?? Number.NaN,
           }
-        : { mode: 'self_pickup' as const };
+        : { mode: 'self_pickup' as const, pickupBranchId: pickupId ?? branch.id };
 
     const payment =
       method === 'card'
@@ -131,242 +175,164 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
   }
 
   const labelClass = 't-label text-[var(--muted)]';
+  const heading = 'font-display text-[clamp(1.5rem,2.1vw,2.1rem)] font-light leading-none';
   const selectClass =
-    'h-14 w-full appearance-none border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 pr-8 font-display text-[clamp(1.2rem,1.6vw,1.6rem)] font-light text-[var(--ink)] transition-colors duration-300 focus:border-[var(--accent-text)] focus:outline-none';
-  const chevron = <ChevronDown aria-hidden className="pointer-events-none absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" strokeWidth={1.5} />;
+    'h-12 w-full appearance-none border-b border-[var(--ink)]/40 px-2 py-2 pr-8 font-display text-[clamp(1.05rem,1.3vw,1.3rem)] font-light text-[var(--ink)] transition-colors duration-300 focus:border-[var(--accent-text)] focus:outline-none';
+  const chevron = <ChevronDown aria-hidden className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" strokeWidth={1.5} />;
+
+  const handover =
+    choice === 'doorstep'
+      ? quote && !quote.pending && quote.distance !== null
+        ? `Delivery, ${quote.distance.toFixed(1)} km`
+        : 'Delivery'
+      : pickup && pickup.id !== branch.id
+        ? `Collection at ${short(pickup.name)}, ${pickup.distanceKm.toFixed(1)} km`
+        : `Collection at ${short(branch.name)}`;
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-x-12 gap-y-16 lg:grid-cols-12" noValidate>
-      <div className="flex flex-col gap-16 lg:col-span-7">
-        <fieldset className="border-t border-[var(--ink)]/25 pt-8">
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-12" noValidate>
+      <div className="flex flex-col gap-9 lg:col-span-7">
+        <fieldset className="border-t border-[var(--ink)]/25 pt-5">
           <legend className="sr-only">Rental dates</legend>
-          <h2 className="t-sub">Dates</h2>
-          <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
+          <h2 className={heading}>Dates</h2>
+          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <Field label="Pickup" name="startDate" type="date" min={today()} value={startDate} onChange={(e) => setStartDate(e.target.value)} error={errors.startDate} required />
             <Field
-              size="lg"
-              label="Pickup"
-              name="startDate"
-              type="date"
-              min={today()}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              error={errors.startDate}
-              required
-            />
-            <Field
-              size="lg"
               label="Return"
               name="endDate"
               type="date"
               min={startDate || today()}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              error={
-                errors.endDate ??
-                (startDate && endDate && endDate <= startDate
-                  ? 'The return date must be after the pickup date.'
-                  : undefined)
-              }
+              error={errors.endDate ?? (startDate && endDate && endDate <= startDate ? 'The return date must be after the pickup date.' : undefined)}
               required
             />
           </div>
         </fieldset>
 
-        <fieldset className="border-t border-[var(--ink)]/25 pt-8">
+        <fieldset className="border-t border-[var(--ink)]/25 pt-5">
           <legend className="sr-only">Delivery</legend>
-          <h2 className="t-sub">Delivery</h2>
-
-          <div className="mt-8 flex flex-col gap-2">
+          <h2 className={heading}>How you get it</h2>
+          <div className="mt-4 flex flex-col gap-2">
             <label htmlFor="delivery-mode" className={labelClass}>
-              How would you like the car
+              Collect or deliver
             </label>
             <div className="relative">
-              <select
-                id="delivery-mode"
-                className={selectClass}
-                value={mode}
-                onChange={(e) => setMode(e.target.value as typeof mode)}
-              >
-                <option value="self_pickup">Collect from {branch.name}, free</option>
-                <option value="doorstep">Deliver to my address</option>
+              <select id="delivery-mode" className={selectClass} value={choice} onChange={(e) => setChoice(e.target.value as Choice)}>
+                <optgroup label="Collect it">
+                  {collection.map((b) => (
+                    <option key={b.id} value={`pickup:${b.id}`} disabled={b.fee === null}>
+                      {b.id === branch.id
+                        ? `${short(b.name)}, where it is kept: free`
+                        : b.fee === null
+                          ? `${short(b.name)}, ${b.distanceKm.toFixed(1)} km: too far`
+                          : `${short(b.name)}, ${b.distanceKm.toFixed(1)} km: ${b.fee === 0 ? 'free' : formatCurrency(b.fee)}`}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Bring it to me">
+                  <option value="doorstep">Deliver to my address</option>
+                </optgroup>
               </select>
               {chevron}
             </div>
           </div>
 
-          {mode === 'doorstep' && (
-            <div className="mt-8 flex flex-col gap-8">
-              <Field
-                size="lg"
-                label="Address"
-                name="addressLine"
-                placeholder="Flat 4B, Brigade Residency, 12th Main"
-                error={errors['delivery.addressLine']}
-                required
-              />
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+          {choice === 'doorstep' && (
+            <div className="mt-6 flex flex-col gap-5">
+              <AddressPicker branch={branch} value={place} onChange={choosePlace} />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_9rem]">
                 <Field
-                  size="lg"
-                  label="City"
-                  name="city"
-                  defaultValue="Bengaluru"
-                  error={errors['delivery.city']}
+                  label="Flat, building and street"
+                  name="addressLine"
+                  value={addressLine}
+                  onChange={(e) => setAddressLine(e.target.value)}
+                  helper="Filled in from the map. Add the flat number."
+                  error={errors['delivery.addressLine']}
                   required
                 />
                 <Field
-                  size="lg"
                   label="Pincode"
                   name="pincode"
                   inputMode="numeric"
-                  placeholder="560038"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
                   error={errors['delivery.pincode']}
                   required
                 />
               </div>
-              <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
-                <Field
-                  size="lg"
-                  label="Latitude"
-                  name="latitude"
-                  inputMode="decimal"
-                  placeholder="12.9716"
-                  value={coords.lat}
-                  onChange={(e) => setCoords((c) => ({ ...c, lat: e.target.value }))}
-                  helper="Delivery reaches 15 km from the branch."
-                  required
-                />
-                <Field
-                  size="lg"
-                  label="Longitude"
-                  name="longitude"
-                  inputMode="decimal"
-                  placeholder="77.6412"
-                  value={coords.lon}
-                  onChange={(e) => setCoords((c) => ({ ...c, lon: e.target.value }))}
-                  required
-                />
-              </div>
-            </div>
-          )}
-        </fieldset>
-
-        <fieldset className="relative border-t border-[var(--ink)]/25 pt-8">
-          <legend className="sr-only">Payment</legend>
-          <h2 className="t-sub">Payment</h2>
-          <p className="t-body mt-3 max-w-[46ch] text-[var(--muted)]">
-            This payment is simulated. No card details are stored and no real
-            transaction takes place.
-          </p>
-          <Annotation
-            tilt={-9}
-            arrow="swoop"
-            arrowClassName="h-auto w-20 rotate-[100deg] text-[var(--accent-text)]"
-            className="absolute -right-4 -top-16 hidden w-56 flex-col items-end text-right text-[var(--accent-text)] xl:flex"
-          >
-            {'relax. nobody\ngets charged.'}
-          </Annotation>
-
-          <div className="mt-8 flex flex-col gap-2">
-            <label htmlFor="payment-method" className={labelClass}>
-              Method
-            </label>
-            <div className="relative">
-              <select
-                id="payment-method"
-                className={selectClass}
-                value={method}
-                onChange={(e) => setMethod(e.target.value as typeof method)}
-              >
-                <option value="card">Card</option>
-                <option value="upi">UPI</option>
-              </select>
-              {chevron}
-            </div>
-          </div>
-
-          {method === 'card' ? (
-            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
-              <Field
-                size="lg"
-                label="Card number"
-                name="cardNumber"
-                inputMode="numeric"
-                placeholder="4242 4242 4242 4242"
-                autoComplete="off"
-                helper="Only the last four digits are kept."
-                required
-              />
-              <Field
-                size="lg"
-                label="Name on card"
-                name="cardName"
-                placeholder="Ananya Krishnan"
-                autoComplete="off"
-                required
-              />
-            </div>
-          ) : (
-            <div className="mt-8">
-              <Field
-                size="lg"
-                label="UPI ID"
-                name="upiHandle"
-                placeholder="ananya@okaxis"
-                error={errors['payment.upiHandle']}
-                required
-              />
             </div>
           )}
         </fieldset>
       </div>
 
-      {/* Summary. Sticky on desktop so the total stays visible while the form
-          scrolls, which is the whole reason a checkout summary exists. */}
-      <aside className="lg:col-span-4 lg:col-start-9">
-        <div className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
-          <div className="tone-night p-8 shadow-[var(--shadow-float)] md:p-10">
-            <h2 className="t-sub">Summary</h2>
+      {/* Payment and the summary, side by side with the form on a laptop
+          and sticky, so the total stays in view. */}
+      <aside className="lg:col-span-5">
+        <div className="flex flex-col gap-8 lg:sticky lg:top-[calc(var(--header-h)+1rem)]">
+          <fieldset className="relative border-t border-[var(--ink)]/25 pt-5">
+            <legend className="sr-only">Payment</legend>
+            <h2 className={heading}>Payment</h2>
+            <p className="mt-2 max-w-[24ch] font-body text-sm font-light text-[var(--muted)] xl:max-w-[26ch]">
+              Simulated. No card details are stored and no money moves.
+            </p>
+            {/* In the corner beside the heading, its arrow dropping onto the
+                method it is about. */}
+            <Annotation
+              tilt={-6}
+              arrow="swoop"
+              arrowClassName="ml-auto mr-32 mt-0 h-auto w-16 -scale-x-100 rotate-[48deg] text-[var(--accent-text)]"
+              className="absolute right-0 top-3 hidden w-48 flex-col items-end text-right text-[var(--accent-text)] xl:flex"
+            >
+              {'relax. nobody\ngets charged.'}
+            </Annotation>
 
+            <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-[7.5rem_1fr_1fr]">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="payment-method" className={labelClass}>
+                  Method
+                </label>
+                <div className="relative">
+                  <select id="payment-method" className={selectClass} value={method} onChange={(e) => setMethod(e.target.value as typeof method)}>
+                    <option value="card">Card</option>
+                    <option value="upi">UPI</option>
+                  </select>
+                  {chevron}
+                </div>
+              </div>
+              {method === 'card' ? (
+                <>
+                  <Field label="Card number" name="cardNumber" inputMode="numeric" autoComplete="off" helper="Only the last four are kept." required />
+                  <Field label="Name on card" name="cardName" autoComplete="off" required />
+                </>
+              ) : (
+                <div className="sm:col-span-2">
+                  <Field label="UPI ID" name="upiHandle" error={errors['payment.upiHandle']} required />
+                </div>
+              )}
+            </div>
+          </fieldset>
+
+          <div className="tone-night p-6 shadow-[var(--shadow-float)] md:px-8 md:py-7">
+            <h2 className={heading}>Summary</h2>
             {quote && !quote.pending && quote.price ? (
               <>
-                <dl className="mt-8 flex flex-col gap-4">
-                  <Row
-                    label={`${quote.price.days} ${quote.price.days === 1 ? 'day' : 'days'} at ${formatCurrency(ratePerDay)}`}
-                    value={formatCurrency(quote.price.rentalAmount)}
-                  />
-                  <Row
-                    label={
-                      mode === 'doorstep' && quote.distance !== null
-                        ? `Delivery, ${quote.distance.toFixed(1)} km`
-                        : 'Delivery'
-                    }
-                    value={
-                      quote.price.deliveryFee === 0
-                        ? 'Free'
-                        : formatCurrency(quote.price.deliveryFee)
-                    }
-                  />
+                <dl className="mt-5 flex flex-col gap-3">
+                  <Row label={`${quote.price.days} ${quote.price.days === 1 ? 'day' : 'days'} at ${formatCurrency(ratePerDay)}`} value={formatCurrency(quote.price.rentalAmount)} />
+                  <Row label={handover} value={quote.price.deliveryFee === 0 ? 'Free' : formatCurrency(quote.price.deliveryFee)} />
                 </dl>
-
-                <div className="mt-6 border-t border-[var(--color-blush)]/30 pt-6">
-                  <Row
-                    label="Total"
-                    value={formatCurrency(quote.price.totalAmount)}
-                    emphasis
-                  />
+                <div className="mt-4 border-t border-[var(--color-blush)]/30 pt-4">
+                  <Row label="Total" value={formatCurrency(quote.price.totalAmount)} emphasis />
                 </div>
-
                 {quote.deliveryError && (
-                  <p role="alert" className="mt-6 font-body text-sm text-[var(--color-paper)]">
+                  <p role="alert" className="mt-5 font-body text-sm text-[var(--color-paper)]">
                     {quote.deliveryError}
                   </p>
                 )}
               </>
             ) : (
-              <p className="t-body mt-8 text-[var(--color-blush)]">
-                {mode === 'doorstep' && quote?.pending
-                  ? 'Add your coordinates to see the delivery fee.'
-                  : 'Choose your dates to see the total.'}
+              <p className="t-body mt-6 text-[var(--color-blush)]">
+                {choice === 'doorstep' && quote?.pending ? 'Choose the address on the map to see the delivery fee.' : 'Choose your dates to see the total.'}
               </p>
             )}
 
@@ -376,7 +342,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
               variant="blush"
               loading={submitting}
               disabled={!quote || quote.pending || Boolean(quote.deliveryError)}
-              className="mt-10 w-full"
+              className="mt-6 w-full"
             >
               Confirm booking
             </Button>
@@ -387,35 +353,11 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
   );
 }
 
-function Row({
-  label,
-  value,
-  emphasis = false,
-}: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-}) {
+function Row({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <dt
-        className={
-          emphasis
-            ? 't-label text-[var(--color-paper)]'
-            : 'font-body text-sm font-light text-[var(--color-blush)]'
-        }
-      >
-        {label}
-      </dt>
-      <dd
-        className={
-          emphasis
-            ? 'font-display text-4xl font-light text-[var(--color-paper)]'
-            : 'font-body text-sm text-[var(--color-paper)]'
-        }
-      >
-        {value}
-      </dd>
+      <dt className={emphasis ? 't-label text-[var(--color-paper)]' : 'font-body text-sm font-light text-[var(--color-blush)]'}>{label}</dt>
+      <dd className={emphasis ? 'font-display text-4xl font-light text-[var(--color-paper)]' : 'font-body text-sm text-[var(--color-paper)]'}>{value}</dd>
     </div>
   );
 }

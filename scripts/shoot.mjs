@@ -46,7 +46,25 @@ for (const size of sizes) {
     await page.goto(`${BASE}${p}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(Number(process.env.SHOOT_WAIT ?? 1200));
     const file = path.join(outDir, `${size.name}${p.replace(/[^\w]+/g, '_') || '_home'}.png`);
-    await page.screenshot({ path: file, fullPage: process.env.SHOOT_FULL !== '0' });
+    // SHOOT_SELECTOR photographs one element and SHOOT_PAD pixels around it.
+    const selector = process.env.SHOOT_SELECTOR;
+    if (selector) {
+      const box = await page.locator(selector).first().evaluate((el) => {
+        el.scrollIntoView({ block: 'center' });
+        const r = el.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height };
+      });
+      await page.waitForTimeout(Number(process.env.SHOOT_SETTLE ?? 2000));
+      const again = await page.locator(selector).first().boundingBox();
+      const b = again ?? box;
+      const pad = Number(process.env.SHOOT_PAD ?? 160);
+      await page.screenshot({
+        path: file,
+        clip: { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: b.width + pad * 2, height: b.height + pad * 2 },
+      });
+    } else {
+      await page.screenshot({ path: file, fullPage: process.env.SHOOT_FULL !== '0' });
+    }
     console.log(file);
   }
   await context.close();

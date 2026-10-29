@@ -16,6 +16,40 @@ export async function listActiveBranches(): Promise<BranchRow[]> {
   );
 }
 
+interface CollectionBranchRow extends RowDataPacket {
+  id: number;
+  name: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+}
+
+export interface CollectionBranch {
+  id: number;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
+/**
+ * Every open branch, with its coordinates, for the checkout's "collect from"
+ * list. The fee to collect away from the car's branch is the delivery tier
+ * for that distance; sp_create_booking works it out again on the server.
+ */
+export async function listCollectionBranches(): Promise<CollectionBranch[]> {
+  const rows = await query<CollectionBranchRow>(
+    'SELECT id, name, address, latitude, longitude FROM branches WHERE is_active = 1 ORDER BY name',
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    address: r.address,
+    latitude: Number(r.latitude),
+    longitude: Number(r.longitude),
+  }));
+}
+
 interface FleetSummaryRow extends RowDataPacket {
   cars: number;
   branches: number;

@@ -16,6 +16,7 @@
 | Headers | `helmet`-equivalent via `next.config` headers plus a strict CSP | The film's stills, engine clip and video need explicit `img-src` and `media-src`, so CSP has to be authored, not defaulted. |
 | PDF | `pdfkit` | Invoice generation, server-side only. |
 | Icons | `lucide-react` at `strokeWidth 1.5` | Named by the design brief. |
+| Map | `leaflet` 1.9.4 over OpenStreetMap tiles; Nominatim through `/api/geocode` | The checkout's address picker. Free, no key; the geocoder is called from the server so the CSP keeps `connect-src 'self'`. |
 | Asset scripts | `ffmpeg-static`, `sharp` (dev) | Film stills and the engine clip (`build:frames`); the fleet photo pipeline is Python (`scripts/fleet-photos/`). |
 
 ### Why the stack changed

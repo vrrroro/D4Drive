@@ -67,7 +67,7 @@ npm run dev
 ### Assets
 
 Everything generated is committed, so a fresh clone runs as is: the film's
-scrubbed stills (`public/film/v1/`, 264 frames, 5.6 MB), the fleet photographs
+scrubbed stills (`public/film/v2/`, 524 frames at 60 a second, 11.2 MB), the fleet photographs
 (`public/cars/`, studio composites of Creative Commons photos, credited on
 `/credits`), and the film as video (`public/videos/`, used only by reduced
 motion's "Play the film"). Only if you replace the film:

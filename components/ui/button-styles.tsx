@@ -6,11 +6,14 @@ import { Loader2 } from 'lucide-react';
  * <a>). Navigation must be a link and an action must be a button; wrapping
  * one in the other is invalid HTML and puts two tab stops on one control.
  *
- * - primary: charcoal with a carmine layer that wipes in from the left.
+ * Every button goes red on hover with white type (`--btn-hover-bg`, the
+ * deeper carmine on a carmine panel):
+ * - primary: charcoal with a red layer that wipes in from the left.
  * - blush: the pale fill used on carmine and charcoal panels. Presses in on
- *   hover, like a keycap, instead of wiping.
- * - secondary: a 1px outline that fills on hover.
- * - link: text with an underline that grows from the left.
+ *   hover, like a keycap, and fills red.
+ * - secondary: a 1px outline that fills red on hover.
+ * - link: text with an underline that grows from the left (a link, not a
+ *   button, so it only turns the accent colour).
  */
 
 export type ButtonVariant = 'primary' | 'blush' | 'secondary' | 'link';
@@ -51,14 +54,14 @@ export function buttonClassName({
   }
 
   if (variant === 'blush') {
-    return `${BASE} ${SIZES[size]} ${PRESS} bg-[var(--color-blush)] text-[var(--color-ink)] hover:bg-[var(--color-paper)] ${className}`;
+    return `${BASE} ${SIZES[size]} ${PRESS} bg-[var(--color-blush)] text-[var(--color-ink)] hover:bg-[var(--btn-hover-bg)] hover:text-[var(--color-paper)] ${className}`;
   }
 
   if (variant === 'secondary') {
     return `${BASE} ${SIZES[size]} border bg-transparent ${
       onDark
-        ? 'border-[var(--color-blush)]/60 text-[var(--color-blush)] hover:bg-[var(--color-blush)] hover:text-[var(--color-ink)]'
-        : 'border-[var(--ink)] text-[var(--ink)] hover:bg-[var(--ink)] hover:text-[var(--ground)]'
+        ? 'border-[var(--color-blush)]/60 text-[var(--color-blush)] hover:border-[var(--btn-hover-bg)] hover:bg-[var(--btn-hover-bg)] hover:text-[var(--color-paper)]'
+        : 'border-[var(--ink)] text-[var(--ink)] hover:border-[var(--btn-hover-bg)] hover:bg-[var(--btn-hover-bg)] hover:text-[var(--color-paper)]'
     } ${className}`;
   }
 
@@ -106,7 +109,7 @@ export function ButtonContent({
       <span
         aria-hidden
         className={`absolute inset-0 -z-10 -translate-x-full transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] group-hover:translate-x-0 motion-reduce:transition-none ${
-          onDark ? 'bg-[var(--color-carmine-deep)]' : 'bg-[var(--color-carmine)]'
+          onDark ? 'bg-[var(--color-carmine-deep)]' : 'bg-[var(--btn-hover-bg)]'
         }`}
       />
       <span className="relative z-10 inline-flex items-center transition-colors duration-500 group-hover:text-[var(--color-paper)]">

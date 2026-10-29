@@ -118,8 +118,14 @@ reach.
 
 **Keycaps** (`.keycap`): outlined on the bottom edge only (`border-bottom` plus a
 1px `box-shadow`), as if seen from slightly above. Hover presses them in:
-`translate(2px, 2px)`, the outline drops, a soft top-left shadow appears. Used
-for back links, pagination, admin actions, the back-to-top control.
+`translate(2px, 2px)`, the outline drops, a soft top-left shadow appears, and
+like every button it fills red with white type. Used for back links,
+pagination and admin actions.
+
+**Every button hovers red with white type** (the owner's rule, 2026-10-12):
+primary, blush, secondary and keycaps share `--btn-hover-bg`, carmine, or the
+deeper carmine on a carmine panel so the hover still shows. Text links only
+turn the accent colour.
 
 **Shadows**: `--shadow-float` (`40px 40px 80px` at 35% ink) under tilted
 photographs and the checkout summary; `--shadow-glass` for the admin editor.
@@ -137,10 +143,11 @@ film is scrubbed by the scroll, forward and back (`docs/VIDEO_STATE_MACHINE.md`)
 | Whole site | Inertial wheel scrolling (Lenis, lerp 0.085). Touch stays native. | `components/motion/SmoothScroll.tsx` |
 | Landing film | 264 stills drawn to a canvas from the scroll position | `components/film/FilmStage.tsx` |
 | Film chapters | Fade with the scroll, drift on a spring: the heading lag | `FilmChapter.tsx` |
-| Hero | One orchestrated entrance after the loader: lines slide in from either side, wordmark letters bounce up, notes and arrows draw last | `FilmHero.tsx` |
+| Hero | One orchestrated entrance after the loader: lines slide in from either side, wordmark letters bounce up, the red dot pops; then the black slab fades in between them and the scroll opens it, pushing the type away | `FilmHero.tsx`, `FilmStage.tsx` |
+| Grey stage | The studio grey multiplied over the film and page while it plays; back to the ground with the smoke | `.film-tone`, `timeline.stageTone` |
 | Panels | Dealt in: scale 0.9 to 1, plus or minus 0.7 degrees to 0, as the top reaches the screen top. Pinned until the next slides over. | `components/motion/StackPanel.tsx` |
 | Notes | Arrow strokes draw themselves once, on view | `HandArrow.tsx` |
-| Header | Colours follow the panel beneath, 300ms | `HeaderTone.tsx` |
+| Header | Colours follow the panel beneath, 300ms; a frosted grey bar once the page has moved | `HeaderTone.tsx` |
 | Cursor | A carmine halo trails the pointer on a spring | `CursorHalo.tsx` |
 | Hover | Fleet names, wordmark letters, the detail photo's tilt, keycaps | CSS and Motion |
 
@@ -176,9 +183,11 @@ heroes. `min-h-[100dvh]`, never `h-screen`.
 
 Panels stack: each pins once its bottom meets the bottom of the screen
 (`top: min(0, viewport - height)`) and the next one is dealt in over it. The
-footer is the last card on every page.
+page ends with a slim footer line; the branch list (`LocationsSection`) flows on
+from the sign-in panel on the landing and the signed-out fleet, on the same
+ground, never as a card of its own.
 
-The landing is different: a 700vh track (600vh on portrait) with the film pinned
+The landing is different: a 1000vh track (850vh on portrait) with the film pinned
 inside it, copy placed in the space the film leaves at each moment (the clear
 band above the car, the floor below it, the flanks while it faces the camera,
 the smoke once it has gone), ending on the sign-in panel. On portrait screens the
@@ -200,10 +209,11 @@ film sits in a band that follows the car, with copy above and below.
 7. **Inertial scrolling with lagging headings.**
 8. **The trailing cursor halo.** The native cursor stays.
 9. **The rotating roast word**: "Your ride is _late again_".
-10. **3D-tilted photographs** that straighten on hover: the detail page, the
-    fleet preview.
-11. **The ghost stack**: every model name piled at a fifth of a line; point at
-    one and it becomes a bold headline with its photograph beside it.
+10. **Level photographs that tilt toward you on hover** (the car page), the
+    owner's rule since 2026-10-12: nothing sits tilted at rest.
+11. **The deck**: the fleet as cards that slide over one another as you scroll,
+    a sliver of each left showing (it replaced the ghost stack of names on
+    2026-10-12).
 12. **Keycap controls.**
 13. **The header chameleon**: its colours follow the panel beneath.
 14. **The escalating red dot**: six clicks of increasingly tired badges, then the
@@ -221,13 +231,16 @@ condition for keeping them.
 
 | Component | Notes |
 |---|---|
-| `SiteHeader` | Fixed, transparent. Wordmark, links, sign out, the typed "Let's ___" link to the fleet (desktop). Skip link. |
-| `SiteFooter` | Night panel, real branches from the database, the cropped wordmark, photo credits. |
+| `SiteHeader` | Fixed. The condensed `D4DRIVE` wordmark at the top left (hidden on the landing until the film starts), Fleet, Sign in and the typed "Let's ___" link (signed out only), or "Signed in as *Name*" with `AccountMenu`. Transparent at the top, frosted grey once the page moves. Skip link. |
+| `SiteFooter` | The slim line on every page: year, simulated payment, photo credits, "This Was Bloomed By Rohit". |
+| `LocationsSection` | Real branches from the database, "Browse the fleet" with its note, the whole wordmark. Landing and signed-out fleet only. |
+| `BackToTop` | A small up arrow at the left edge, red on hover. |
 | `AuthPanel` | Sign in and register as one three-column panel (brand, heading, form). Light at the end of the film, hot and swinging in on `/login`. |
-| `FleetIndex` | The ghost stack where there is a mouse and room; photo cards otherwise. One list of links serves both. |
+| `FleetIndex` | The deck: one card per car, pinned under the header a little lower than the last, each sliding over the one before and popping up as it arrives. Hover greys the car and its name. A plain list under reduced motion. |
+| `CarLink` | A link to a car that carries its photo into the car page with a View Transition where the browser has one. |
 | `CarPhoto` | Studio composite, or a labelled "Photograph pending" slot. Never a stock image or a CSS shape. |
 | `Field` | Underline input, label always above, error and helper slots always present. `tone` light, dark, hot; `size="lg"` sets values in Fraunces. |
-| `Button`, `ButtonLink` | Primary (charcoal, carmine wipe), blush (on carmine and charcoal, presses like a keycap), secondary, link. |
+| `Button`, `ButtonLink` | Primary (charcoal, red wipe), blush (on carmine and charcoal, presses like a keycap, fills red), secondary (fills red), link. |
 | `Annotation`, `HandArrow` | Notes. Real text, readable in place; arrows decorative. |
 | `Wordmark`, `RotatingWord`, `EasterEgg` | Decorative or labelled for assistive technology as described in each file. |
 | `StackPanel` | Tone, tilt, pin. |

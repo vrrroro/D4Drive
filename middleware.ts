@@ -28,8 +28,10 @@ export function middleware(request: NextRequest) {
     // Narrowing this to a nonce is the next hardening step.
     "style-src 'self' 'unsafe-inline'",
     "media-src 'self'",
-    // Fleet photography is served from public/cars, never hotlinked.
-    "img-src 'self' data: blob:",
+    // Fleet photography is served from public/cars, never hotlinked. The one
+    // outside origin is OpenStreetMap's map tiles, for the checkout's address
+    // picker (address search itself goes through our own /api/geocode).
+    "img-src 'self' data: blob: https://tile.openstreetmap.org",
     "font-src 'self' data:",
     "connect-src 'self'" + (isDev ? ' ws: wss:' : ''),
     "object-src 'none'",

@@ -16,7 +16,8 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
   {
     key: 'Permissions-Policy',
-    value: 'geolocation=(), camera=(), microphone=(), payment=(), usb=()',
+    // Geolocation for this origin only: the checkout's "use my location".
+    value: 'geolocation=(self), camera=(), microphone=(), payment=(), usb=()',
   },
   {
     key: 'Strict-Transport-Security',

@@ -76,6 +76,16 @@ query.
 **Errors do not leak.** Log the full error server-side. Return a generic message
 and the correct status code. Stack traces, SQL fragments, and column names never
 cross the wire. This is enforced in the shared error handler, not per route.
+The one class of message passed through is the stored programs' own refusals
+(`SIGNAL SQLSTATE '45000'`, errnos 5001 to 5201), whose text is written for
+the customer ("This car is already booked for the selected dates.").
+
+**SQL shown on purpose, to staff only.** `/admin/reports` prints each query
+under its result and `/admin/database` walks through the statements every
+transaction runs; that is the coursework demonstration. Both pages, and
+`/api/admin/database/try`, are behind `requireAdmin`. `npm run check:leaks`
+waives only its SQL pattern for those two pages and still fails them on a
+stack frame, driver code or path.
 
 **Never log a secret.** No passwords, no tokens, no full card numbers, not even
 at debug level. Logs get copied into issues and screenshots.
@@ -109,7 +119,7 @@ the credits link out to Wikimedia without embedding anything from it.
 ```
 default-src 'self';
 media-src 'self';
-img-src 'self' data: blob:;
+img-src 'self' data: blob: https://tile.openstreetmap.org;
 script-src 'self';
 style-src 'self' 'unsafe-inline';
 font-src 'self';
@@ -118,6 +128,14 @@ frame-ancestors 'none';
 base-uri 'self';
 form-action 'self';
 ```
+
+`img-src` allows one outside origin, OpenStreetMap's tile server, for the
+checkout's address map. Address search does not go from the browser to any
+third party: it goes to our own `/api/geocode`, which asks OpenStreetMap's
+Nominatim from the server, without cookies, for signed-in visitors only (30
+lookups a minute each, one upstream request a second). The visitor's typed
+address and pin therefore reach one third party. `Permissions-Policy` allows
+geolocation for this origin only, for "use my location".
 
 `style-src 'unsafe-inline'` is present because Next.js injects inline styles.
 Narrow it to a nonce before any real deployment. `frame-ancestors 'none'`

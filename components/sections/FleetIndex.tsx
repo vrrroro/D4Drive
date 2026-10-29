@@ -1,10 +1,9 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
-import Link from 'next/link';
-import { useState } from 'react';
-import { Annotation } from '@/components/ui/Annotation';
+import { motion, useScroll, useSpring, useTransform } from 'motion/react';
+import { useRef } from 'react';
 import { CarPhoto } from '@/components/ui/CarPhoto';
+import { CarLink } from '@/components/motion/CarLink';
 import { usePrefersReducedMotion } from '@/components/motion/use-prefers-reduced-motion';
 
 export interface FleetCar {
@@ -19,117 +18,66 @@ export interface FleetCar {
   image: string | null;
 }
 
+const price = (value: string) => `₹${Number(value).toLocaleString('en-IN')}`;
+
 /**
- * The fleet as a ghost stack.
+ * The fleet as a stack of cards.
  *
- * Every model name, set enormous at a fifth of a line apart, so they pile up
- * as translucent type. Hover or focus one and it snaps to a bold headline on
- * top of the pile, its studio photograph swings in tilted in 3D, and its
- * brief drops down like a sign on a hinge. Moving down the stack scrubs
- * through the fleet the way the scroll scrubs the film.
+ * Each car is a card pinned under the header; as the visitor scrolls, the
+ * next one slides up over it, popping up from slightly small to full size as
+ * it arrives (scale and lift, scroll-linked, transform only). The pile leaves
+ * a sliver of each card above the next, so the stack reads as a deck.
  *
- * One list of links serves every layout: on touch screens and narrow windows
- * the same rows lay out as ordinary photo cards (globals.css, .fleet-*). The
- * shared preview is decoration and hidden from assistive technology; each
- * row's own text carries its price and specs.
+ * Hovering a card greys its photograph (a pre-greyed copy fades in: opacity,
+ * not an animated filter) and its name. One link per card, so each is one
+ * tab stop with one name; the photo inside is decorative.
  */
 export function FleetIndex({ cars }: { cars: FleetCar[] }) {
-  const [active, setActive] = useState<number | null>(null);
+  return (
+    <ol className="fleet-cards" aria-label="The fleet">
+      {cars.map((car, index) => (
+        <FleetCard key={car.id} car={car} index={index} />
+      ))}
+    </ol>
+  );
+}
+
+function FleetCard({ car, index }: { car: FleetCar; index: number }) {
+  const ref = useRef<HTMLLIElement>(null);
   const reduced = usePrefersReducedMotion();
-  const current = cars.find((car) => car.id === active) ?? null;
-  const price = (value: string) => `₹${Number(value).toLocaleString('en-IN')}`;
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'start 35%'] });
+  const p = useSpring(scrollYProgress, { stiffness: 140, damping: 26, mass: 0.5, restDelta: 0.0005 });
+  const scale = useTransform(p, [0, 1], [0.9, 1]);
+  const y = useTransform(p, [0, 1], [70, 0]);
+  const name = `${car.brand} ${car.model}`;
 
   return (
-    <div className="fleet relative" onMouseLeave={() => setActive(null)}>
-      <ol className="fleet-stack">
-        {cars.map((car, index) => {
-          const name = `${car.brand} ${car.model}`;
-          return (
-            <li key={car.id} className="fleet-row" data-active={active === car.id ? 'true' : undefined} style={{ zIndex: active === car.id ? cars.length + 1 : index + 1 }}>
-              <Link
-                href={`/cars/${car.id}`}
-                className="fleet-row-link group"
-                onMouseEnter={() => setActive(car.id)}
-                onFocus={() => setActive(car.id)}
-                onBlur={() => setActive(null)}
-              >
-                <span className="fleet-card-photo">
-                  <CarPhoto src={car.image} name={name} aspect="aspect-[3/2]" decorative priority={index < 2} />
-                </span>
-                <span className="fleet-name">
-                  <span className="fleet-brand">{car.brand} </span>
-                  {car.model}
-                </span>
-                <span className="fleet-specs">
-                  {price(car.pricePerDay)} a day, {car.seats} seats, {car.fuel}, {car.transmission}, from {car.branch}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* Desktop preview: the hovered car, tilted, with its brief. */}
-      <div aria-hidden="true" className="fleet-preview">
-        <div className="fleet-photo-frame">
-          {cars.map((car) => (
-            <motion.div
-              key={car.id}
-              className="fleet-photo"
-              initial={false}
-              animate={active === car.id ? { opacity: 1, scale: 1 } : { opacity: 0, scale: reduced ? 1 : 0.6 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {car.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={car.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-              )}
-            </motion.div>
-          ))}
-        </div>
-
-        <AnimatePresence mode="wait" initial={false}>
-          {current && (
-            <motion.div
-              key={current.id}
-              className="fleet-brief"
-              initial={reduced ? { opacity: 0 } : { opacity: 0, rotateX: -90 }}
-              animate={{ opacity: 1, rotateX: 0 }}
-              exit={reduced ? { opacity: 0 } : { opacity: 0, rotateX: 90 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: '50% 0%' }}
-            >
-              <p className="t-label text-[var(--color-blush)]">Per day</p>
-              <p className="t-sub mt-1 text-[var(--color-paper)]">{price(current.pricePerDay)}</p>
-              <dl className="mt-6 grid grid-cols-2 gap-x-8 gap-y-3 font-body text-sm text-[var(--color-paper)]">
-                <dt className="t-label text-[var(--color-blush)]">Seats</dt>
-                <dd>{current.seats}</dd>
-                <dt className="t-label text-[var(--color-blush)]">Fuel</dt>
-                <dd className="capitalize">{current.fuel}</dd>
-                <dt className="t-label text-[var(--color-blush)]">Gearbox</dt>
-                <dd className="capitalize">{current.transmission}</dd>
-              </dl>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence initial={false}>
-          {current ? (
-            <motion.div key={`note-${current.id}`} className="fleet-note" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <Annotation tilt={-14} arrow="swoop" arrowClassName="mt-1 ml-10 h-auto w-28 rotate-[-38deg] text-[var(--color-blush)]" className="text-[var(--color-blush)]">
-                {`lives in\n${current.branch}`}
-              </Annotation>
-            </motion.div>
-          ) : (
-            // At rest the pile is just type. Say what it is.
-            <motion.div key="note-rest" className="fleet-rest" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-              <Annotation tilt={-9} arrow="long" arrowClassName="mt-2 h-auto w-40 -scale-x-100 rotate-[14deg] text-[var(--color-blush)]" className="text-[var(--color-blush)]">
-                {`${cars.length === 1 ? 'one car' : `${cars.length} cars`} in there.\npoint at one.`}
-              </Annotation>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+    <li ref={ref} className="fleet-card-slot" style={{ ['--i' as string]: index }}>
+      <motion.article className="fleet-card" style={reduced ? undefined : { scale, y, transformOrigin: '50% 100%' }}>
+        <CarLink href={`/cars/${car.id}`} carId={car.id} className="fleet-card-link group">
+          <span className="fleet-card-photo" data-car-photo={car.id}>
+            <CarPhoto src={car.image} name={name} aspect="aspect-[3/2]" decorative priority={index < 2} />
+            {car.image && (
+              // The grey copy that fades in on hover. Static filter; only its
+              // opacity moves.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={car.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="fleet-card-grey" />
+            )}
+          </span>
+          <span className="fleet-card-text">
+            <span className="t-eyebrow text-[var(--muted)]">{car.brand}</span>
+            <span className="fleet-card-name t-display">{car.model}</span>
+            <span className="t-sub mt-6">
+              {price(car.pricePerDay)}
+              <span className="t-body text-[var(--muted)]"> a day</span>
+            </span>
+            <span className="mt-6 font-body text-sm font-light leading-relaxed text-[var(--muted)]">
+              {car.seats} seats, <span className="capitalize">{car.fuel}</span>, {car.transmission}. Kept at {car.branch}.
+            </span>
+            <span className="fleet-card-cta t-label mt-auto">View this car</span>
+          </span>
+        </CarLink>
+      </motion.article>
+    </li>
   );
 }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useScroll, useSpring } from 'motion/react';
+import { animate, useMotionValue, useScroll, useSpring } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BootLoader } from './BootLoader';
 import { FilmContext, usePrefersReducedMotion } from './FilmContext';
 import { FilmStage } from './FilmStage';
-import { BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING } from './constants';
+import { BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING, SLAB_ENTRANCE } from './constants';
+import { filmPhase } from './timeline';
 
 /**
  * The landing film: a tall track with the film pinned inside it.
@@ -20,7 +21,10 @@ import { BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING } from './
 export function FilmStory({ children, label }: { children: ReactNode; label: string }) {
   const trackRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const toneRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
+  // The black slab's own fade-in, once the hero has arrived (time, not scroll).
+  const entrance = useMotionValue(0);
 
   const { scrollYProgress } = useScroll({ target: trackRef, offset: ['start start', 'end end'] });
   const progress = useSpring(scrollYProgress, PROGRESS_SPRING);
@@ -72,7 +76,27 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
     }
   }, [loaderGone]);
 
+  // The phase, written straight onto the track for CSS (the header logo and
+  // the grey stage hang off it). A motion-value subscription, not React state
+  // and not a scroll listener.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || reduced) return undefined;
+    const write = (p: number) => {
+      const phase = filmPhase(p);
+      if (track.dataset.filmPhase !== phase) track.dataset.filmPhase = phase;
+    };
+    write(progress.get());
+    return progress.on('change', write);
+  }, [progress, reduced]);
+
   const ready = reduced || loaderGone;
+
+  useEffect(() => {
+    if (!ready || reduced) return undefined;
+    const controls = animate(entrance, 1, SLAB_ENTRANCE);
+    return () => controls.stop();
+  }, [ready, reduced, entrance]);
   const value = useMemo(() => ({ progress, ready, reduced }), [progress, ready, reduced]);
 
   return (
@@ -82,10 +106,16 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
         aria-label={label}
         data-tone="light"
         data-film-ready={ready ? 'true' : 'false'}
+        data-film-phase="hero"
         className="film-track"
       >
         <div ref={stageRef} className="film-stage">
-          {!reduced && <FilmStage progress={progress} stageRef={stageRef} onBootProgress={handleBoot} />}
+          {!reduced && (
+            <FilmStage progress={progress} entrance={entrance} stageRef={stageRef} toneRef={toneRef} onBootProgress={handleBoot} />
+          )}
+          {/* The grey stage: the studio grey, multiplied over the film and the
+              page while it plays. Its opacity is written by FilmStage. */}
+          <div ref={toneRef} aria-hidden="true" className="film-tone" />
           <div className="film-layer">{children}</div>
         </div>
       </section>

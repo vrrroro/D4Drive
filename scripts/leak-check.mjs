@@ -30,8 +30,17 @@ const LEAK_PATTERNS = [
 const results = [];
 let failures = 0;
 
-function scan(label, status, text) {
-  const hit = LEAK_PATTERNS.find((pattern) => pattern.test(text));
+const SQL_PATTERN = LEAK_PATTERNS[5];
+
+/**
+ * `showsSql` is for the two admin pages whose purpose is to show SQL
+ * (/admin/reports prints each query under its table; /admin/database walks
+ * through the statements each transaction runs). Only the SQL pattern is
+ * waived there; a stack frame, driver code or path still fails.
+ */
+function scan(label, status, text, { showsSql = false } = {}) {
+  const patterns = showsSql ? LEAK_PATTERNS.filter((p) => p !== SQL_PATTERN) : LEAK_PATTERNS;
+  const hit = patterns.find((pattern) => pattern.test(text));
   if (hit) {
     failures += 1;
     results.push(`LEAK  ${label}  ${status}  matched ${hit}: ${text.slice(0, 160).replace(/\s+/g, ' ')}`);
@@ -40,7 +49,7 @@ function scan(label, status, text) {
   }
 }
 
-async function hit(label, path, init = {}, cookie = '') {
+async function hit(label, path, init = {}, cookie = '', options = {}) {
   const headers = new Headers(init.headers);
   if (cookie) headers.set('cookie', cookie);
   const response = await fetch(BASE + path, { ...init, headers, redirect: 'manual' });
@@ -51,7 +60,7 @@ async function hit(label, path, init = {}, cookie = '') {
   if (contentType.includes('text/html')) {
     text = text.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ');
   }
-  scan(label, response.status, text);
+  scan(label, response.status, text, options);
   return response;
 }
 
@@ -79,6 +88,9 @@ await hit('GET /api/cars huge page', '/api/cars?page=99999999999&pageSize=9999')
 await hit('GET /api/cars/0x10', '/api/cars/0x10');
 await hit('GET /api/cars/1e20', '/api/cars/1e20');
 await hit("GET /api/cars/1' OR 1=1", "/api/cars/1'%20OR%201=1");
+await hit('GET /api/geocode signed out', '/api/geocode?q=indiranagar');
+await hit('POST cancel signed out', '/api/bookings/1/cancel', { method: 'POST' });
+await hit('GET database try signed out', '/api/admin/database/try?kind=history&reference=D4K7QM2XPA');
 await hit('GET /api/cars/999999', '/api/cars/999999');
 await hit('GET availability bad dates', '/api/cars/1/availability?startDate=2027-13-45&endDate=x');
 await hit('GET availability reversed', '/api/cars/1/availability?startDate=2027-06-05&endDate=2027-06-01');
@@ -114,7 +126,23 @@ if (session.ok) {
   await hit('PATCH booking illegal status', '/api/admin/bookings/999999', auth({ method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: 'teleported' }) }), session.jar);
   await hit('PATCH delivery 0x10', '/api/admin/deliveries/0x10', auth({ method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: 'delivered' }) }), session.jar);
   await hit('DELETE admin car 1e20', '/api/admin/cars/1e20', auth({ method: 'DELETE' }), session.jar);
+  // Phase 13 and 14 routes: the stored programs' refusals must reach the
+  // client as their own messages, and nothing else.
+  await hit('POST cancel absent booking', '/api/bookings/999999/cancel', auth({ method: 'POST' }), session.jar);
+  await hit('POST cancel 1e20', '/api/bookings/1e20/cancel', auth({ method: 'POST' }), session.jar);
+  await hit('POST cancel without CSRF', '/api/bookings/1/cancel', { method: 'POST' }, session.jar);
+  await hit('POST close without CSRF', '/api/admin/operations/close', { method: 'POST' }, session.jar);
+  await hit('POST withdraw absent car', '/api/admin/cars/999999/withdraw', auth({ method: 'POST' }), session.jar);
+  await hit('DELETE booked car (FK)', '/api/admin/cars/1', auth({ method: 'DELETE' }), session.jar);
+  await hit('POST booking unknown pickup branch', '/api/bookings', auth(json({ carId: 1, startDate: '2030-03-01', endDate: '2030-03-03', delivery: { mode: 'self_pickup', pickupBranchId: 999999 }, payment: { method: 'card', cardLastFour: '4242' } })), session.jar);
+  await hit('GET database try bad kind', '/api/admin/database/try?kind=drop', {}, session.jar);
+  await hit("GET database try quoted reference", "/api/admin/database/try?kind=history&reference=D4' OR 1=1", {}, session.jar);
+  await hit('GET geocode no params', '/api/geocode', {}, session.jar);
+  await hit("GET geocode injection text", "/api/geocode?q=%27%3B%20DROP%20TABLE%20users%3B--", {}, session.jar);
+  await hit('GET geocode bad coordinates', '/api/geocode?lat=999&lon=x', {}, session.jar);
   await hit('GET page /admin', '/admin', {}, session.jar);
+  await hit('GET page /admin/reports (shows SQL by design)', '/admin/reports', {}, session.jar, { showsSql: true });
+  await hit('GET page /admin/database (shows SQL by design)', '/admin/database', {}, session.jar, { showsSql: true });
   await hit('GET page /bookings', '/bookings', {}, session.jar);
 } else {
   results.push('note  admin sign-in failed (database down or rate limited); admin routes checked unauthenticated only');

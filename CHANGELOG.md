@@ -9,6 +9,131 @@ Entries are grouped by session date, newest first. Every session adds one.
 
 ### 2026-10-12: Phase 13 (database coursework) and Phase 14 (UI revisions) planned
 
+#### Phase 14 verified (2026-10-12)
+- Fixed in dark mode: the black slab was invisible on the dark page (it is
+  now the studio grey there, `--film-slab`), and the copy laid over the film
+  took the dark scheme's light ink, light on a light film (it keeps the
+  charcoal while the film runs).
+- `npm run check:leaks` covers the new routes (cancel, withdraw, delete,
+  the close, the database try-it, the geocoder): 54 requests. Only the SQL
+  pattern is waived, and only on the two admin pages that show SQL by
+  design; `SECURITY.md` says so.
+- `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `test:db`
+  (63 pass), `build`, `smoke` (47/47 against `next start`), `check:leaks`
+  (clean), production audit 0. Screens at 1440x900 and 390x844, reduced
+  motion, dark mode.
+
+#### Phase 14, step 6: the confirmation and the spacing (items 13, 15)
+- Confirmation stays carmine; its note now reads "this is important."
+- Spacing: the panel padding and the space above every inner page's heading
+  trimmed (the owner found pages too zoomed in); the checkout's own
+  tightening is in step 5.
+
+#### Phase 14, step 5: the checkout (items 13, 14, 16)
+- Checkout laid out to fit a laptop screen: dates and "How you get it" on
+  the left; payment (method, card number and name on one row) and the
+  summary on the right, sticky. Smaller heading.
+- "Collect or deliver" lists every open branch with its distance from the
+  car and the fee (the car's own branch free, others on the delivery tiers,
+  beyond 15 km disabled), then doorstep delivery. Sent as `pickupBranchId`.
+- Doorstep: `AddressPicker`. Search the address (through our new
+  `GET /api/geocode`, OpenStreetMap's Nominatim behind it, signed-in only,
+  30 a minute, one upstream request a second, cached a day, boxed to
+  Bengaluru), tap the map, or "use my location". The pin fills the street
+  and pincode, a dashed line runs from the branch, and the summary shows the
+  distance and fee. Latitude and longitude fields are gone. Leaflet 1.9.4
+  over OpenStreetMap tiles, greyscale, loaded only for doorstep.
+- CSP `img-src` allows `https://tile.openstreetmap.org` only;
+  `Permissions-Policy` allows geolocation for this origin.
+- "relax. nobody gets charged." sits beside the Payment heading, pointing
+  into it. No example name, card, UPI ID or address in the checkout.
+
+#### Phase 14, step 4: the car page (items 9, 10, 12)
+- The car page is one grey field: the level photo (tilting only on hover,
+  the landing spot of the fleet's view transition, `data-car-hero`), the
+  facts, then "How it gets to you" (collect at the car's branch, or another
+  within 15 km for the delivery fee; the delivery tiers) and a single
+  "Reserve this car" button at the end. The red card and the second Reserve
+  button are gone.
+- Fixed in `CarLink`: the view transition waited on requestAnimationFrame,
+  which browsers pause while a transition waits for its update, so Chrome
+  aborted it after four seconds; it now polls on a timer, and its rejected
+  promises are handled.
+- Signed out, Reserve already lands on sign-in (`/login?next=/booking/:id`),
+  which now ends with the slim footer line, not the branch list.
+
+#### Phase 14, step 3: the fleet (items 7, 8; groundwork for 9, 13, 14)
+- `/cars` is one grey studio field: the heading, the filters and the cars.
+  The red hot panel is gone.
+- The fleet is a deck (`FleetIndex` rewritten): each car a card pinned under
+  the header a little lower than the last, the next sliding over it and
+  popping up from 90% as it arrives (scroll-linked, transform only). Hovering
+  greys the photograph (a pre-greyed copy fades in) and the name. Reduced
+  motion gets a plain list. The ghost stack and its CSS are gone.
+- Signed-out visitors get the sign-in panel and the branches after the last
+  car; signed-in visitors do not.
+- `CarLink`: on browsers with View Transitions the clicked car's photo morphs
+  into the car page's photo while the rest cross-fades; otherwise an
+  ordinary link. `app/template.tsx`: every page arrives with a short rise and
+  fade (CSS), standing aside during a view transition.
+- Every select and its open list is the studio grey (`--select-bg`), so the
+  options read on every panel.
+- The car page's photo lies level and tilts only on hover (`.car-tilt`).
+- Fleet copy: "Nine cars across Bengaluru ... or wait for you at any of our
+  ten branches".
+- Smoke test: the deck's hover, and no sign-in panel for a signed-in visitor.
+
+#### Phase 14, step 2: the landing film (items 1, 2, 4, 5)
+- The hero is type only: the slogan at the top, the whole `D4DRIVE` wordmark
+  at the bottom (sized to the height left; its line box no longer crops the
+  letters), the red dot beside it. The "self-drive cars" note and its arrow
+  are gone; "this one isn't for rent. sadly." moved to the side-on hold, where
+  the car is.
+- A black slab fades in out of the blank space between them (1.5s after the
+  slogan, or with the first scroll), then opens to the film with the scroll
+  while the film rises out of its black, pushing the slogan up and the
+  wordmark down off the screen (`--hero-up`, `--hero-down`, transform only).
+  The old peeking window and its `--win-*` geometry are gone.
+- Grey stage: a studio-grey multiply layer (`.film-tone`) over the film and
+  the page while the film plays, charcoal copy above it; it fades back to the
+  page ground with the smoke.
+- Four holds: the film stops on the side-on car, head-on, three-quarter and
+  the smoke while each chapter's copy is fully shown, then moves on. Moving
+  segments ease in and out. Track 1000vh (850vh portrait).
+- Smoother scrub: the stills are cut at 60 a second with ffmpeg's
+  motion-compensated interpolation (`public/film/v2`, 524 stills, 11.2 MB;
+  phones load half, as before), each still decoded before first use and the
+  next eight decoded ahead of the playhead (`FrameLoader.warm`).
+  `public/film/v1` removed. `npm run build:frames` gains `--fps`.
+- Timeline in beats (30 a second) so the choreography is independent of the
+  cut; `filmPhase` drives the header logo. Tests rewritten (21), the smoke
+  test checks the holds, the grey stage and the header logo.
+- Delivery chapter copy corrected: collecting away from the car's branch now
+  costs the delivery tier.
+
+#### Phase 14, step 1: the site's chrome (branch `feature/ux-revisions`, draft PR #26)
+- Header: the condensed `D4DRIVE` wordmark is the logo, hidden on the
+  landing's first screen until the film starts (`FilmStory` writes
+  `data-film-phase` on the track; `filmPhase` in `timeline.ts`). Once the page
+  has moved, a frosted grey bar (`data-scrolled`, from a sentinel watched by
+  `HeaderTone`, no scroll listener), tinted for carmine and charcoal panels.
+- Signed in: "Signed in as *Name*" opens `AccountMenu` (My bookings, Fleet,
+  admin pages for staff, Photo credits, Sign out). The rotating "Let's ___"
+  is for signed-out visitors only. `SignOutButton` removed.
+- Every button hovers red with white type: primary, blush, secondary and
+  keycaps share `--btn-hover-bg` (the deeper carmine on carmine panels).
+- `SiteFooter` is a slim line on every page with "This Was Bloomed By Rohit".
+  The branch list and "Browse the fleet" moved to `LocationsSection`, which
+  flows on from the landing's sign-in panel with no card or tilt.
+- The "go on." notes are anchored to their buttons, arrows rising to them.
+- Back to top is a small arrow at the left edge, red on hover.
+- Fixed: the Fleet link landed at the end of the page. Lenis kept the
+  previous page's eased target; `SmoothScroll` now jumps to the top of a new
+  page before it paints (back and forward, and #fragments, keep theirs).
+- "Self-drive" removed from all copy; example names, numbers and emails
+  removed from the sign-in form.
+- `scripts/shoot.mjs` gains `SHOOT_SELECTOR`.
+
 Branch `feature/dbms-coursework`, stacked on `feature/scroll-film-redesign`
 (PR #24), draft PR #25. Steps land newest first below, each pushed as it is done.
 

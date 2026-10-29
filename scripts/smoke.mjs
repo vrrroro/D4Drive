@@ -61,7 +61,8 @@ function watch(page, label) {
   await page.screenshot({ path: `${SHOTS}/01-hero.png` });
 
   const canvas = page.locator('[data-film-canvas]');
-  const frame = async () => Number(await canvas.getAttribute('data-frame'));
+  const frame = async () => Number(await canvas.getAttribute('data-beat'));
+  const opacityOf = (selector) => page.locator(selector).first().evaluate((el) => Number(getComputedStyle(el).opacity));
   const track = await page.evaluate(() => {
     const el = document.querySelector('.film-track');
     return { top: el.offsetTop, length: el.offsetHeight - innerHeight };
@@ -70,21 +71,27 @@ function watch(page, label) {
     await page.evaluate((y) => window.scrollTo(0, y), track.top + p * track.length);
     await page.waitForTimeout(1500);
   };
-  ok('the film starts on its first frame', (await frame()) === 0, `frame=${await frame()}`);
+  ok('the film starts on its first frame', (await frame()) === 0, `beat=${await frame()}`);
+  ok('the header hides its wordmark while the hero shows it', (await opacityOf('.header-logo')) < 0.05);
 
-  await scrubTo(0.39);
+  await scrubTo(0.42);
   const middle = await frame();
-  ok('scrolling scrubs the film forward', middle > 100 && middle < 140, `frame=${middle}`);
+  ok('scrolling scrubs the film forward to the head-on shot', middle === 120, `beat=${middle}`);
   const help = page.locator('[data-chapter="roast"]');
   ok('the chapter for that moment is on screen', Number(await help.evaluate((el) => getComputedStyle(el).opacity)) > 0.9);
+  await scrubTo(0.47);
+  ok('the film holds on the shot while its copy is up', (await frame()) === 120, `beat=${await frame()}`);
+  ok('the stage is toned grey while the film plays', (await opacityOf('.film-tone')) > 0.9);
+  ok('the header shows its wordmark once the film has started', (await opacityOf('.header-logo')) > 0.9);
   await page.screenshot({ path: `${SHOTS}/02-film.png` });
 
   await scrubTo(0.1);
   ok('scrolling back rewinds it', (await frame()) < middle, `frame=${await frame()}`);
 
   await scrubTo(1);
-  ok('the car leaves frame by the end of the track', (await frame()) === 263, `frame=${await frame()}`);
+  ok('the car leaves frame by the end of the track', (await frame()) === 263, `beat=${await frame()}`);
   ok('the smoke fades into the page', Number(await canvas.evaluate((el) => el.style.opacity)) < 0.05);
+  ok('the stage is back to the page ground after the film', (await opacityOf('.film-tone')) < 0.05);
 
   const panel = page.locator('#sign-in');
   await panel.scrollIntoViewIfNeeded();
@@ -129,20 +136,21 @@ let reference = '';
   await page.waitForURL('**/cars', { timeout: 15000 });
   ok('register signs in and honours ?next', page.url().endsWith('/cars'));
 
-  const cards = page.locator('.fleet-row-link');
+  const cards = page.locator('.fleet-card-link');
   await cards.first().waitFor();
   const count = await cards.count();
   ok('catalog lists active cars', count === 9, `count=${count}`);
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
   ok('every car in the fleet has a photograph', slots === 0, `slots=${slots}`);
 
-  // The ghost stack: pointing at a name brings up that car's photograph.
-  await page.locator('.fleet').scrollIntoViewIfNeeded();
+  // The deck: pointing at a card greys exactly that car.
+  await cards.nth(0).scrollIntoViewIfNeeded();
   await page.waitForTimeout(1200);
-  await cards.nth(2).hover();
-  await page.waitForTimeout(700);
-  const shown = await page.locator('.fleet-photo').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
-  ok('pointing at a name shows exactly that car', shown === 1, `shown=${shown}`);
+  await cards.nth(0).hover();
+  await page.waitForTimeout(800);
+  const greyed = await page.locator('.fleet-card-grey').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
+  ok('pointing at a car greys exactly that car', greyed === 1, `greyed=${greyed}`);
+  ok('a signed-in visitor gets no sign-in panel at the end of the fleet', (await page.locator('#sign-in').count()) === 0);
   await page.screenshot({ path: `${SHOTS}/04-catalog.png` });
 
   await page.goto(BASE + '/cars?fuel=electric');
@@ -262,7 +270,7 @@ let reference = '';
   const fadedNoJs = await staticPage.locator('[data-chapter]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
   ok('without JavaScript every chapter is readable', fadedNoJs === 0, `faded=${fadedNoJs}`);
   await staticPage.goto(BASE + '/cars');
-  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-row-link').count()) === 9);
+  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-card-link').count()) === 9);
   await noJs.close();
 }
 

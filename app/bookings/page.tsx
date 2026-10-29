@@ -45,7 +45,7 @@ export default async function BookingsPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="journeys-title">
+    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="journeys-title">
       <h1 id="journeys-title" className="t-mega">
         Your <span className="italic-safe inline-block italic">journeys</span>.
       </h1>

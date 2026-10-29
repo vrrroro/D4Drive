@@ -40,7 +40,19 @@ export function HeaderTone({ targetId }: { targetId: string }) {
       { rootMargin: '-3% 0px -96% 0px' },
     );
     panels.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+
+    // Scrolled at all? The sentinel 24px into the document says, without a
+    // scroll listener. The frosted bar in globals.css hangs off this.
+    const sentinel = document.querySelector('[data-scroll-sentinel]');
+    const scrolled = new IntersectionObserver(([entry]) => {
+      if (entry) header.dataset.scrolled = entry.isIntersecting ? 'false' : 'true';
+    });
+    if (sentinel) scrolled.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+      scrolled.disconnect();
+    };
   }, [targetId, pathname]);
 
   return null;

@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 14, the owner's UI revisions (Phase 13 done 2026-10-12, PR #25)
-**Status:** Phases 12 and 13 complete in code; Phase 14 in progress on `feature/ux-revisions`
+**Current phase:** none active. Phases 13 and 14 done 2026-10-12 (PRs #25, #26); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 14 verified
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -27,7 +27,7 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
 | 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
-| 7 | 14: The owner's UI revisions (18 items) | **Active**, branch `feature/ux-revisions` stacked on 13 |
+| 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
 
 ---
 
@@ -62,28 +62,45 @@ Design decisions (stated assumptions, see `docs/DATABASE.md`):
 - [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
 - [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (40 pass, 4 skip; corrected, see the CHANGELOG fix), `test:db` (57 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
 
-### Phase 14: The owner's UI revisions (active)
+### Phase 14: The owner's UI revisions (done 2026-10-12, PR #26)
 
-Owner's list of 2026-10-12, numbered as given:
+Owner's list of 2026-10-12, numbered as given. Decisions the owner made when
+asked (2026-10-12):
 
-- [ ] 1. Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
-- [ ] 2. During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
-- [ ] 3. Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
-- [ ] 4. Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
-- [ ] 5. Film scrub much smoother (more in-between frames, holds)
-- [ ] 6. Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
-- [ ] 7. "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
-- [ ] 8. Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors
-- [ ] 9. Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
-- [ ] 10. "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
-- [ ] 11. Every button hovers red with white text
-- [ ] 12. Reserve while signed out goes to sign-in directly, without the footer's fleet block
-- [ ] 13. Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
-- [ ] 14. "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
-- [ ] 15. Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
-- [ ] 16. Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
-- [ ] 17. Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
-- [ ] 18. No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
+- **Item 2 colours:** "grey stage, dark text". During the film the page and
+  the film are toned to the studio grey; text and header stay charcoal. After
+  the film it returns to the light page.
+- **Item 6 logo:** the condensed `D4DRIVE` wordmark replaces the serif logo at
+  the **top left**; hidden on the landing's first screen, shown once the film
+  starts and on every other page.
+- **Item 13 map:** OpenStreetMap (Leaflet tiles), address search through our
+  own server to OpenStreetMap's Nominatim geocoder; no API key.
+- **Items 3, 8, 12 footer:** the flowing locations section ("Browse the
+  fleet") appears only after the landing's sign-in panel and at the end of the
+  fleet page for signed-out visitors. Every other page, sign-in included, ends
+  with a slim line (up arrow, credits, "This Was Bloomed By Rohit").
+
+- [x] 1. (2026-10-12: `closedSlab`, `slabAlpha`, `heroPush`; the slab fades in 1.5s after the slogan, or with the first scroll) Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
+- [x] 2. (2026-10-12: `.film-tone` multiply layer, `stageTone`; four holds in `SEGMENTS`; chapters fully shown through their holds) During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
+- [x] 3. (2026-10-12: `LocationsSection` flows on from sign-in on the landing and the signed-out fleet; both notes re-aimed) Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
+- [x] 4. (2026-10-12: "self-drive" removed from all copy; note and arrow gone; the wordmark sized to the height left, line box 0.92) Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
+- [x] 5. (2026-10-12: v2 cut at 60 stills a second by motion interpolation, decode ahead of the playhead, eased segments, the holds) Film scrub much smoother (more in-between frames, holds)
+- [x] 6. (2026-10-12: `header-logo`, hidden via `.film-track[data-film-phase='hero']`; frosted bar from `data-scrolled`) Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
+- [x] 7. (2026-10-12: scroll bug fixed in `SmoothScroll`, Lenis kept the old page's eased target; the fleet is one grey studio field) "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
+- [x] 8. (2026-10-12: `FleetIndex` deck, `.fleet-card-grey` hover, `AuthPanel` + `LocationsSection` only when signed out) Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors
+- [x] 9. (2026-10-12: `CarLink` view transition carries the photo; `.page-enter` on every page; `.car-tilt` level at rest) Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
+- [x] 10. (2026-10-12: inside the car's grey field, one Reserve button at the end) "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
+- [x] 11. (2026-10-12: `--btn-hover-bg`, deeper carmine on carmine panels; keycaps too) Every button hovers red with white text
+- [x] 12. (2026-10-12: `/booking/:id` redirects to `/login?next=`; sign-in ends with the slim line only) Reserve while signed out goes to sign-in directly, without the footer's fleet block
+- [x] 13. (2026-10-12: `.page-enter`; two-column checkout that fits a 900px screen; collection at any branch with its distance and fee; `--select-bg` grey lists; `AddressPicker` with OpenStreetMap search, map tap and "use my location", distance worked out from the pin) Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
+- [x] 14. (2026-10-12: beside the Payment heading, pointing into it; the method list is grey) "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
+- [x] 15. (2026-10-12) Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
+- [x] 16. (2026-10-12: Let's link signed-out only; no example names, numbers, emails, cards or UPI IDs in any form) Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
+- [x] 17. (2026-10-12: `AccountMenu`) Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
+- [x] Verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `test:db` (63), `build`, `smoke` (47/47), `check:leaks` (54, clean); screens at 1440x900 and 390x844, reduced motion and dark mode (found and fixed: the slab and the film copy in dark mode)
+- [ ] On real phones: the scrub at 60 stills a second, the deck, the map (needs devices)
+- [ ] Lighthouse on the new landing (11.2 MB of stills, coarse to fine; measure LCP and memory)
+- [x] 18. (2026-10-12: `BackToTop` is a small arrow at the left edge; `SiteFooter` is the slim line) No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
 
 ---
 
@@ -288,6 +305,7 @@ Found and fixed in this phase:
 - **Dark-mode accent text:** `DESIGN.md` holds carmine constant in dark mode, but carmine text on the dark ground measures 2.4:1. Text and focus rings use `#E66256` (same hue) in dark only; fills stay `#A82519`. Confirm or replace.
 - **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
 - **Logo loader:** needs a carmine render of the mark, or a decision to drop it.
+- **Checkout map provider:** OpenStreetMap's free tiles and Nominatim (chosen by the owner, 2026-10-12). Fine for coursework traffic; a real deployment needs a paid or self-hosted provider.
 - **`EDRD.md` vs `DESIGN.md`:** EDRD is the original brief (gold accent). `DESIGN.md` supersedes it (carmine accent). Follow `DESIGN.md`.
 
 ---
