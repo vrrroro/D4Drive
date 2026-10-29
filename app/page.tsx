@@ -75,8 +75,8 @@ export default async function HomePage() {
           <Annotation
             tilt={9}
             arrow="loop"
-            arrowClassName="mt-2 h-auto w-[clamp(5rem,8vw,9rem)] rotate-[58deg] text-[var(--color-carmine)]"
-            className="ch-landscape-only absolute left-[44vw] top-[22dvh] text-[var(--color-carmine)]"
+            arrowClassName="mt-1 h-auto w-[clamp(3.5rem,5.5vw,6.5rem)] rotate-[58deg] text-[var(--color-carmine)]"
+            className="ch-landscape-only absolute left-[44vw] top-[9dvh] text-[var(--color-carmine)] [&_.t-marker]:text-[clamp(1.1rem,1.5vw,1.8rem)]"
           >
             {"this one isn't\nfor rent. sadly."}
           </Annotation>
@@ -155,7 +155,7 @@ export default async function HomePage() {
       {session ? (
         <WelcomePanel id="sign-in" name={firstName ?? 'there'} />
       ) : (
-        <AuthPanel id="sign-in" tone="light" next="/cars" dissolve />
+        <AuthPanel id="sign-in" tone="light" next="/cars" />
       )}
       <LocationsSection />
     </>

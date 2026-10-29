@@ -78,6 +78,20 @@ export const TRANSACTIONS: Transaction[] = [
     result: 'Available or taken. Only a preview: the booking procedure checks again under a lock.',
   },
   {
+    id: 'advisor',
+    operation: 'A visitor asks the car advisor which car to pick',
+    where: 'The "Which car?" advisor on every public page (POST /api/advisor), answered by a local model through Ollama',
+    tables: ['cars', 'branches', 'bookings'],
+    component: [
+      'Tool search_fleet: SELECT ... JOIN branches, a WHERE built only from validated filters',
+      'Tool check_availability: SELECT ... WHERE id = ? AND is_active = 1, then FUNCTION fn_car_available(car, start, end)',
+    ],
+    dml: ['SELECT'],
+    effect:
+      'Read only. The model never writes SQL: it asks for a tool with arguments, the server checks them with zod and binds them into fixed, parameterised queries, and the rows go back to the model.',
+    result: 'A short recommendation and links to up to three cars, every price and seat count taken from the rows.',
+  },
+  {
     id: 'reserve',
     operation: 'A customer reserves a car and pays',
     where: 'Checkout, "Reserve" (POST /api/bookings)',
