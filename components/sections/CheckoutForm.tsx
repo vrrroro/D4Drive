@@ -2,6 +2,8 @@
 
 import { useState, useMemo, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronDown } from 'lucide-react';
+import { Annotation } from '@/components/ui/Annotation';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -128,18 +130,20 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
     }
   }
 
-  const labelClass = 'font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]';
+  const labelClass = 't-label text-[var(--muted)]';
   const selectClass =
-    'h-12 w-full border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 font-body text-sm text-[var(--ink)] transition-colors duration-500 focus:border-[var(--accent-text)] focus:outline-none';
+    'h-14 w-full appearance-none border-b border-[var(--ink)]/40 bg-transparent px-0 py-2 pr-8 font-display text-[clamp(1.2rem,1.6vw,1.6rem)] font-light text-[var(--ink)] transition-colors duration-300 focus:border-[var(--accent-text)] focus:outline-none';
+  const chevron = <ChevronDown aria-hidden className="pointer-events-none absolute right-1 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]" strokeWidth={1.5} />;
 
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-x-12 gap-y-16 lg:grid-cols-12" noValidate>
-      <div className="flex flex-col gap-12 lg:col-span-7">
-        <fieldset className="border-t border-[var(--ink)] pt-8">
+      <div className="flex flex-col gap-16 lg:col-span-7">
+        <fieldset className="border-t border-[var(--ink)]/25 pt-8">
           <legend className="sr-only">Rental dates</legend>
-          <h2 className="font-display text-2xl text-[var(--ink)]">Dates</h2>
+          <h2 className="t-sub">Dates</h2>
           <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
             <Field
+              size="lg"
               label="Pickup"
               name="startDate"
               type="date"
@@ -150,6 +154,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
               required
             />
             <Field
+              size="lg"
               label="Return"
               name="endDate"
               type="date"
@@ -167,28 +172,32 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
           </div>
         </fieldset>
 
-        <fieldset className="border-t border-[var(--ink)] pt-8">
+        <fieldset className="border-t border-[var(--ink)]/25 pt-8">
           <legend className="sr-only">Delivery</legend>
-          <h2 className="font-display text-2xl text-[var(--ink)]">Delivery</h2>
+          <h2 className="t-sub">Delivery</h2>
 
           <div className="mt-8 flex flex-col gap-2">
             <label htmlFor="delivery-mode" className={labelClass}>
               How would you like the car
             </label>
-            <select
-              id="delivery-mode"
-              className={selectClass}
-              value={mode}
-              onChange={(e) => setMode(e.target.value as typeof mode)}
-            >
-              <option value="self_pickup">Collect from {branch.name}, free</option>
-              <option value="doorstep">Deliver to my address</option>
-            </select>
+            <div className="relative">
+              <select
+                id="delivery-mode"
+                className={selectClass}
+                value={mode}
+                onChange={(e) => setMode(e.target.value as typeof mode)}
+              >
+                <option value="self_pickup">Collect from {branch.name}, free</option>
+                <option value="doorstep">Deliver to my address</option>
+              </select>
+              {chevron}
+            </div>
           </div>
 
           {mode === 'doorstep' && (
             <div className="mt-8 flex flex-col gap-8">
               <Field
+                size="lg"
                 label="Address"
                 name="addressLine"
                 placeholder="Flat 4B, Brigade Residency, 12th Main"
@@ -197,6 +206,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
               />
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
                 <Field
+                  size="lg"
                   label="City"
                   name="city"
                   defaultValue="Bengaluru"
@@ -204,6 +214,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                   required
                 />
                 <Field
+                  size="lg"
                   label="Pincode"
                   name="pincode"
                   inputMode="numeric"
@@ -214,6 +225,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
               </div>
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
                 <Field
+                  size="lg"
                   label="Latitude"
                   name="latitude"
                   inputMode="decimal"
@@ -224,6 +236,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                   required
                 />
                 <Field
+                  size="lg"
                   label="Longitude"
                   name="longitude"
                   inputMode="decimal"
@@ -237,32 +250,44 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
           )}
         </fieldset>
 
-        <fieldset className="border-t border-[var(--ink)] pt-8">
+        <fieldset className="relative border-t border-[var(--ink)]/25 pt-8">
           <legend className="sr-only">Payment</legend>
-          <h2 className="font-display text-2xl text-[var(--ink)]">Payment</h2>
-          <p className="mt-3 font-body text-xs text-[var(--muted)]">
+          <h2 className="t-sub">Payment</h2>
+          <p className="t-body mt-3 max-w-[46ch] text-[var(--muted)]">
             This payment is simulated. No card details are stored and no real
             transaction takes place.
           </p>
+          <Annotation
+            tilt={-9}
+            arrow="swoop"
+            arrowClassName="h-auto w-20 rotate-[100deg] text-[var(--accent-text)]"
+            className="absolute -right-4 -top-16 hidden w-56 flex-col items-end text-right text-[var(--accent-text)] xl:flex"
+          >
+            {'relax. nobody\ngets charged.'}
+          </Annotation>
 
           <div className="mt-8 flex flex-col gap-2">
             <label htmlFor="payment-method" className={labelClass}>
               Method
             </label>
-            <select
-              id="payment-method"
-              className={selectClass}
-              value={method}
-              onChange={(e) => setMethod(e.target.value as typeof method)}
-            >
-              <option value="card">Card</option>
-              <option value="upi">UPI</option>
-            </select>
+            <div className="relative">
+              <select
+                id="payment-method"
+                className={selectClass}
+                value={method}
+                onChange={(e) => setMethod(e.target.value as typeof method)}
+              >
+                <option value="card">Card</option>
+                <option value="upi">UPI</option>
+              </select>
+              {chevron}
+            </div>
           </div>
 
           {method === 'card' ? (
             <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
               <Field
+                size="lg"
                 label="Card number"
                 name="cardNumber"
                 inputMode="numeric"
@@ -272,6 +297,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                 required
               />
               <Field
+                size="lg"
                 label="Name on card"
                 name="cardName"
                 placeholder="Ananya Krishnan"
@@ -282,6 +308,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
           ) : (
             <div className="mt-8">
               <Field
+                size="lg"
                 label="UPI ID"
                 name="upiHandle"
                 placeholder="ananya@okaxis"
@@ -296,9 +323,9 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
       {/* Summary. Sticky on desktop so the total stays visible while the form
           scrolls, which is the whole reason a checkout summary exists. */}
       <aside className="lg:col-span-4 lg:col-start-9">
-        <div className="lg:sticky lg:top-24">
-          <div className="surface-panel border-t-4 border-t-[var(--color-carmine)] p-8">
-            <h2 className="font-display text-2xl text-[var(--ink)]">Summary</h2>
+        <div className="lg:sticky lg:top-[calc(var(--header-h)+1.5rem)]">
+          <div className="tone-night p-8 shadow-[var(--shadow-float)] md:p-10">
+            <h2 className="t-sub">Summary</h2>
 
             {quote && !quote.pending && quote.price ? (
               <>
@@ -321,7 +348,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                   />
                 </dl>
 
-                <div className="mt-6 border-t border-[var(--ink)] pt-6">
+                <div className="mt-6 border-t border-[var(--color-blush)]/30 pt-6">
                   <Row
                     label="Total"
                     value={formatCurrency(quote.price.totalAmount)}
@@ -330,13 +357,13 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
                 </div>
 
                 {quote.deliveryError && (
-                  <p role="alert" className="mt-6 font-body text-xs text-[var(--accent-text)]">
+                  <p role="alert" className="mt-6 font-body text-sm text-[var(--color-paper)]">
                     {quote.deliveryError}
                   </p>
                 )}
               </>
             ) : (
-              <p className="mt-8 font-body text-sm text-[var(--muted)]">
+              <p className="t-body mt-8 text-[var(--color-blush)]">
                 {mode === 'doorstep' && quote?.pending
                   ? 'Add your coordinates to see the delivery fee.'
                   : 'Choose your dates to see the total.'}
@@ -346,6 +373,7 @@ export function CheckoutForm({ carId, ratePerDay, branch }: CheckoutFormProps) {
             <Button
               type="submit"
               size="lg"
+              variant="blush"
               loading={submitting}
               disabled={!quote || quote.pending || Boolean(quote.deliveryError)}
               className="mt-10 w-full"
@@ -373,8 +401,8 @@ function Row({
       <dt
         className={
           emphasis
-            ? 'font-body text-sm text-[var(--ink)]'
-            : 'font-body text-sm text-[var(--muted)]'
+            ? 't-label text-[var(--color-paper)]'
+            : 'font-body text-sm font-light text-[var(--color-blush)]'
         }
       >
         {label}
@@ -382,8 +410,8 @@ function Row({
       <dd
         className={
           emphasis
-            ? 'font-display text-2xl text-[var(--accent-text)]'
-            : 'font-body text-sm text-[var(--ink)]'
+            ? 'font-display text-4xl font-light text-[var(--color-paper)]'
+            : 'font-body text-sm text-[var(--color-paper)]'
         }
       >
         {value}

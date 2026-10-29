@@ -1,10 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { StackPanel } from '@/components/motion/StackPanel';
 import { getSession } from '@/lib/auth/guards';
 import { listAllCars, listBranches } from '@/lib/services/admin';
 import { FleetManager } from '@/components/sections/FleetManager';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Fleet admin' };
 
 export default async function AdminFleetPage() {
   const session = await getSession();
@@ -14,17 +19,14 @@ export default async function AdminFleetPage() {
   const [cars, branches] = await Promise.all([listAllCars(), listBranches()]);
 
   return (
-    <main className="px-8 pt-24 pb-20 md:px-16 md:pb-32">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <Link href="/admin" className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)] transition-colors duration-500 hover:text-[var(--accent-text)]">
+    <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(2rem,4vw,4rem))]" aria-labelledby="fleet-admin-title">
+        <Link href="/admin" className="keycap t-label">
+          <ArrowLeft aria-hidden className="h-4 w-4" strokeWidth={1.5} />
           Operations
         </Link>
 
-        <h1 className="font-display mt-8 text-4xl leading-[0.95] text-[var(--ink)] md:text-6xl">
-          The{' '}
-          <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
-            fleet
-          </span>
+        <h1 id="fleet-admin-title" className="t-mega mt-12">
+          The <span className="italic-safe inline-block italic">fleet</span>.
         </h1>
 
         <FleetManager
@@ -46,7 +48,6 @@ export default async function AdminFleetPage() {
           }))}
           branches={branches.map((b) => ({ id: b.id, name: b.name, city: b.city }))}
         />
-      </div>
-    </main>
+    </StackPanel>
   );
 }

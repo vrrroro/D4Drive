@@ -1,0 +1,102 @@
+[
+  {
+    "image": "/cars/maruti-suzuki-swift.webp",
+    "model": "Maruti Suzuki Swift VXi",
+    "title": "2020 Suzuki Swift Facelift IMG 3658.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2020_Suzuki_Swift_Facelift_IMG_3658.jpg",
+    "mirrored": false,
+    "plateBlurred": false
+  },
+  {
+    "image": "/cars/hyundai-creta.webp",
+    "model": "Hyundai Creta SX",
+    "title": "Hyundai Creta 1.5 Design 2024.jpg",
+    "author": "RL GNZLZ",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Hyundai_Creta_1.5_Design_2024.jpg",
+    "mirrored": false,
+    "plateBlurred": false
+  },
+  {
+    "image": "/cars/tata-nexon-ev.webp",
+    "model": "Tata Nexon EV Max",
+    "title": "2020 Tata Nexon EV (India) front view.png",
+    "author": "DriveSpark",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2020_Tata_Nexon_EV_(India)_front_view.png",
+    "mirrored": true,
+    "plateBlurred": true
+  },
+  {
+    "image": "/cars/mahindra-thar.webp",
+    "model": "Mahindra Thar LX",
+    "title": "Mahindra Thar SUV in \"Red Rage\" color at Ashiana Brahmanda, East Singbhum India (Ank Kumar, Infosys limited) 02.jpg",
+    "author": "Ank Kumar",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Mahindra_Thar_SUV_in_%22Red_Rage%22_color_at_Ashiana_Brahmanda,_East_Singbhum_India_(Ank_Kumar,_Infosys_limited)_02.jpg",
+    "mirrored": false,
+    "plateBlurred": true
+  },
+  {
+    "image": "/cars/honda-city.webp",
+    "model": "Honda City ZX",
+    "title": "2023 Honda City 1.5 RS in Platinum White Pearl, front left.jpg",
+    "author": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2023_Honda_City_1.5_RS_in_Platinum_White_Pearl,_front_left.jpg",
+    "mirrored": false,
+    "plateBlurred": false
+  },
+  {
+    "image": "/cars/toyota-innova-crysta.webp",
+    "model": "Toyota Innova Crysta",
+    "title": "Toyota Innova 2.8 E 2019 (2022 Front Fascia) (1).jpg",
+    "author": "Captainmorlypogi1959",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Toyota_Innova_2.8_E_2019_(2022_Front_Fascia)_(1).jpg",
+    "mirrored": false,
+    "plateBlurred": true
+  },
+  {
+    "image": "/cars/kia-seltos.webp",
+    "model": "Kia Seltos HTX",
+    "title": "0 Kia Seltos 1.jpg",
+    "author": "Benespit",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:0_Kia_Seltos_1.jpg",
+    "mirrored": false,
+    "plateBlurred": false
+  },
+  {
+    "image": "/cars/mg-zs-ev.webp",
+    "model": "MG ZS EV Excite",
+    "title": "MG ZS EV Facelift 1X7A5867.jpg",
+    "author": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:MG_ZS_EV_Facelift_1X7A5867.jpg",
+    "mirrored": false,
+    "plateBlurred": true
+  },
+  {
+    "image": "/cars/volkswagen-virtus-gt.webp",
+    "model": "Volkswagen Virtus GT",
+    "title": "2022 Volkswagen Virtus 1.5 GT (India) front view 02.png",
+    "author": "DriveSpark",
+    "license": "CC BY 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:2022_Volkswagen_Virtus_1.5_GT_(India)_front_view_02.png",
+    "mirrored": false,
+    "plateBlurred": true
+  },
+  {
+    "image": "/cars/renault-kwid.webp",
+    "model": "Renault Kwid RXT",
+    "title": "Renault Kwid 2017 in Montevideo (front).jpg",
+    "author": "NaBUru38",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Renault_Kwid_2017_in_Montevideo_(front).jpg",
+    "mirrored": false,
+    "plateBlurred": true
+  }
+]

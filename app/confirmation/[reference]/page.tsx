@@ -1,12 +1,17 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { queryOne } from '@/lib/db';
-import { getSession } from '@/lib/auth/guards';
-import { formatCurrency } from '@/lib/services/pricing';
-import { Button } from '@/components/ui/Button';
-import { ButtonLink } from '@/components/ui/ButtonLink';
 import type { RowDataPacket } from 'mysql2/promise';
+import { StackPanel } from '@/components/motion/StackPanel';
+import { Annotation } from '@/components/ui/Annotation';
+import { ButtonLink } from '@/components/ui/ButtonLink';
+import { buttonClassName, ButtonContent } from '@/components/ui/button-styles';
+import { getSession } from '@/lib/auth/guards';
+import { queryOne } from '@/lib/db';
+import { formatCurrency } from '@/lib/services/pricing';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = { title: 'Booked' };
 
 interface Row extends RowDataPacket {
   id: number;
@@ -20,14 +25,9 @@ interface Row extends RowDataPacket {
   delivery_mode: string;
 }
 
-const formatDate = (d: Date) =>
-  new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+const formatDate = (d: Date) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
-export default async function ConfirmationPage({
-  params,
-}: {
-  params: Promise<{ reference: string }>;
-}) {
+export default async function ConfirmationPage({ params }: { params: Promise<{ reference: string }> }) {
   const session = await getSession();
   if (!session) notFound();
 
@@ -44,58 +44,61 @@ export default async function ConfirmationPage({
       WHERE bo.reference = ? AND bo.user_id = ?`,
     [reference, session.userId],
   );
-
   if (!booking) notFound();
 
   return (
-    <main className="flex min-h-[100dvh] items-center px-8 py-24 md:px-16">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-12">
-          <div className="md:col-span-6 md:col-start-2">
-            <div className="h-px w-8 bg-[var(--color-carmine)] md:w-12" />
-
-            <h1 className="font-display mt-8 text-5xl leading-[0.9] text-[var(--ink)] md:text-7xl">
-              You are{' '}
-              <span className="italic-safe inline-block font-display italic text-[var(--accent-text)]">
-                booked
-              </span>
-            </h1>
-
-            <p className="mt-8 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">
-              Reference
+    <StackPanel tone="hot" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="booked-title">
+      <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <h1 id="booked-title" className="t-mega">
+            You&apos;re booked.
+          </h1>
+          <p className="t-eyebrow mt-14 text-[var(--color-blush)]">Reference</p>
+          <div className="relative mt-2 inline-block">
+            <p className="t-condensed text-[clamp(5rem,14vw,14rem)] text-[var(--color-paper)] [text-shadow:0.02em_0.02em_0_var(--color-oxblood)]">
+              {booking.reference}
             </p>
-            <p className="font-display mt-2 text-3xl text-[var(--ink)]">{booking.reference}</p>
+            <Annotation
+              tilt={-10}
+              arrow="swoop"
+              arrowClassName="h-auto w-24 -scale-x-100 rotate-[60deg] text-[var(--color-blush)]"
+              className="absolute -right-56 -top-6 hidden w-52 text-[var(--color-blush)] md:block"
+            >
+              {'keep this one.\nthe keys know it.'}
+            </Annotation>
+          </div>
+        </div>
 
-            <dl className="mt-12 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-[var(--ink)] pt-8">
-              <div>
-                <dt className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">Car</dt>
-                <dd className="mt-2 font-body text-sm text-[var(--ink)]">{booking.brand} {booking.model}</dd>
-              </div>
-              <div>
-                <dt className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">Total paid</dt>
-                <dd className="mt-2 font-body text-sm text-[var(--ink)]">{formatCurrency(Number(booking.total_amount))}</dd>
-              </div>
-              <div>
-                <dt className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">Pickup</dt>
-                <dd className="mt-2 font-body text-sm text-[var(--ink)]">{formatDate(booking.start_date)}</dd>
-              </div>
-              <div>
-                <dt className="font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]">Return</dt>
-                <dd className="mt-2 font-body text-sm text-[var(--ink)]">{formatDate(booking.end_date)}</dd>
-              </div>
-            </dl>
+        <div className="lg:col-span-5 lg:pt-6">
+          <dl className="grid grid-cols-2 gap-x-8 gap-y-8 border-t border-[var(--color-blush)]/35 pt-8">
+            <Item label="Car" value={`${booking.brand} ${booking.model}`} />
+            <Item label="Total paid" value={formatCurrency(Number(booking.total_amount))} />
+            <Item label="Pickup" value={formatDate(booking.start_date)} />
+            <Item label="Return" value={formatDate(booking.end_date)} />
+            <Item label="Handover" value={booking.delivery_mode === 'doorstep' ? 'Delivered to you' : 'Collect from the branch'} />
+            <Item label="Length" value={`${booking.days} ${booking.days === 1 ? 'day' : 'days'}`} />
+          </dl>
 
-            <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-              <a href={`/api/bookings/${booking.id}/invoice`}>
-                <Button size="lg">Download invoice</Button>
-              </a>
-              <ButtonLink href="/bookings" variant="secondary" size="lg">
-                My bookings
-              </ButtonLink>
-            </div>
+          <div className="mt-12 flex flex-col gap-4 sm:flex-row">
+            {/* A real link to a file, styled as a button: one element, one tab stop. */}
+            <a href={`/api/bookings/${booking.id}/invoice`} className={buttonClassName({ variant: 'blush', size: 'lg' })}>
+              <ButtonContent variant="blush">Download invoice</ButtonContent>
+            </a>
+            <ButtonLink href="/bookings" variant="secondary" onDark size="lg">
+              My bookings
+            </ButtonLink>
           </div>
         </div>
       </div>
-    </main>
+    </StackPanel>
+  );
+}
+
+function Item({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="t-label text-[var(--color-blush)]">{label}</dt>
+      <dd className="mt-2 font-display text-2xl font-light">{value}</dd>
+    </div>
   );
 }

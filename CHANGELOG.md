@@ -7,6 +7,67 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-08: Phase 12, the scroll film and the editorial redesign
+
+Owner's brief: the hero film should be scrubbed by the scroll instead of
+playing outright, carry the company's story in the spaces it leaves, and fade
+into sign-in as the car takes off; every page restyled to the "Lil Boxes"
+editorial-maximalism system while keeping D4Drive's own identity; real fleet
+photographs with one consistent look.
+
+#### Added
+- **The landing film** (`components/film/`): 264 WebP stills drawn into a
+  pinned canvas from the scroll position, coarse-to-fine loading, a real
+  progress loader, a hero window that opens out of the headline, five chapters
+  of copy placed in the film's empty space, the smoke fading into the sign-in
+  panel. Portrait screens crop to a band that follows the car. Contract
+  rewritten in `docs/VIDEO_STATE_MACHINE.md`.
+- `npm run build:frames` (`scripts/build-film-frames.mjs`): stills, the engine
+  clip, and `lib/film-manifest.ts` with the car's position in every frame.
+- **Fleet photographs** for all ten cars (`public/cars/`): Wikimedia Commons
+  photos (CC BY, CC BY-SA), cut out, plates blurred, set on the film's
+  cyclorama at one angle and scale. `public/cars/credits.json`, a credit line
+  under each photo, a `/credits` page, and the Python pipeline in
+  `scripts/fleet-photos/`. Seed `image_url` now points at them.
+- The system's pieces: `SmoothScroll` (Lenis), `StackPanel` (pinned, dealt-in
+  panels), `CursorHalo`, `BackToTop`, `HeaderTone` (the header follows the
+  panel beneath), `Annotation` and `HandArrow` (red-pen notes), `Wordmark`
+  (letters as windows onto the fleet), `RotatingWord`, `EasterEgg` (six clicks,
+  then the film's engine note), `LetsCta`, `SiteHeader`, `SiteFooter` (real
+  branches), `AuthPanel` and `WelcomePanel`, `FleetIndex` (the ghost stack).
+- `lib/services/branches.ts` (branches, fleet summary, fleet photos, phone
+  formatting), `lib/services/users.ts`, `lib/photo-credits.ts`.
+- `tests/film-timeline.test.ts` (15 tests). Smoke test rewritten for the film:
+  41 checks.
+
+#### Changed
+- Type: Fraunces (variable, optical size), Six Caps, Inter, Shadows Into Light
+  Two, replacing Playfair Display. Tokens: ember, oxblood, blush, studio, and
+  three corner-anchored fields. Radius 0 kept everywhere. `DESIGN.md` rewritten.
+- Every page restyled: catalog (ghost stack on desktop, photo cards on touch),
+  detail (tilted photo, delivery panel), checkout (charcoal summary), bookings,
+  confirmation, login (carmine, swings in), admin, 404, error, loading.
+- `getCar` returns the branch phone. `CarPhoto` renders the composites and keeps
+  the labelled slot for a car without one.
+- Cache headers for `/film/*` (immutable, versioned) and fleet photo files.
+- `Field` takes `tone` (light, dark, hot) and `size`; `Button` gains `blush`.
+
+#### Removed
+- The autoplaying intro: `IntroSequence`, `VideoStage`, `AuthGate`,
+  `useIntroMachine` and its tests, the catalog's particle assembly
+  (`AssembleOnView`), `SiteNav`, `AuthForm`, `Gridlines`. The particle stage
+  stays for the sign-in dissolve.
+
+#### Fixed
+- The smoke test's "boot loader shows a progressbar" race (it read the loader
+  after it had already gone on a fast machine).
+- The confirmation page nested a `<button>` in an `<a>`.
+
+#### Verified (Windows 11, Node 24, MySQL 8.0, Chrome)
+`lint`, `lint:copy`, `typecheck`, `npm test` (38 pass, 2 skip), `test:db`
+(45 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks`.
+Screens reviewed at 1440x900 and 390x844, in reduced motion, and in dark mode.
+
 ### 2026-10-07: ESLint CLI, pushed
 
 #### Changed

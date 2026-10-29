@@ -111,12 +111,14 @@ export interface CarDetailRow extends CarRow {
   branch_latitude: string;
   branch_longitude: string;
   branch_address: string;
+  branch_phone: string;
   registration_no: string;
 }
 
 export async function getCar(id: number): Promise<CarDetailRow | null> {
   return queryOne<CarDetailRow>(
     `SELECT c.id, c.branch_id, b.name AS branch_name, b.address AS branch_address,
+            b.phone AS branch_phone,
             b.latitude AS branch_latitude, b.longitude AS branch_longitude,
             c.brand, c.model, c.year, c.registration_no, c.fuel_type,
             c.transmission, c.seats, c.price_per_day, c.image_url, c.description

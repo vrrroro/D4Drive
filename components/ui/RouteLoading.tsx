@@ -1,22 +1,16 @@
 /**
  * Loading state for a server-rendered route while its data streams in.
  *
- * Quiet on purpose: a status line for assistive technology and a rule that
- * breathes in opacity (the only property it animates). No skeleton boxes
- * pretending to be the page; DESIGN.md bans div-built fakes of real UI.
+ * Quiet on purpose: a status line for assistive technology and a carmine rule
+ * that breathes in opacity. No skeleton boxes pretending to be the page.
  */
 export function RouteLoading({ label }: { label: string }) {
   return (
-    <main className="px-8 pt-24 pb-20 md:px-16" aria-busy="true">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <div className="h-px w-8 animate-pulse bg-[var(--color-carmine)] motion-reduce:animate-none md:w-12" />
-        <p
-          role="status"
-          className="mt-8 font-body text-[10px] uppercase tracking-[0.25em] text-[var(--muted)]"
-        >
-          {label}
-        </p>
-      </div>
-    </main>
+    <section className="panel tone-studio min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" data-tone="light" aria-busy="true">
+      <div className="h-px w-16 animate-pulse bg-[var(--color-carmine)] motion-reduce:animate-none" />
+      <p role="status" className="t-label mt-8 text-[var(--muted)]">
+        {label}
+      </p>
+    </section>
   );
 }

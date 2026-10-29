@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint:copy": "node scripts/lint-copy.mjs",
     "build:assets": "node scripts/build-video-assets.mjs",
+    "build:frames": "node scripts/build-film-frames.mjs",
     "db:setup": "node scripts/db-setup.mjs",
     "test": "node --import ./tests/register.mjs --experimental-strip-types --test tests/*.test.ts",
     "test:db": "node --env-file=.env --import ./tests/register.mjs --experimental-strip-types --test tests/*.test.ts",
@@ -22,6 +23,7 @@
     "@node-rs/argon2": "^2.0.2",
     "html-to-image": "^1.11.13",
     "jose": "^5.9.6",
+    "lenis": "^1.3.26",
     "lucide-react": "^0.469.0",
     "motion": "^11.15.0",
     "mysql2": "^3.24.2",
@@ -43,6 +45,7 @@
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
     "playwright-core": "1.56",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2"
   },
