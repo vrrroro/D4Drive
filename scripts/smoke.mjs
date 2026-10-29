@@ -7,7 +7,7 @@
  *
  * Drives a real Chromium through the landing film (loader, scrubbing forward
  * and back, chapters, the hand-over to sign-in, a wrong then right password),
- * registration, the fleet stack, booking, invoice, an admin status change after
+ * registration, the fleet grid, booking, invoice, an admin status change after
  * the access token is deleted (so the client must refresh and retry),
  * refresh-token replay, and the ?next open redirect.
  *
@@ -72,17 +72,38 @@ function watch(page, label) {
     await page.waitForTimeout(1500);
   };
   ok('the film starts on its first frame', (await frame()) === 0, `beat=${await frame()}`);
-  ok('the header hides its wordmark while the hero shows it', (await opacityOf('.header-logo')) < 0.05);
+
+  // Before any scroll the film fades in by itself in the gap between the
+  // slogan and the wordmark: no slab, the picture itself.
+  await page.waitForTimeout(3200);
+  const appeared = await page.evaluate(() => {
+    const c = document.querySelector('[data-film-canvas]');
+    const s = document.querySelector('[data-hero-slogan]').getBoundingClientRect();
+    const m = document.querySelector('[data-hero-wordmark]').getBoundingClientRect();
+    const r = c.width / c.clientWidth;
+    return c.getContext('2d').getImageData(Math.round((innerWidth / 2) * r), Math.round(((s.bottom + m.top) / 2) * r), 1, 1).data[3];
+  });
+  ok('the film fades in by itself between the slogan and the wordmark', appeared > 200, `alpha=${appeared}`);
+
+  // One grey: the page, the film's stage and the ground all match.
+  const greys = await page.evaluate(() =>
+    [document.body, document.querySelector('.film-stage')].map((el) => getComputedStyle(el).backgroundColor),
+  );
+  ok('the page and the film stage are the same grey', greys.every((g) => g === 'rgb(189, 188, 186)'), greys.join(' '));
+
+  // The header is a floating island with the logo in it.
+  const island = await page.locator('#site-header').boundingBox();
+  ok('the header is a floating island', island.y > 4 && island.width < 1440 - 100, `x=${island.x} y=${island.y} w=${island.width}`);
+  ok('the island carries the logo', (await opacityOf('.header-logo')) > 0.9);
+  ok('the red dot and the back-to-top button are gone', (await page.locator('[data-easter-egg]').count()) === 0 && (await page.getByRole('button', { name: 'Back to top' }).count()) === 0);
 
   await scrubTo(0.42);
   const middle = await frame();
-  ok('scrolling scrubs the film forward to the head-on shot', middle === 120, `beat=${middle}`);
+  ok('scrolling scrubs the film forward toward the head-on shot', middle > 100 && middle < 130, `beat=${middle}`);
   const help = page.locator('[data-chapter="roast"]');
   ok('the chapter for that moment is on screen', Number(await help.evaluate((el) => getComputedStyle(el).opacity)) > 0.9);
-  await scrubTo(0.47);
-  ok('the film holds on the shot while its copy is up', (await frame()) === 120, `beat=${await frame()}`);
-  ok('the stage is toned grey while the film plays', (await opacityOf('.film-tone')) > 0.9);
-  ok('the header shows its wordmark once the film has started', (await opacityOf('.header-logo')) > 0.9);
+  await scrubTo(0.46);
+  ok('the film keeps moving while its copy is up: no holds', (await frame()) > middle + 3, `beat=${await frame()}`);
   await page.screenshot({ path: `${SHOTS}/02-film.png` });
 
   await scrubTo(0.1);
@@ -91,12 +112,12 @@ function watch(page, label) {
   await scrubTo(1);
   ok('the car leaves frame by the end of the track', (await frame()) === 263, `beat=${await frame()}`);
   ok('the smoke fades into the page', Number(await canvas.evaluate((el) => el.style.opacity)) < 0.05);
-  ok('the stage is back to the page ground after the film', (await opacityOf('.film-tone')) < 0.05);
 
   const panel = page.locator('#sign-in');
   await panel.scrollIntoViewIfNeeded();
   await page.waitForTimeout(800);
   ok('the film hands over to the sign-in panel', await panel.getByRole('heading', { name: 'Sign in to drive.' }).isVisible());
+  ok('the page ends without the big wordmark', (await page.locator('section[aria-labelledby="locations-title"] .t-condensed').count()) === 0);
   await panel.getByLabel('Email').fill('ananya.k@fastmail.in');
   await panel.getByLabel('Password').fill('wrong-password-123');
   await panel.getByRole('button', { name: 'Sign in' }).click();
@@ -136,19 +157,25 @@ let reference = '';
   await page.waitForURL('**/cars', { timeout: 15000 });
   ok('register signs in and honours ?next', page.url().endsWith('/cars'));
 
-  const cards = page.locator('.fleet-card-link');
+  const cards = page.locator('.fleet-link');
   await cards.first().waitFor();
   const count = await cards.count();
   ok('catalog lists active cars', count === 9, `count=${count}`);
   const slots = await page.locator('[data-placeholder="car-photo"]').count();
   ok('every car in the fleet has a photograph', slots === 0, `slots=${slots}`);
 
-  // The deck: pointing at a card greys exactly that car.
+  // The grid: three across, no card boxes, and pointing at a car greys exactly that car.
+  const rowTops = await cards.evaluateAll((els) => els.slice(0, 3).map((el) => Math.round(el.getBoundingClientRect().top)));
+  ok('the fleet is a grid, three across', new Set(rowTops).size === 1, rowTops.join(','));
+  const boxed = await page.locator('.fleet-grid li, .fleet-link').evaluateAll((els) =>
+    els.filter((el) => { const s = getComputedStyle(el); return s.boxShadow !== 'none' || s.backgroundColor !== 'rgba(0, 0, 0, 0)'; }).length,
+  );
+  ok('no car sits in a visible card', boxed === 0, `boxed=${boxed}`);
   await cards.nth(0).scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(600);
   await cards.nth(0).hover();
   await page.waitForTimeout(800);
-  const greyed = await page.locator('.fleet-card-grey').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
+  const greyed = await page.locator('.fleet-grey').evaluateAll((els) => els.filter((el) => Number(getComputedStyle(el).opacity) > 0.9).length);
   ok('pointing at a car greys exactly that car', greyed === 1, `greyed=${greyed}`);
   ok('a signed-in visitor gets no sign-in panel at the end of the fleet', (await page.locator('#sign-in').count()) === 0);
   await page.screenshot({ path: `${SHOTS}/04-catalog.png` });
@@ -270,7 +297,7 @@ let reference = '';
   const fadedNoJs = await staticPage.locator('[data-chapter]').evaluateAll((els) => els.filter((el) => getComputedStyle(el).opacity !== '1').length);
   ok('without JavaScript every chapter is readable', fadedNoJs === 0, `faded=${fadedNoJs}`);
   await staticPage.goto(BASE + '/cars');
-  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-card-link').count()) === 9);
+  ok('without JavaScript the fleet is listed', (await staticPage.locator('.fleet-link').count()) === 9);
   await noJs.close();
 }
 

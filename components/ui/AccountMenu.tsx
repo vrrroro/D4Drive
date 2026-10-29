@@ -97,7 +97,7 @@ export function AccountMenu({ name, isAdmin }: AccountMenuProps) {
       <div
         id={menuId}
         hidden={!open}
-        className="absolute right-0 top-[calc(100%+0.9rem)] min-w-[15rem] border border-[var(--ink)]/10 bg-[var(--ground)] py-2 shadow-[var(--shadow-glass)]"
+        className="island-menu absolute right-[-1.5rem] top-[calc(100%+1.35rem)] min-w-[15rem] py-2"
       >
         <ul className="flex flex-col">
           {links.map((link) => (

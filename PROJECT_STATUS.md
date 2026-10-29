@@ -1,7 +1,7 @@
 # Project Status and Milestones
 
-**Current phase:** none active. Phases 13 and 14 done 2026-10-12 (PRs #25, #26); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 14 verified
+**Current phase:** 15, one grey (done in code 2026-10-12, branch `feature/one-grey`); the stack waits on the owner's review
+**Status:** Complete in code; Phases 12 to 15 verified
 **Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
@@ -28,6 +28,30 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
 | 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
 | 7 | 14: The owner's UI revisions (18 items) | Done 2026-10-12, PR #26 |
+| 8 | 15: One grey (the owner's next list) | Done in code 2026-10-12, branch `feature/one-grey` |
+
+---
+
+### Phase 15: One grey (done in code 2026-10-12, branch `feature/one-grey`)
+
+The owner's list of 2026-10-12, after Phase 14. Decisions the owner made when
+asked: the whole site is the film's studio grey (`#BDBCBA`, "film appears
+straight out of the page"), and there is no dark mode ("same grey always").
+
+- [x] Remove the D4DRIVE wordmark at the end of the site (`LocationsSection`)
+- [x] The film comes from the space between the slogan and the wordmark, fading in by itself instead of the slab (grey or black rectangle): `appearAlpha`, framed on the red door
+- [x] One long fluid scroll: no holds; the copy comes and goes over the moving film
+- [x] One grey: no cuts between greys anywhere; the film fades out into the same grey as the page; no grey stage layer; no dark mode
+- [x] Header as a floating glass island with the logo and the links (square corners, see the note below)
+- [x] Fleet back to the grid, with no visible cards; the photos relit so their backdrop is the page grey
+- [x] Remove the back-to-top button and the red dot
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `build`, `smoke` (51/51), screens at 1440x900 and 390x844
+- [ ] On real phones: the island and the grid at 390px, the scrub (needs devices)
+- [ ] Lighthouse on the new landing
+
+Note for the owner: an iOS dynamic island is a rounded pill, and the system's
+rule is radius 0 everywhere. The island is square-cornered; rounding it is a
+one-line change in `.site-header` (`globals.css`) if you want the pill.
 
 ---
 
@@ -302,7 +326,9 @@ Found and fixed in this phase:
 - **Hidden scrollbar:** the reference system hides it site-wide; kept, with the back-to-top keycap. Easy to restore in `globals.css` if users miss it.
 
 - **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered and deliberately not decided by an agent.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
-- **Dark-mode accent text:** `DESIGN.md` holds carmine constant in dark mode, but carmine text on the dark ground measures 2.4:1. Text and focus rings use `#E66256` (same hue) in dark only; fills stay `#A82519`. Confirm or replace.
+- **Dark mode:** removed in Phase 15 (the owner's decision). The old dark-mode accent question is moot. On the grey, small accent text is carmine-deep (5.5:1) and carmine is kept for large type (3.8:1).
+- **Carmine panels:** `/login` and the confirmation are still carmine (the owner kept the confirmation red in Phase 14). Phase 15's "one grey" was read as covering the greys only; confirm.
+- **Island corners:** square, per radius 0; a rounded pill is one line if wanted.
 - **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
 - **Logo loader:** needs a carmine render of the mark, or a decision to drop it.
 - **Checkout map provider:** OpenStreetMap's free tiles and Nominatim (chosen by the owner, 2026-10-12). Fine for coursework traffic; a real deployment needs a paid or self-hosted provider.

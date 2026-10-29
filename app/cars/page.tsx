@@ -21,8 +21,8 @@ const inWords = (n: number) => NUMBER_WORDS[n] ?? String(n);
 /**
  * The catalog.
  *
- * One grey studio field from the heading to the last car: the filters, then
- * the deck of cards (FleetIndex). Signed-out visitors get the landing's
+ * The page grey from the heading to the last car: the filters, then the
+ * grid of cars (FleetIndex). Signed-out visitors get the landing's
  * ending after it: the sign-in panel and the branches. Signed-in visitors
  * already have both, so the page simply ends.
  *

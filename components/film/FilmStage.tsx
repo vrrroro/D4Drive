@@ -7,17 +7,16 @@ import { FrameLoader } from './frame-loader';
 import {
   FADE_OUT,
   LAST_BEAT,
-  closedSlab,
+  appearAlpha,
+  closedWindow,
   ease,
-  filmAlpha,
   filmFrame,
   fitModeFor,
   frameAt,
   heroFraming,
   heroPush,
   placeFrame,
-  slabAlpha,
-  stageTone,
+  windowOpenness,
   windowRect,
   type FitMode,
   type Rect,
@@ -25,15 +24,11 @@ import {
 
 interface FilmStageProps {
   progress: MotionValue<number>;
-  /** 0 to 1: the slab fading in on its own after the hero's entrance. */
+  /** 0 to 1: the film fading in on its own after the hero's entrance. */
   entrance: MotionValue<number>;
   stageRef: RefObject<HTMLDivElement | null>;
-  toneRef: RefObject<HTMLDivElement | null>;
   onBootProgress: (fraction: number) => void;
 }
-
-/** The slab's colour when the stage does not say (globals.css `--film-slab`). */
-const SLAB = '#121110';
 
 /** Layout position of `el` inside `ancestor`, ignoring transforms. */
 function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; left: number } {
@@ -52,15 +47,16 @@ function offsetWithin(el: HTMLElement, ancestor: HTMLElement): { top: number; le
  * The canvas the film is drawn into.
  *
  * Drawing is driven by events, not a loop: a change in scroll progress or in
- * the slab's entrance, a frame arriving, or a resize each request one
+ * the film's entrance, a frame arriving, or a resize each request one
  * animation frame, and that frame draws once. Nothing here touches React
  * state; the progress value and the loader live outside the render cycle.
  *
- * Each draw also writes the three things the type and the page follow: the
- * push on the hero (`--hero-up`, `--hero-down`), the grey stage (the tone
- * layer's opacity), and the film's own fade.
+ * The page is the film's own studio grey, so nothing is drawn behind the
+ * picture: it fades in straight out of the page in the hero's gap, opens to
+ * the screen, and at the end fades back into the same grey. Each draw also
+ * writes the push on the hero (`--hero-up`, `--hero-down`).
  */
-export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgress }: FilmStageProps) {
+export function FilmStage({ progress, entrance, stageRef, onBootProgress }: FilmStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bootRef = useRef(onBootProgress);
   bootRef.current = onBootProgress;
@@ -75,11 +71,10 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
     let vh = 0;
     let dpr = 1;
     let mode: FitMode = 'cover';
-    let closed: Rect = closedSlab(1, 1, 0);
+    let closed: Rect = closedWindow(1, 1, 0);
     let gap = { top: 0, bottom: 1 };
-    let slabColour = SLAB;
-    let ground = 'rgb(249, 248, 246)';
-    let groundClear = 'rgba(249, 248, 246, 0)';
+    let ground = 'rgb(189, 188, 186)';
+    let groundClear = 'rgba(189, 188, 186, 0)';
     let raf = 0;
     let lastKey = '';
     let lastPush = '';
@@ -100,12 +95,10 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
       const p = progress.get();
       const e = entrance.get();
 
-      // The film and the grey stage fade back into the page together:
-      // opacity only, and whether or not the frame itself changed.
+      // The film fades back into the page: opacity only, and whether or not
+      // the frame itself changed.
       const fade = ease((p - FADE_OUT[0]) / (FADE_OUT[1] - FADE_OUT[0]));
       canvas.style.opacity = String(1 - fade);
-      const tone = toneRef.current;
-      if (tone) tone.style.opacity = stageTone(p).toFixed(3);
 
       const win = windowRect(p, mode, vw, vh, closed);
       const push = heroPush(p, gap, vh);
@@ -116,50 +109,44 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
         lastPush = pushKey;
       }
 
-      const slab = slabAlpha(p, e);
-      const film = filmAlpha(p);
+      const alpha = appearAlpha(p, e);
       const f = frameAt(p, FILM_MANIFEST.count);
       const i0 = Math.floor(f);
       const t = f - i0;
-      const key = `${f.toFixed(3)}|${win.y.toFixed(1)}|${win.height.toFixed(1)}|${slab.toFixed(3)}|${vw}x${vh}`;
+      const key = `${f.toFixed(3)}|${win.y.toFixed(1)}|${win.height.toFixed(1)}|${alpha.toFixed(3)}|${vw}x${vh}`;
       if (key === lastKey) return;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, vw, vh);
       lastKey = key;
-      if (slab <= 0) return;
+      if (alpha <= 0) return;
 
-      // The slab: black, appearing out of the blank space.
-      ctx.globalAlpha = slab;
-      ctx.fillStyle = slabColour;
-      ctx.fillRect(win.x, win.y, win.width, win.height);
-
-      // The film rises out of the black as the slab opens.
-      const base = film > 0 ? (loader.exact(i0) ?? loader.nearest(i0)) : null;
+      const base = loader.exact(i0) ?? loader.nearest(i0);
       if (base) {
         const frameRect = filmFrame(mode, vw, vh);
         const focus = FILM_MANIFEST.focus[Math.min(FILM_MANIFEST.count - 1, Math.round(f))] ?? 0.5;
         const at = heroFraming(p, win, placeFrame(mode, frameRect, FILM_MANIFEST.width, FILM_MANIFEST.height, focus));
 
+        // The picture itself, in the window, appearing out of the page.
         ctx.save();
         ctx.beginPath();
         ctx.rect(win.x, win.y, win.width, win.height);
         ctx.clip();
-        ctx.globalAlpha = slab * film;
+        ctx.globalAlpha = alpha;
         ctx.drawImage(base, at.dx, at.dy, at.dw, at.dh);
         // Between two stills, blend the next one in by the fraction. At 60
         // stills a second of film this reads as continuous motion.
         const next = t > 0.04 ? (loader.exact(i0 + step) ?? loader.exact(i0 + 1)) : null;
         if (next && next !== base) {
-          ctx.globalAlpha = slab * film * t;
+          ctx.globalAlpha = alpha * t;
           ctx.drawImage(next, at.dx, at.dy, at.dw, at.dh);
         }
         ctx.restore();
 
         // On portrait the band dissolves into the page above and below it.
         // The clear end of each gradient is the ground colour at zero alpha:
-        // fading to transparent black would draw a grey bar through the middle.
-        if (mode === 'band' && film >= 1) {
+        // fading to transparent black would draw a dark bar through the middle.
+        if (mode === 'band' && windowOpenness(p) >= 1) {
           ctx.globalAlpha = 1;
           const edge = frameRect.height * 0.12;
           const top = ctx.createLinearGradient(0, frameRect.y, 0, frameRect.y + edge);
@@ -195,12 +182,12 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
       const mark = stage.querySelector<HTMLElement>('[data-hero-wordmark]');
       if (!slogan || !mark) {
         gap = { top: vh * 0.43, bottom: vh * 0.6 };
-        return closedSlab(vw, vh, vw * 0.06, gap);
+        return closedWindow(vw, vh, vw * 0.06, gap);
       }
       const s = offsetWithin(slogan, stage);
       const m = offsetWithin(mark, stage);
       gap = { top: s.top + slogan.offsetHeight, bottom: m.top };
-      return closedSlab(vw, vh, s.left, gap);
+      return closedWindow(vw, vh, s.left, gap);
     };
 
     let alive = true;
@@ -215,9 +202,7 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
       canvas.height = Math.round(vh * dpr);
       canvas.style.width = `${vw}px`;
       canvas.style.height = `${vh}px`;
-      const styles = getComputedStyle(stage);
-      slabColour = styles.getPropertyValue('--film-slab').trim() || SLAB;
-      const channels = styles.backgroundColor.match(/\d+(\.\d+)?/g);
+      const channels = getComputedStyle(stage).backgroundColor.match(/\d+(\.\d+)?/g);
       if (channels && channels.length >= 3) {
         const [r, g, b] = channels;
         ground = `rgb(${r}, ${g}, ${b})`;
@@ -255,7 +240,7 @@ export function FilmStage({ progress, entrance, stageRef, toneRef, onBootProgres
       loader.dispose();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [progress, entrance, stageRef, toneRef]);
+  }, [progress, entrance, stageRef]);
 
   return <canvas ref={canvasRef} aria-hidden="true" data-film-canvas className="film-canvas absolute inset-0" />;
 }

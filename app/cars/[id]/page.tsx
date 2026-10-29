@@ -64,7 +64,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
           {/* Level at rest, tilting toward the pointer only while it is on
               the photo. data-car-hero is where the fleet's photo lands. */}
           <div className="car-tilt" data-car-hero={car.id}>
-            <CarPhoto src={car.image_url} name={`${car.brand} ${car.model}, ${car.year}`} aspect="aspect-[3/2]" priority className="shadow-[var(--shadow-float)]" />
+            <CarPhoto src={car.image_url} name={`${car.brand} ${car.model}, ${car.year}`} aspect="aspect-[3/2]" priority />
           </div>
           <PhotoCreditLine image={car.image_url} className="mt-6 max-w-[60ch]" />
         </div>
