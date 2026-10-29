@@ -1,73 +1,247 @@
-# Project Status & Milestones
+# Project Status and Milestones
 
-**Current Phase:** Phase 1 — Backend Initialization & Database
-**Status:** 🟡 Frontend shell complete, backend not started
+**Current phase:** All phases done. Remaining items need real devices, a real screen reader, or the owner (see Summary)
+**Status:** Complete in code
+**Last updated:** 2026-10-07
 
-*Instructions for AI: Only work on the current active phase. Update this file with checkboxes [x] as you complete sub-tasks. See `CLAUDE.md` for the stack — the frontend is React/Vite/Tailwind, not Bootstrap/vanilla JS.*
+Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
+the work. When a phase is finished, set the next one as current here and in the
+"Current state" section of `CLAUDE.md`.
 
-### Phase 0: Frontend Shell & Opening Film (✅ Complete)
-- [x] Vite + React 19 + TypeScript + Tailwind v4 project at repo root.
-- [x] Design tokens from `EDRD.md` in `src/index.css` (`@theme`).
-- [x] Opening film: logo loader → car approach → login → depart → scatter (`src/sequence/`).
-- [x] WebGL2 particle stage for dissolves/assembles with CSS fallback (`src/fx/`).
-- [x] Login panel UI with Member / Concierge roles (visual only — no real auth yet).
-- [x] Landing site: Header, Hero, Fleet grid with body-type filter, Experience, Enquiries FAQ, Footer.
-- [x] Static fleet of 7 cars in `src/data/fleet.ts` (temporary).
-- [x] `npm run build` passes.
+**Verified on 2026-10-05 (cloud sandbox, Ubuntu 24.04, Node 22, MySQL 8.0.46):**
+`npm ci`, `npm run db:setup`, `npm run lint:copy`, `npm run typecheck`,
+`npm run test:db` (34 pass, 0 skipped: the double-booking and refresh-rotation
+tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
+`npm run build`, and `npm run smoke` (27 browser checks pass against
+`next start`).
 
-### Phase 1: Backend Initialization & Database (🔴 Not Started) ← ACTIVE
-- [ ] Create `server/` with its own `package.json`; install `express`, `mysql2`, `bcryptjs`, `jsonwebtoken`, `dotenv`, `cors`, `cookie-parser`.
-- [ ] Set up `server/server.js` with Express skeleton, CORS (origin `http://localhost:5173`), JSON body parsing, error handler.
-- [ ] Create `server/config/db.js` using a `mysql2` connection pool from `.env`.
-- [ ] Write `server/database/schema.sql` (users, branches, cars, bookings, deliveries, payments — 3NF).
-- [ ] Write `server/database/seed.sql` (1 admin, 3 branches, the 7 cars from `src/data/fleet.ts` plus 3 more).
-- [ ] Add Vite proxy `/api` → `http://localhost:5000` in `vite.config.ts`.
-- [ ] Root `README.md`: add backend setup steps.
+---
 
-### Phase 2: Core Backend & Auth (🔴 Not Started)
-- [ ] User/Auth controllers, routes, and JWT middleware (access token + httpOnly refresh cookie).
-- [ ] `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`, `GET /api/auth/me`.
-- [ ] `requireAdmin` middleware (Concierge role).
-- [ ] Car API: `GET /api/cars`, `GET /api/cars/:id`.
+## Phase order
 
-### Phase 3: Connect Frontend to API (🔴 Not Started)
-- [ ] Small typed API client in `src/lib/api.ts`.
-- [ ] Wire `LoginPanel` to `/api/auth/login`; show errors without breaking the dissolve; role comes from the server, not the toggle.
-- [ ] Make "Request an invitation" open a register form.
-- [ ] Load the Fleet section from `GET /api/cars`; remove the static array from runtime code.
-- [ ] Keep session on reload (`/api/auth/me`); sign-out calls `/api/auth/logout`.
+| Order | Phase | State |
+|---|---|---|
+| 1 | 0 to 8: Foundation through Admin | Done in code, see ticks |
+| 2 | 10: Close the gaps | Done |
+| 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
+| 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
 
-### Phase 4: Car Catalog & Availability (🔴 Not Started)
-- [ ] Extend Fleet filtering: brand, fuel, price, seats (backend query params + UI).
-- [ ] Car detail view (route or modal) reached from "Reserve".
-- [ ] SQL availability check for overlapping date ranges.
+---
 
-### Phase 5: The Booking Engine (🔴 Not Started)
-- [ ] Booking flow UI (dates → delivery/pickup → summary) in the EDRD style.
-- [ ] Haversine distance service; tiered delivery fee per `PRD.md`.
-- [ ] Pricing service (Days × Rate + Delivery Fee).
-- [ ] `POST /api/bookings` as one MySQL transaction (Booking → Delivery → Payment).
+### Phase 0: Foundation and toolchain (done)
 
-### Phase 6: Mock Payments & Post-Booking (🔴 Not Started)
-- [ ] Mock Card / UPI payment step.
-- [ ] Confirmation screen.
-- [ ] PDFKit invoice: `GET /api/bookings/:id/invoice`.
-- [ ] "My bookings" view for members.
+- [x] Create the GitHub repository
+- [x] Write `.gitignore` and `.env.example`, confirm `.env` is excluded
+- [x] Scaffold Next.js 15 with TypeScript strict and Tailwind v4
+- [x] Configure `@theme` tokens from `DESIGN.md`, both light and dark
+- [x] Wire `next/font/google` for Playfair Display and Inter
+- [x] Add `npm run lint:copy` to fail the build on em-dashes and en-dashes
+- [x] Security headers and a per-request nonce CSP in `middleware.ts`
+- [x] CI runs copy lint, typecheck, tests, build, and audit (`.github/workflows/ci.yml`)
 
-### Phase 7: Concierge (Admin) Panel (🔴 Not Started)
-- [ ] Dashboard stats (revenue, active bookings, fleet status).
-- [ ] Add / edit / soft-delete cars (with image upload via `multer`).
-- [ ] Manage booking statuses.
-- [ ] Manage delivery statuses.
+### Phase 1: Database (mostly done)
 
-### Phase 8: Polish & Testing (🔴 Not Started)
-- [ ] Toast notifications for all async actions; loading states on buttons.
-- [ ] Double-booking prevention test.
-- [ ] Responsiveness + reduced-motion check.
-- [ ] Final README run instructions.
+- [x] Write `docs/ERD.md`, derived from `database/schema.sql`
+- [x] Write `database/schema.sql` in 3NF with indexes and foreign keys
+- [x] Write `database/seed.sql`: 1 admin, 3 branches, 10 realistic cars
+- [x] Build `lib/db.ts` as a single pooled `mysql2/promise` instance
+- [x] `npm run db:setup` creates the database and loads schema and seed
+- [x] Confirm the booking overlap index supports the locking query (covering range scan, see `docs/ERD.md` section 5)
 
-## Open decisions / known gaps
-- **Currency:** Fleet shows **£** prices; `PRD.md` delivery fees are in **₹**. Pick one before Phase 5.
-- **Login is cosmetic:** any credentials pass; the role toggle decides Member vs Concierge. Fixed in Phase 3.
-- **Fleet photos** are stills from the reveal film (same livery on every car) — see `README.md` › Assets.
-- Footer newsletter form and footer links are non-functional placeholders.
+### Phase 2: Auth and session (mostly done)
+
+- [x] Argon2id hashing helpers (`lib/auth/hash.ts`)
+- [x] `jose` sign and verify, access plus refresh tokens (`lib/auth/tokens.ts`)
+- [x] `httpOnly` `Secure` `SameSite=Lax` cookie helpers (`lib/auth/cookies.ts`)
+- [x] `POST /api/auth/register` and `POST /api/auth/login` with zod validation
+- [x] `POST /api/auth/logout` and `GET /api/auth/me`
+- [x] `POST /api/auth/refresh` with rotation and reuse detection (`refresh_tokens` table)
+- [x] Rate limiting on auth routes (`lib/auth/rate-limit.ts`)
+- [x] CSRF double-submit token on state-changing admin routes
+- [x] `requireSession` and `requireAdmin` guards (`lib/auth/guards.ts`)
+
+### Phase 3: Design system in code (mostly done)
+
+- [x] `Button` with variants
+- [x] `Field` with label, error slot, italic placeholder
+- [x] `Card` built on `border-t` (`components/ui/Card.tsx`)
+- [x] `Toast` system
+- [x] Fixed gridlines and paper grain layers
+- [x] Z-index scale in `lib/constants.ts`
+- [x] Verify every component at radius 0 and in both colour schemes (computed in a browser, Phase 9)
+
+### Phase 4: The intro sequence (done in code)
+
+Specification is `docs/VIDEO_STATE_MACHINE.md`.
+
+- [x] `scripts/build-video-assets.mjs`: poster stills, MP4 and WebM, two sizes
+- [x] Video variants and posters committed to `public/videos` and `public/posters`
+- [x] `useIntroMachine` as a pure reducer, unit tested with no DOM
+- [x] `BootLoader`, `VideoStage`, `AuthGate`, `IntroSequence`
+- [x] Recovered path: reduced motion, media error, stall, returning visitor
+- [x] Verify on a throttled connection (Phase 9)
+- [ ] Verify on iOS Safari and Android Chrome (needs physical devices, see Phase 9)
+
+### Phase 5: Car catalog (done)
+
+- [x] `GET /api/cars` with filters, `GET /api/cars/:id`, availability endpoint
+- [x] Catalog page with `searchParams` filters, car detail page
+- [x] Empty and error states
+
+### Phase 6: Booking engine (done in code)
+
+- [x] Haversine distance service, unit tested
+- [x] Pricing service, unit tested
+- [x] Availability service with `SELECT ... FOR UPDATE` locking
+- [x] `POST /api/bookings` as one transaction across booking, delivery, payment
+- [x] Checkout page
+- [x] Concurrency test passes against a real MySQL 8
+
+### Phase 7: Payment simulation and post-booking (done)
+
+- [x] Mock card and UPI payment UI, labelled as simulated
+- [x] Confirmation page
+- [x] `pdfkit` invoice at `GET /api/bookings/:id/invoice`, authorisation in the query
+- [x] Customer bookings dashboard with delivery tracking
+
+### Phase 8: Admin (done)
+
+- [x] Dashboard, fleet management, booking transitions, delivery lifecycle
+- [x] Every admin route behind `requireAdmin`; status changes checked against a transition graph
+
+---
+
+### Phase 10: Close the gaps (done 2026-10-05)
+
+- [x] Add `POST /api/auth/refresh`: verify refresh cookie, rotate both tokens, 401 on failure; client retries once on 401 (`lib/api-client.ts`)
+- [x] Write `docs/ERD.md` from `database/schema.sql`
+- [x] Extract a shared `Card` component and use it in catalog and admin (and the customer bookings list)
+- [x] Run against a real MySQL 8 (`npm run db:setup`), then `npm run test:db` so the double-booking test runs instead of skipping
+- [x] Smoke test in the browser: register, log in, intro, catalog, book, invoice, admin status change (`npm run smoke`)
+- [x] Car photography: labelled "Photograph pending" slots (`components/ui/CarPhoto.tsx`); seed `image_url` is `NULL`, picsum removed from seed and CSP
+- [ ] Real photographs of the ten seeded cars in `public/cars/`. **Cannot be done in the sandbox:** it needs real photography of these specific models, and stock images are banned. Upload via the admin fleet page's Photo field.
+
+Found and fixed while closing the gaps:
+
+- [x] `scripts/db-setup.mjs` had a syntax error (`'\'` instead of `'\\'`), so `npm run db:setup` had never run
+- [x] Double-booking test leaked a booking into the next test; it now clears before each test
+- [x] Invoices returned 500 in production builds (`pdfkit` bundled without its font files); `serverExternalPackages`
+- [x] Editing a car in admin wiped its photo and description (fields had no default values)
+- [x] `?next=` on `/login` was an open redirect
+
+### Phase 11: Port the Vite intro effects (done 2026-10-05)
+
+Source: `reference/vite-intro/` (read its `REFERENCE.md` first). Target: `components/intro/`.
+Keep `docs/VIDEO_STATE_MACHINE.md` as the contract; extend it, do not break it.
+
+- [x] Port the WebGL2 particle stage into `components/fx/` with the reduced-motion and no-WebGL fallbacks (both verified in a browser)
+- [x] `AuthGate`: on successful login, dissolve the panel's type into particles instead of a plain fade
+- [x] Landing reveal: scatter the film's last frame into the landing content
+- [ ] Optional: logo spin loader in `BootLoader`, if a carmine-palette logo clip exists. **Blocked:** the only clip (`reference/vite-intro/public/media/logo-spin.mp4`) is solid gold metal, which `DESIGN.md` forbids as a fill. Needs a carmine render of the mark from the owner.
+- [x] Catalog cards assemble from particles on first view (data still from the API); CSS failsafe keeps them visible without JS
+- [x] Recolour everything to `DESIGN.md` (carmine accent, gold hairline only), rupees, no em-dashes
+- [x] Update `docs/VIDEO_STATE_MACHINE.md` (section 10, `CLEAR_ERROR`, corrected `POSTER_TIME`) and unit tests (`CLEAR_ERROR`, authenticated skip, particle helpers)
+- [x] Delete ported files from `reference/vite-intro/`. The folder keeps only the blocked logo loader and its media; delete it once that is decided
+- [x] Fix `AuthGate` register mode: it has no mobile field and submits to the login endpoint, so registering from the gate always fails
+- [x] Send `ALREADY_AUTHENTICATED`: the contract's signed-in skip of the gate was never wired up
+- [x] Video dimming animated `filter`; now an opacity scrim
+- [x] VideoStage re-registered every listener on each render (unstable callbacks)
+
+### Phase 9: Hardening (done 2026-10-05, except real-device checks)
+
+Every number below was measured in the cloud sandbox against `next start` on
+MySQL 8.0.46, with headless Chromium 140. The scripts are kept in the repo
+(`npm run smoke`, `npm run check:leaks`); the one-off audit scripts are
+described in the CHANGELOG entry for this date.
+
+- [x] Full pre-merge checklist (`DESIGN.md` section 10) across every page. Mechanical items verified in a browser or by grep: zero dashes, radius 0 computed on every element in both schemes, one charcoal band, axe-clean contrast in light and dark, no CTA wraps, labels above inputs with error and helper slots, italic descender clearance, hero two lines at 320 to 1920px with a 16-word subtext and `pt-24`, eyebrows within budget, reduced motion collapses every transform (CSS plus `MotionConfig`), no scroll listeners, no `h-screen`, no div fakes or hand-rolled SVG (only the sanctioned grain), every effect cleans up, loading, empty, and error states present, grain fixed and `pointer-events-none`. "At least 4 layout families across 8 sections" does not apply: the landing has three sections.
+- [x] Lighthouse: LCP under 2.5s, INP under 200ms, CLS under 0.1. With real throttling (`--throttling-method=devtools`, Slow 4G, 4x CPU) LCP is 1.6 to 1.7s on `/`, `/cars`, `/cars/1`, `/login`; CLS at most 0.002; desktop LCP 0.6 to 0.7s. Lighthouse's default simulated mode reports 2.4 to 3.0s on mobile because it estimates from the post-hydration script graph; measured LCP equals FCP on every page. INP has no Lighthouse lab metric, so Event Timing was recorded during real typing, select, and submit interactions at 4x CPU: worst 80ms (gate submit while the dissolve starts). Accessibility 100 on every page measured.
+- [x] Responsive pass at 375, 768, 1024, and 1600 (plus 320 and 360 for the nav): no horizontal overflow, no wrapped CTA, one-line nav, on all 11 pages
+- [x] Keyboard-only navigation of the intro and the booking flow: 12 checks, including the gate's focus trap in both directions, Enter to submit, nothing reachable behind the film (`inert`), single tab stops on cards and Reserve, visible focus rings, and a booking completed without a mouse
+- [x] Screen reader pass on forms and the auth gate, automated: axe-core (WCAG 2.1 AA plus best practice) clean on the gate open, after a failed sign-in, and in register mode with field errors, and on every page in both colour schemes; the accessibility tree shows every field named by its label and every error as its own alert
+- [ ] Screen reader pass with a real screen reader (VoiceOver, NVDA, TalkBack). **Cannot be done in the sandbox:** no assistive technology runs headless. The automated pass above is the substitute until someone runs it.
+- [x] Verify no error response leaks a stack trace or SQL fragment (`npm run check:leaks`: 37 hostile requests with the database up, again with it stopped, and every authenticated page against a dead database)
+- [x] Throttled network: Slow 4G reaches the gate in 2.2s; Fast 3G takes the recovered path at the 6s ceiling; Slow 3G reaches the recovered landing in 11.4s (the script bundle's own arrival). Never a stuck loader.
+- [ ] Device check: iOS Safari and Android Chrome. **Cannot be done in the sandbox:** needs physical devices or a device cloud. `playsInline`, `min-h-[100dvh]`, and the reduced-motion path are in place for exactly these.
+- [ ] Particle frame cost on a real GPU. **Cannot be measured here:** the sandbox renders WebGL with SwiftShader on the CPU, where card assembly adds about 500ms of TBT on desktop `/cars` (0ms with particles off). On a GPU the draw cost is negligible; confirm on a device. Captures are already queued one at a time on idle and card grain is coarsened to 2.5px.
+
+Found and fixed in this phase:
+
+- [x] `next lint` (deprecated, removed in Next 16) replaced by the ESLint CLI with a flat `eslint.config.mjs`; ESLint now runs in CI (2026-10-07)
+
+- [x] `npm audit --audit-level=high` failed (9 high). Production now has 0: Next 15.5.27, `sharp` and friends updated, nested PostCSS lifted by an `overrides` entry. The 5 left are dev-only (`braces` under `eslint-config-next`, no patched release), so CI gates on `--omit=dev` and prints the full audit as information
+- [x] Gridlines sat at sixths of an unpadded box; now drawn by the content's own 12-column grid at column 1, 5, 9 starts and column 12 end, shown from 1024px
+- [x] `Button` link variant animated `width`; now `scaleX`. Named transition properties replace `transition-all`
+- [x] `<Link><Button>` nested a button in an anchor; new `ButtonLink` renders one element
+- [x] `/favicon.ico` 404; generated `app/icon` (D4 on carmine) also served at `/favicon.ico`
+- [x] Hero headline ran to four lines; now two at every width, the tagline moved into the subtext
+- [x] Reduced motion had no manual play control; "Play the film" opens a native dialog with controls
+- [x] Landing links were reachable by Tab behind the film; now `inert` until the reveal
+- [x] Without JavaScript the boot loader covered the landing forever; a `<noscript>` style hides the intro layers
+- [x] The charcoal band set its emphasis in gold; the success toast used a gold border as a state signal. Both gone
+- [x] Dark mode: carmine text measured 2.4:1; text and focus rings use `--accent-text` (#E66256, same hue) in dark only
+- [x] `--muted` measured 4.42:1 on taupe panels; `.surface-panel` remaps it (4.91:1)
+- [x] Motion's JS animations ignored reduced motion; `MotionConfig reducedMotion="user"`
+- [x] Field errors on the dark gate were carmine on charcoal; now paper with the carmine underline
+- [x] Mobile nav overlapped the wordmark at 375px
+- [x] Card photos and placeholders inside links repeated the car name to screen readers; now decorative there
+- [x] Route ids accepted `0x10`, `1e3`, and `1e20`; strict `parsePositiveId` everywhere
+- [x] Admin status changes could race; compare-and-set updates, invalid transitions now 409
+- [x] Admin car with an unknown branch returned 500; now 400. Duplicate registration on edit now 409
+- [x] No loading states; `loading.tsx` on every data route
+- [x] Unused font weights preloaded; Playfair 400 and Inter 400/500 only
+- [x] Particle captures embedded a dozen unused font subsets; latin faces only, captures queued on idle
+- [x] The boot loader's floor and ceiling counted from hydration; now from navigation start
+- [x] Checkout accepted a return date before pickup without saying so; inline error added
+
+---
+
+## Open decisions
+
+- **Express tier:** `ARCHITECTURE.md` asks whether the course rubric needs a visibly separate Express server. **Still unanswered and deliberately not decided by an agent.** Every API route is a thin handler over `lib/services/*`, so lifting them into Express later is mechanical.
+- **Dark-mode accent text:** `DESIGN.md` holds carmine constant in dark mode, but carmine text on the dark ground measures 2.4:1. Text and focus rings use `#E66256` (same hue) in dark only; fills stay `#A82519`. Confirm or replace.
+- **Hero copy:** the headline is now "Delivered to your door." with "Drive easy, book smart." in the subtext, to meet the two-line cap. Confirm the wording.
+- **Logo loader:** needs a carmine render of the mark, or a decision to drop it.
+- **`EDRD.md` vs `DESIGN.md`:** EDRD is the original brief (gold accent). `DESIGN.md` supersedes it (carmine accent). Follow `DESIGN.md`.
+
+---
+
+## Summary (2026-10-05)
+
+### What was done this session
+
+On branch `integrate/combine-frontends`, three commits, one per phase:
+
+1. **Phase 10, close the gaps.** Refresh-token rotation with reuse detection
+   and a client that retries once on 401; `docs/ERD.md` with the measured
+   overlap query plan; shared `Card`; labelled photo slots instead of random
+   stock images. The first real MySQL run surfaced and fixed four latent bugs
+   (db:setup never ran, a leaky test, invoices 500ing in production builds,
+   admin edits wiping photos) and an open redirect.
+2. **Phase 11, the Vite intro effects.** WebGL2 particle stage in
+   `components/fx/`; the gate's type dissolves on sign-in, the film's last
+   frame scatters into the landing, catalog cards assemble on view. CSS
+   fallbacks for reduced motion, no WebGL2, and no JavaScript. Fixed the
+   gate's broken register mode and wired the signed-in skip.
+3. **Phase 9, hardening.** Measured Lighthouse, INP, responsive, keyboard,
+   axe in both colour schemes, error leaks with the database up and down, and
+   throttled networks, then fixed 24 issues they and the checklist surfaced
+   (listed under Phase 9).
+
+Verification at the end: `lint`, `lint:copy`, `typecheck`, `npm test`
+(38 pass, 2 skipped without MySQL), `test:db` (45 pass), `build`,
+`npm audit --omit=dev` (0), `smoke` (35 browser checks), `check:leaks`.
+
+### What is left
+
+| Item | Why it is not done | Who |
+|---|---|---|
+| Review and merge PR #23 | Pushed 2026-10-07; agents do not merge their own work to `main` | Owner |
+| Real car photography | Needs photos of these ten models; stock images are banned | Owner |
+| Logo spin loader | Only a gold render of the mark exists | Owner |
+| iOS Safari, Android Chrome | Needs physical devices | Owner or a device cloud |
+| VoiceOver, NVDA, TalkBack pass | Needs a real screen reader | Owner |
+| Particle cost on a real GPU | Sandbox WebGL is CPU-rendered | Owner, on any laptop |
+| Express tier | Course-rubric decision | Owner (Open decisions) |
+| Confirm dark accent tint and hero copy | Design decisions taken under stated assumptions | Owner (Open decisions) |
+| Dev-only `braces` advisory | No patched release exists | Watch the informational CI audit |

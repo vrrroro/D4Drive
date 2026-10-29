@@ -21,8 +21,29 @@
 - **Booking Management:** View all bookings, update statuses (Pending -> Confirmed -> Active -> Completed/Cancelled).
 - **Delivery Management:** Update delivery lifecycle (Pending -> Out for Delivery -> Delivered).
 
-## 3. UI/UX Requirements
-- **Landing Page Hook:** A cinematic opening film (logo → car reveal → login → particle dissolve) leads into the site. *(Built — see `README.md`.)*
-- **Styling:** Luxury / editorial design system defined in `EDRD.md` (alabaster, charcoal, gold; Playfair Display + Inter; 0px radii). This replaces the original Bootstrap navy/blue theme.
+
+## 3. Entry Experience (the product's first impression)
+
+The site does not open on a homepage. It opens on a sequence.
+
+1. **Loader.** Alabaster ground, the `D4Drive` wordmark, and a progress rule
+   filling left to right. The rule is driven by the hero film's real buffered
+   progress, not a timer, so it never reports a number that is not true.
+2. **Reveal.** Once enough of the film has buffered, the loader fades out over
+   700ms onto the film's first frame, held paused.
+3. **Gate.** A login panel fades up over the frozen frame.
+4. **Release.** On successful authentication the panel fades out and the film
+   resumes from where it was held.
+5. **Arrival.** When the film ends, it transitions into the landing content.
+
+The film features a crimson Porsche, and the site's entire accent palette is
+drawn from it, so the asset and the interface read as one object.
+
+Full specification, including autoplay policy, reduced motion, stalled networks,
+and returning visitors, is in `docs/VIDEO_STATE_MACHINE.md`.
+
+## 4. UI/UX Requirements
+- **Entry sequence:** See section 3. It is the single strongest moment in the product and is specified separately.
+- **Styling:** Luxury editorial. Warm alabaster ground, rich charcoal ink, carmine accent drawn from the hero film. Zero border radius. Full system in `DESIGN.md`.
 - **Responsiveness:** Flawless mobile, tablet, and desktop views.
 - **Feedback:** Use Toast notifications for all async actions (booking, login, errors). Loading states on all buttons.

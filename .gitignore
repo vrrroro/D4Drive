@@ -18,13 +18,14 @@ out/
 .turbo/
 .vercel/
 
-# Uploads and generated media
+# Uploads
 uploads/
-public/videos/*.mp4
-public/videos/*.webm
+
+# The intro film variants in public/videos and the stills in public/posters ARE
+# committed (about 7.5 MB) so a fresh clone or cloud session plays the intro.
+# Regenerate them with npm run build:assets, see README.
 public/videos/*.m4s
 public/videos/*.mpd
-!public/videos/.gitkeep
 
 # Logs
 logs/
@@ -49,3 +50,5 @@ Thumbs.db
 # Misc
 .cache/
 *.tsbuildinfo
+
+smoke-shots/

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Copy lint
+        run: npm run lint:copy
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Build-time placeholders. No route is prerendered against a live
+          # database, so these only need to satisfy the startup assertions.
+          DB_HOST: localhost
+          DB_USER: ci
+          DB_NAME: d4drive
+          JWT_ACCESS_SECRET: ci-placeholder-secret-value-at-least-32-chars
+          JWT_REFRESH_SECRET: ci-placeholder-secret-value-at-least-32-diff
+
+      # The gate is what ships: production dependencies at high or above.
+      # The dev-only chain under eslint-config-next (braces) has an advisory
+      # with no patched release, so a full-tree gate could never pass. It is
+      # still printed below so a fix is noticed when one lands.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit all dependencies (informational)
+        run: npm audit --audit-level=high
+        continue-on-error: true

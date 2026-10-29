@@ -1,47 +1,228 @@
 # System Architecture
 
-## 1. Tech Stack
-- **Frontend:** React 19, TypeScript, Vite 7, Tailwind CSS v4, `motion`, `lucide-react`, `html-to-image` (login dissolve), WebGL2 particle stage. Single-page app.
-- **Backend:** Node.js, Express.js — REST API under `/api`.
-- **Database:** MySQL (relational, 3rd Normal Form), accessed with `mysql2` connection pool and raw parameterised SQL.
-- **Backend libraries:** `express`, `mysql2`, `bcryptjs`, `jsonwebtoken`, `dotenv`, `cors`, `cookie-parser`, `multer` (image uploads), `pdfkit` (invoices).
+## 1. Stack
 
-## 2. Directory Structure
+| Layer | Choice | Why this and not the alternative |
+|---|---|---|
+| Framework | Next.js 15, App Router, React 19 | Server Components keep the marketing surface static and fast. Route Handlers remove the need for a second server. |
+| Language | TypeScript, `strict: true` | A booking engine that computes money and prevents double-booking should not be typed at runtime only. |
+| Styling | Tailwind v4 | Named by the design brief. Tokens live in `@theme`, not scattered in components. |
+| Motion | `motion` (import from `motion/react`) | Motion values animate outside the React render cycle, which the intro loader requires. |
+| Database | MySQL 8 via `mysql2/promise` | Raw parameterised SQL, no ORM. The relational modelling is the point of the exercise. |
+| Validation | `zod` | One schema per boundary, inferred types, parsed before anything touches SQL. |
+| Auth tokens | `jose` | Works in the Edge runtime, so middleware can verify a session. `jsonwebtoken` cannot. |
+| Password hashing | `@node-rs/argon2` | Argon2id, memory-hard, prebuilt Windows binaries. |
+| Headers | `helmet`-equivalent via `next.config` headers plus a strict CSP | The video hero needs an explicit `media-src`, so CSP has to be authored, not defaulted. |
+| PDF | `pdfkit` | Invoice generation, server-side only. |
+| Icons | `lucide-react` at `strokeWidth 1.5` | Named by the design brief. |
+
+### Why the stack changed
+
+The original plan was Express plus vanilla JS plus Bootstrap, with JWTs handled by
+`fetch` on the client. Three things drove the change:
+
+**CORS disappears.** A separate Express origin forces a cross-origin policy, and a
+permissive one is the most common way student projects leak credentials. Serving
+the API from the same origin as the app removes the entire class of problem.
+
+**Tokens leave `localStorage`.** The original design implies reading a JWT in
+client JavaScript, which means any XSS anywhere on the page can exfiltrate a
+session. Session tokens now live in `httpOnly`, `Secure`, `SameSite=Lax` cookies
+that client JavaScript cannot read at all.
+
+**The hero video needs a real asset pipeline.** A 16.4 MB MP4 served as a static
+file makes the entry screen the slowest page in the product. Next.js gives route
+segment caching, immutable asset headers, and `next/image` for the poster frame,
+which is the element that must actually paint fast.
+
+> **Open question for the course rubric.** If the assignment requires a visibly
+> separate Express tier, the API folder lifts out into a standalone service with
+> little change to the code. Raise this before Phase 2 starts, because it is
+> cheap to split now and expensive later.
+
+---
+
+## 2. Directory structure
+
 ```text
 D4Drive/
-├── package.json            # frontend (Vite) — npm run dev / build / preview
-├── index.html, vite.config.ts, tsconfig.json
+├── app/
+│   ├── layout.tsx                 fonts, grain layer, theme tokens
+│   ├── page.tsx                   intro sequence + landing (Server Component shell)
+│   ├── cars/
+│   │   ├── page.tsx               catalog, filters via searchParams
+│   │   └── [id]/page.tsx          detail
+│   ├── booking/[carId]/page.tsx   checkout
+│   ├── bookings/page.tsx          customer dashboard
+│   ├── admin/                     dashboard, fleet, bookings, deliveries
+│   └── api/
+│       ├── auth/                  register, login, logout, refresh, me
+│       ├── cars/                  list with filters, detail, availability
+│       ├── bookings/              create (transactional), list, invoice
+│       └── admin/                 fleet and booking and delivery management
+├── components/
+│   ├── intro/                     the video state machine, see docs/
+│   ├── ui/                        Button, Input, Card, Field, Toast
+│   └── sections/                  landing page composition
+├── lib/
+│   ├── db.ts                      mysql2 pool, single instance
+│   ├── auth/                      hashing, jose sign/verify, cookie helpers
+│   ├── validation/                zod schemas, one file per boundary
+│   ├── services/
+│   │   ├── pricing.ts             days * rate + tiered delivery fee
+│   │   ├── distance.ts            Haversine
+│   │   └── availability.ts        overlap detection, locking
+│   └── constants.ts               z-index scale, timings, fee tiers
+├── database/
+│   ├── schema.sql
+│   ├── seed.sql
+│   └── migrations/
+├── scripts/
+│   └── build-video-assets.mjs     transcode, poster extraction
 ├── public/
-│   ├── media/              # opening-film videos + stills
-│   └── fleet/              # car photography
-├── src/
-│   ├── App.tsx             # Boot (opening film + login) → Site
-│   ├── sequence/           # opening film state machine: Boot, LogoLoader, CarStage, LoginPanel
-│   ├── site/               # landing site: Header, Hero, Fleet, Experience, Enquiries/Footer
-│   ├── ui/                 # Button, Field, Reveal/GridLines
-│   ├── fx/                 # WebGL2 particle stage + hooks
-│   ├── lib/                # cn(), sequence timings
-│   └── data/fleet.ts       # TEMPORARY static fleet — replace with API data
-│
-└── server/                 # backend (to be built — Phase 1)
-    ├── package.json
-    ├── server.js
-    ├── .env                # copied from /.env.example, never committed
-    ├── config/             # db.js (mysql2 pool)
-    ├── middleware/         # auth (JWT), requireAdmin, error handler
-    ├── routes/             # API route definitions
-    ├── controllers/        # req/res logic
-    ├── services/           # business logic: pricing, distance (Haversine), availability
-    ├── utils/              # helpers, validators
-    ├── database/           # schema.sql, seed.sql
-    └── uploads/            # stored images (gitignored)
+│   ├── videos/                    generated by build:assets, committed
+│   └── posters/                   generated poster stills, committed
+├── docs/
+│   ├── VIDEO_STATE_MACHINE.md
+│   └── ERD.md
+├── DESIGN.md
+├── CONTRIBUTING.md
+└── SECURITY.md
 ```
 
-## 3. How the pieces connect
-- In development, Vite serves the SPA on `http://localhost:5173` and the API runs on `http://localhost:5000`. Add a Vite `server.proxy` entry for `/api` → `http://localhost:5000` so the frontend can call relative `/api/...` URLs.
-- In production, Express serves the built `dist/` folder statically and the API from the same origin.
-- Auth: login returns a short-lived JWT access token; the refresh token is set as an httpOnly cookie. TTLs and secrets are in `.env.example`.
-- Roles: the UI's **Member** maps to a customer account; **Concierge** maps to an admin account (`requireAdmin`).
+---
 
-## 4. Frontend flow
-`App.tsx` renders `Boot` until the visitor signs in, then `Site`. `Boot` runs the opening film (logo → car approach → login → depart → scatter); see `README.md` for each phase and its timings. In dev, `?stage=site` (optionally `&role=concierge`) skips straight to the site.
+## 3. Request flow
+
+```
+Browser
+   │
+   ├─ Server Component render (no client JS for static sections)
+   │
+   └─ Route Handler  app/api/**/route.ts
+        │
+        ├─ 1. zod.parse(body)          reject malformed input before anything else
+        ├─ 2. requireSession(req)      verify jose JWT from httpOnly cookie
+        ├─ 3. requireAdmin(session)    role check where applicable
+        ├─ 4. service layer            pure business logic, no SQL, no req/res
+        ├─ 5. repository               parameterised SQL only
+        └─ 6. typed JSON response      correct status code, never a raw error
+```
+
+**The service layer never sees `Request` or `Response`.** Pricing, distance, and
+availability are pure functions over plain data. That is what makes them testable
+without a server and without a database.
+
+**Errors never leak.** A caught database error logs the full detail server-side
+and returns a generic message with the right status code. Stack traces, SQL
+fragments, and column names never cross the wire.
+
+---
+
+## 4. The double-booking problem
+
+This is the one piece of logic that will be graded hardest and is easiest to get
+subtly wrong.
+
+A naive implementation reads availability, decides the car is free, and inserts.
+Two concurrent requests both read "free" before either inserts, and both succeed.
+The check must hold a lock across the read and the write.
+
+```sql
+START TRANSACTION;
+
+-- Lock the car row so a concurrent booking blocks here rather than racing.
+SELECT id FROM cars WHERE id = ? AND is_active = 1 FOR UPDATE;
+
+-- Overlap test. Two ranges overlap when each starts before the other ends.
+SELECT COUNT(*) AS conflicts
+FROM bookings
+WHERE car_id = ?
+  AND status IN ('pending', 'confirmed', 'active')
+  AND start_date < ?     -- requested end
+  AND end_date   > ?;    -- requested start
+
+-- Only if conflicts = 0:
+INSERT INTO bookings ...;
+INSERT INTO deliveries ...;
+INSERT INTO payments ...;
+
+COMMIT;
+```
+
+Three details that matter:
+
+**The overlap comparison uses strict inequality.** `start < requestedEnd AND end >
+requestedStart` treats a booking ending on the same day another begins as
+non-overlapping, which is correct for a same-day handover.
+
+**Cancelled and completed bookings are excluded** from the conflict set, or a car
+becomes permanently unbookable after its first rental.
+
+**All three inserts share one transaction.** A booking row without its payment row
+is a corrupt record. Either all of it lands or none of it does.
+
+MySQL has no exclusion constraints, so `FOR UPDATE` is the mechanism. A unique
+index cannot express range overlap.
+
+---
+
+## 5. Asset pipeline
+
+`D4Drive.mp4` is 16.4 MB. Shipped raw it becomes the Largest Contentful Paint
+element and the entry screen fails Core Web Vitals on any connection worse than
+office wifi.
+
+`scripts/build-video-assets.mjs` produces, from the source in `~/Downloads`:
+
+| Output | Purpose |
+|---|---|
+| `poster.avif` and `poster.webp` | Frame one, roughly 40 KB. **This is the LCP element, not the video.** |
+| `d4drive-1080.mp4` (H.264 High) | Baseline compatibility |
+| `d4drive-1080.webm` (VP9) | Roughly 30% smaller where supported |
+| `d4drive-720.mp4` / `.webm` | Served under `max-width: 768px` |
+
+The `<video>` element carries `poster`, `muted`, `playsInline`, `preload="auto"`,
+and no `controls`. The poster paints immediately while bytes stream behind the
+loader, which is exactly what the loader exists to cover.
+
+Generated media is gitignored. A 16 MB binary does not belong in git history,
+where it is permanent even after deletion.
+
+**This step needs `ffmpeg`.** It is not installed on this machine. The pipeline
+task installs `ffmpeg-static` as a dev dependency so no global install is needed.
+
+---
+
+## 6. Performance budget
+
+| Metric | Target | Main risk |
+|---|---|---|
+| LCP | under 2.5s | Video treated as LCP instead of the poster |
+| INP | under 200ms | Buffer progress written to React state on every `progress` event |
+| CLS | under 0.1 | Fonts swapping, or the video stage not reserving its aspect ratio |
+| JS on landing | under 120 KB gzipped | Motion pulled into a Server Component tree by accident |
+
+Motion is client-only and lazy. The intro is the only part of the landing page
+that ships JavaScript; every static section below it stays a Server Component.
+
+---
+
+## 7. Z-index scale
+
+Defined once in `lib/constants.ts`. Arbitrary `z-50` scattered through components
+is banned.
+
+| Layer | Value |
+|---|---|
+| Base content | 0 |
+| Gridlines | 10 |
+| Sticky nav | 20 |
+| Video stage | 30 |
+| Auth gate overlay | 40 |
+| Boot loader | 50 |
+| Toasts | 60 |
+| Paper grain | 70 |
+
+The grain sits above everything because it is a material applied to the whole
+surface. It is `pointer-events-none`, so it never intercepts a click.

@@ -1,0 +1,241 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   D4Drive design tokens
+
+   Every colour is defined once on bare `:root`. The dark block redefines only
+   the ground and ink roles. No colour gets its only definition inside a media
+   query, or the light theme breaks wherever that query does not match.
+
+   Carmine is the single accent, sampled from the car in the hero film rather
+   than picked by eye: hue 5, saturation 0.85, measured off frame 150. It
+   clears 6.72:1 against ground and 7.13:1 for white text on top of it.
+   Gold is a material, not an accent: it appears only as hairline foil and
+   never signals interactive state. See DESIGN.md section 1.
+   ========================================================================== */
+
+@theme {
+  --color-ground: #f9f8f6;
+  --color-ink: #1a1a1a;
+  --color-surface: #ebe5de;
+  --color-muted: #6c6863;
+  --color-carmine: #a82519;
+  --color-carmine-deep: #7d1a12;
+  --color-foil: #d4af37;
+  --color-paper: #ffffff;
+
+  --font-display: var(--font-playfair), Georgia, 'Times New Roman', serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius is 0 across the entire system. No exceptions, no states. */
+  --radius-none: 0px;
+
+  /* Three motion tiers. Nothing snaps. */
+  --duration-interaction: 500ms;
+  --duration-colour: 700ms;
+  --duration-cinematic: 1500ms;
+  --duration-cinematic-slow: 2000ms;
+  --ease-luxury: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.02);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 0.06);
+  --shadow-image: 0 4px 24px rgb(0 0 0 / 0.08);
+  --shadow-image-hover: 0 8px 32px rgb(0 0 0 / 0.12);
+  --shadow-button: 0 4px 16px rgb(0 0 0 / 0.15);
+  --shadow-button-hover: 0 8px 24px rgb(0 0 0 / 0.25);
+  --shadow-stage: 0 8px 32px rgb(0 0 0 / 0.12);
+  --shadow-inner-frame: inset 0 0 0 1px rgb(0 0 0 / 0.06);
+}
+
+:root {
+  --ground: var(--color-ground);
+  --ink: var(--color-ink);
+  --surface: var(--color-surface);
+  --muted: var(--color-muted);
+
+  /* Primary button fill is the inverse of the page ground, not a fixed
+     charcoal. On a dark ground a charcoal button is invisible, which is the
+     Button Contrast Check in DESIGN.md failing in the one mode nobody tests. */
+  --btn-bg: var(--color-ink);
+  --btn-fg: var(--color-paper);
+  /* --muted measures 5.21:1 on ground but only 4.42:1 on the taupe surface,
+     under the 4.5:1 DESIGN.md requires for labels and helper text on any
+     panel. Surface panels remap --muted to this (4.91:1). */
+  --muted-on-surface: #65615c;
+  /* Carmine used as text, focus ring, or focus underline. Identical to
+     carmine in light. In dark, carmine fills and rules stay #A82519 (white on
+     it is still 7.13:1) but carmine text on #141414 is 2.4:1, so text moves
+     to a lighter tint of the same hue 5 (5.48:1 on ground, 4.95:1 on
+     surface). DESIGN.md holds carmine constant in dark; this is the one
+     place it cannot, and only for legibility. */
+  --accent-text: var(--color-carmine);
+  color-scheme: light;
+}
+
+:root:not([data-theme='light']) {
+  @media (prefers-color-scheme: dark) {
+    /* Ground and ink swap roles. Carmine and foil hold constant, because the
+       accent is drawn from a physical object and does not change with the
+       viewer's system preference. */
+    --ground: #141414;
+    --ink: #f2f0ed;
+    --surface: #1f1e1c;
+    --muted: #9b968f;
+    --btn-bg: var(--color-paper);
+    --btn-fg: var(--color-ink);
+    --muted-on-surface: #a8a39c;
+    --accent-text: #e66256;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ground: #141414;
+  --ink: #f2f0ed;
+  --surface: #1f1e1c;
+  --muted: #9b968f;
+  --btn-bg: var(--color-paper);
+  --btn-fg: var(--color-ink);
+  --muted-on-surface: #a8a39c;
+  --accent-text: #e66256;
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+* {
+  border-radius: 0 !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.625;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background-color: var(--color-carmine);
+  color: var(--color-paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Utilities
+   ========================================================================== */
+
+/* A taupe panel (checkout summary, admin car form). Remaps --muted so every
+   label and helper inside it clears 4.5:1 against the panel itself. */
+.surface-panel {
+  background-color: var(--surface);
+  --muted: var(--muted-on-surface);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Vertical decorative label. Capped at two instances page-wide and hidden on
+   mobile, per DESIGN.md section 7. */
+.vertical-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Drop cap for section-opening paragraphs. leading is deliberately tight, and
+   the float needs the sibling clear to avoid text wrapping under it awkwardly. */
+.drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  line-height: 0.8;
+  float: left;
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  color: var(--accent-text);
+}
+
+/* On the charcoal band carmine fails contrast, so the drop cap goes paper. */
+.drop-cap-on-dark::first-letter {
+  color: var(--color-paper);
+}
+
+/* Any italic display word containing a descender clips at leading-[0.9].
+   This reserves the space. See DESIGN.md section 2. */
+.italic-safe {
+  line-height: 1.1;
+  padding-bottom: 0.25rem;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in var(--duration-colour) var(--ease-luxury) both;
+}
+
+/* Particle assembly (components/fx/use-particles.ts). Hidden only when the
+   script that reveals it can run and motion is welcome. The failsafe shows a
+   pending element after 3s if hydration never arrives; once the hook arms it,
+   the hook owns the reveal and the failsafe no longer applies. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-assemble='pending'] {
+    opacity: 0;
+    animation: assemble-failsafe 1ms linear 3s forwards;
+  }
+
+  [data-assemble='armed'],
+  [data-assemble='running'] {
+    opacity: 0;
+  }
+}
+
+@keyframes assemble-failsafe {
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   Reduced motion
+
+   At MOTION_INTENSITY 7 every animation on this page is gated. Transforms and
+   scales collapse; colour transitions survive, because they do not cause
+   vestibular discomfort and removing them would strip the interface of
+   feedback entirely.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .motion-safe-transform {
+    transform: none !important;
+  }
+}
