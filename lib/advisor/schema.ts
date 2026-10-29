@@ -65,6 +65,16 @@ export interface AdvisorReply {
   cars: AdvisorCar[];
 }
 
+/**
+ * What /api/advisor streams back, one JSON object per line. `draft` is the
+ * checked reply so far (the whole of it, not a delta; an empty one means a
+ * draft was withdrawn for a correction), `done` the final reply and its cars.
+ */
+export type AdvisorEvent =
+  | { type: 'draft'; text: string }
+  | ({ type: 'done' } & AdvisorReply)
+  | { type: 'error'; status: number; error: string };
+
 // ---------------------------------------------------------------------------
 // The tools the model can call
 
@@ -77,8 +87,17 @@ const isoDate = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .refine((value) => !Number.isNaN(Date.parse(value)), 'Not a real date');
 
-/** A filter the visitor did not mention is left out (or sent as null); either way it becomes null. */
-const optional = <T extends z.ZodTypeAny>(schema: T) => schema.nullish().transform((v) => v ?? null);
+/**
+ * A small model fills a filter nobody asked for with "all" or "any" (a live
+ * run searched for brand "all" and found nothing). That means no filter.
+ */
+const NO_PREFERENCE = /^(all|any|none|either|no preference|not specified|n\/a)$/i;
+
+/** A filter the visitor did not mention is left out, sent as null or as "all"; each becomes null. */
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z
+    .preprocess((v) => (typeof v === 'string' && NO_PREFERENCE.test(v.trim()) ? null : v), schema.nullish())
+    .transform((v) => v ?? null);
 
 export const searchFleetInput = z
   .object({
@@ -87,7 +106,7 @@ export const searchFleetInput = z
     transmission: optional(z.enum(TRANSMISSIONS)),
     max_price_per_day: optional(z.number().positive().max(1_000_000)),
     brand: optional(z.string().trim().min(1).max(60)),
-    sort: z.enum(SORTS).nullish().transform((v) => v ?? 'price_asc'),
+    sort: optional(z.enum(SORTS)).transform((v) => v ?? 'price_asc'),
   })
   .strict();
 

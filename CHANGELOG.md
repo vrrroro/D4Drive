@@ -7,6 +7,44 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-21: Phase 19, a faster car advisor (branch `feature/advisor-speed`, stacked on PR #30)
+
+The owner found the advisor too slow when giving the number of people and a
+place. Timed live: 43 s for "5 people, near Whitefield" (5.5 s loading the
+model, 11.5 s re-reading the instructions, a thrown-away draft, then the
+search and a 10 s answer). The owner chose fixes 1 to 4 of five offered.
+
+#### Changed
+- **The model stays loaded and is warmed at server start.** `keep_alive` is
+  24 hours (was 15 minutes) and `instrumentation.ts` has Ollama load the model
+  and read the instructions when the server starts (`warmAdvisor`), so the
+  first visitor skips about 17 s. About 2 GB of RAM stays in use meanwhile.
+- **Replies stream.** `POST /api/advisor` now answers `application/x-ndjson`
+  (`draft`, `done`, `error` events; 400 and 429 still plain JSON). Once the
+  fleet has been searched, each finished sentence is checked and only then
+  sent, so the visitor reads the answer while it is written; a sentence that
+  fails a check stops the model, withdraws the draft and sends a correction.
+  A visitor who leaves stops the model. The widget shows the growing draft
+  (hidden from screen readers, which hear the finished reply).
+- **Shorter replies:** under 80 words in the prompt, `num_predict` 320.
+- Measured after: 10 to 16 s for most questions with the first words at 6 to
+  8 s; 25 s when the model needs a correction first (was 32 to 43 s).
+
+#### Fixed
+- **Invented cars got through.** A warm run answered "Toyota Innova or Hyundai
+  i20" (neither in the fleet) with no price in it, so no check fired. The
+  server now catches a maker and model a tool did not return
+  (`unknownCars`) and sends the draft back.
+- **"brand": "all" searched for a brand called all**, found nothing and fell
+  back to the closest cars, which the reply then called automatic. "all",
+  "any", "none" and the like now mean no filter.
+- **"5 people near Whitefield" got "How many seats do you need?"** A reply that
+  only asks back, when the visitor gave the party size, is sent back with
+  "search now"; the prompt says people are seats, and to give each car's
+  branch without claiming it is near.
+- `tests/advisor.test.ts`: 11 tests (4 new: "all" filters, unknown cars,
+  party size, sentence streaming).
+
 ### 2026-10-21: Phase 18, the AI car advisor (branch `feature/ai-car-advisor`, stacked on PR #29)
 
 The course asks for an AI feature, explained, demonstrated and presented.

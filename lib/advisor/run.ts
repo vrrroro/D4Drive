@@ -1,6 +1,16 @@
 import { DELIVERY_TIERS } from '@/lib/constants';
-import { ADVISOR_SYSTEM, todayLine } from '@/lib/advisor/prompt';
-import { cleanReply, mentionedCars, numbersIn, soundsFactual, ungroundedAmounts } from '@/lib/advisor/reply';
+import { systemMessage, todayLine } from '@/lib/advisor/prompt';
+import {
+  asksBack,
+  cleanReply,
+  completeSentences,
+  givesPartySize,
+  mentionedCars,
+  numbersIn,
+  soundsFactual,
+  ungroundedAmounts,
+  unknownCars,
+} from '@/lib/advisor/reply';
 import { ADVISOR_TOOLS, type AdvisorCar, type AdvisorReply, type AdvisorTurn } from '@/lib/advisor/schema';
 import { runTool } from '@/lib/advisor/tools';
 
@@ -13,6 +23,12 @@ import { runTool } from '@/lib/advisor/tools';
  * (tools.ts, which run parameterised SQL and fn_car_available), reads the
  * rows, and answers. The loop ends when it stops calling tools, or after
  * MAX_ROUNDS.
+ *
+ * The answer is streamed: once the fleet has been searched, each finished
+ * sentence is checked and handed to `onDraft`, so the visitor reads it while
+ * the model is still writing the next one. Nothing unchecked is ever passed
+ * on; a sentence that fails a check stops the draft, withdraws what was
+ * shown, and sends the model back with a correction.
  *
  * Nothing leaves the server: no API key, no third party, no quota. The
  * browser talks only to /api/advisor (the page's CSP keeps connect-src
@@ -32,6 +48,20 @@ const MAX_CORRECTIONS = 2;
 
 /** On a CPU a round (reading the prompt, then writing) can take a while. */
 const ROUND_TIMEOUT_MS = 120_000;
+
+/**
+ * How long Ollama keeps the model in memory after the last message. Loading
+ * it again and re-reading the instructions costs about 17 s on a laptop
+ * CPU, so it stays for a day (about 2 GB of RAM while it does).
+ */
+const KEEP_ALIVE = '24h';
+
+/**
+ * The same for every request, warm-up included: a different num_ctx makes
+ * Ollama reload the model. num_predict caps a runaway reply (an 80 word
+ * answer is about 120 tokens).
+ */
+const OPTIONS = { temperature: 0.2, num_ctx: 8192, num_predict: 320 };
 
 /** The advisor cannot be used here: Ollama is not running, or the model is not pulled. */
 export class AdvisorUnavailableError extends Error {
@@ -65,49 +95,106 @@ interface OllamaMessage {
   tool_name?: string;
 }
 
-interface OllamaChatResponse {
-  message?: OllamaMessage;
+/** One line of Ollama's streamed answer. A tool call arrives whole, in one line. */
+interface OllamaChunk {
+  message?: { content?: string; tool_calls?: OllamaToolCall[] };
+  done?: boolean;
   error?: string;
 }
 
-async function chat(messages: OllamaMessage[]): Promise<OllamaMessage> {
+function requestBody(messages: OllamaMessage[], options: Record<string, number> = OPTIONS) {
+  return JSON.stringify({ model: ADVISOR_MODEL, messages, tools: ADVISOR_TOOLS, stream: true, keep_alive: KEEP_ALIVE, options });
+}
+
+/** A failed fetch or read, as the route should report it. */
+function failure(error: unknown, cancelled: AbortSignal | undefined): Error {
+  // The visitor went away: not the model's fault, nothing to report.
+  if (cancelled?.aborted) return error instanceof Error ? error : new Error('cancelled');
+  if (error instanceof AdvisorBusyError || error instanceof AdvisorUnavailableError) return error;
+  // A garbled line from Ollama: it is running, just not well.
+  if (error instanceof SyntaxError) return new AdvisorBusyError();
+  if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+    console.warn('[advisor] the model took longer than', ROUND_TIMEOUT_MS, 'ms');
+    return new AdvisorBusyError();
+  }
+  // Connection refused: Ollama is not running on OLLAMA_HOST.
+  console.error('[advisor] could not reach Ollama at', OLLAMA_HOST);
+  return new AdvisorUnavailableError();
+}
+
+/**
+ * One round with the model, streamed. `onContent` sees the text so far
+ * after every token and returns false to stop the model there (the round
+ * then comes back with `stopped`).
+ */
+async function chat(
+  messages: OllamaMessage[],
+  cancelled: AbortSignal | undefined,
+  onContent: (soFar: string) => boolean,
+): Promise<{ message: OllamaMessage; stopped: boolean }> {
+  const stop = new AbortController();
+  const signals = [AbortSignal.timeout(ROUND_TIMEOUT_MS), stop.signal, ...(cancelled ? [cancelled] : [])];
   let response: Response;
   try {
     response = await fetch(`${OLLAMA_HOST}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: ADVISOR_MODEL,
-        messages,
-        tools: ADVISOR_TOOLS,
-        stream: false,
-        // Keep the model loaded between messages, so only the first is slow.
-        keep_alive: '15m',
-        // Low temperature: it should pick from the rows, not improvise.
-        options: { temperature: 0.2, num_ctx: 8192 },
-      }),
-      signal: AbortSignal.timeout(ROUND_TIMEOUT_MS),
+      body: requestBody(messages),
+      signal: AbortSignal.any(signals),
     });
   } catch (error) {
-    if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
-      console.warn('[advisor] the model took longer than', ROUND_TIMEOUT_MS, 'ms');
-      throw new AdvisorBusyError();
-    }
-    // Connection refused: Ollama is not running on OLLAMA_HOST.
-    console.error('[advisor] could not reach Ollama at', OLLAMA_HOST);
-    throw new AdvisorUnavailableError();
+    throw failure(error, cancelled);
   }
 
-  const body = (await response.json().catch(() => ({}))) as OllamaChatResponse;
   if (response.status === 404) {
     console.error(`[advisor] model ${ADVISOR_MODEL} is not pulled: run "ollama pull ${ADVISOR_MODEL}"`);
     throw new AdvisorUnavailableError();
   }
-  if (!response.ok || !body.message) {
+  if (!response.ok || !response.body) {
+    const body = (await response.json().catch(() => ({}))) as OllamaChunk;
     console.warn('[advisor] Ollama answered', response.status, body.error ?? '');
     throw new AdvisorBusyError();
   }
-  return body.message;
+
+  let content = '';
+  const toolCalls: OllamaToolCall[] = [];
+  let stopped = false;
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffered = '';
+  try {
+    reading: for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffered += value;
+      let newline: number;
+      while ((newline = buffered.indexOf('\n')) >= 0) {
+        const line = buffered.slice(0, newline).trim();
+        buffered = buffered.slice(newline + 1);
+        if (!line) continue;
+        const chunk = JSON.parse(line) as OllamaChunk;
+        if (chunk.error) {
+          console.warn('[advisor] Ollama stopped:', chunk.error);
+          throw new AdvisorBusyError();
+        }
+        if (chunk.message?.tool_calls?.length) toolCalls.push(...chunk.message.tool_calls);
+        if (chunk.message?.content) {
+          content += chunk.message.content;
+          if (!onContent(content)) {
+            stopped = true;
+            break reading;
+          }
+        }
+        if (chunk.done) break reading;
+      }
+    }
+  } catch (error) {
+    throw failure(error, cancelled);
+  } finally {
+    // Stops Ollama generating if we left early (a failed check, or the visitor went away).
+    stop.abort();
+    reader.releaseLock();
+  }
+  return { message: { role: 'assistant', content, tool_calls: toolCalls.length ? toolCalls : undefined }, stopped };
 }
 
 /** Arguments arrive as an object, or from some models as a JSON string. */
@@ -145,45 +232,93 @@ function toolCallInText(content: string): OllamaToolCall[] {
  */
 const SEARCH_FIRST =
   'Note from the D4Drive server: you have not searched the fleet yet, so you cannot name any car or price. Call search_fleet now with the filters that match my request, then answer only from its results.';
+const SEARCH_NOW =
+  'Note from the D4Drive server: I have already said how many of us are coming, so do not ask. Call search_fleet now (the number of people is seats_min) and recommend from its results.';
 const PRICES_FROM_ROWS = (bad: number[]) =>
   `Note from the D4Drive server: these amounts are not in the tool results: ${bad.map((n) => `₹${n}`).join(', ')}. Answer again using only the rupees_per_day and rental_rupees values the tools returned.`;
+const NOT_IN_FLEET = (names: string[]) =>
+  `Note from the D4Drive server: ${names.join(', ')} did not come from search_fleet, so ${names.length > 1 ? 'they are' : 'it is'} not in our fleet. Answer again recommending only cars the tools returned.`;
 
 /** Delivery fees may always be quoted: they are the site's own constants. */
 const FEES = new Set<number>(DELIVERY_TIERS.map((t) => t.fee));
 
-export async function askAdvisor(history: AdvisorTurn[], now = new Date()): Promise<AdvisorReply> {
+export interface AdvisorOptions {
+  now?: Date;
+  /** Aborted when the visitor leaves: the model is stopped, sparing the CPU. */
+  signal?: AbortSignal;
+  /** The checked reply so far, each time it grows by a sentence; '' when a draft is withdrawn. */
+  onDraft?: (text: string) => void;
+}
+
+export async function askAdvisor(history: AdvisorTurn[], { now = new Date(), signal, onDraft }: AdvisorOptions = {}): Promise<AdvisorReply> {
   const today = todayLine(now);
   const messages: OllamaMessage[] = [
-    { role: 'system', content: `${ADVISOR_SYSTEM}\n\n${today.text}` },
+    { role: 'system', content: systemMessage(now) },
     ...history.map((turn): OllamaMessage => ({ role: turn.role, content: turn.content })),
   ];
   const seen = new Map<number, AdvisorCar>();
   const known = new Set<number>(FEES);
   let searched = false;
   let corrections = 0;
+  const partyGiven = givesPartySize(history[history.length - 1]?.content ?? '');
+
+  /** Why a draft cannot be shown, as the correction to send back; null when it can. */
+  const fault = (reply: string): string | null => {
+    const strangers = unknownCars(reply, seen.values());
+    if (!searched && (soundsFactual(reply) || strangers.length > 0)) return SEARCH_FIRST;
+    if (!searched && partyGiven && asksBack(reply)) return SEARCH_NOW;
+    const bad = ungroundedAmounts(reply, known);
+    if (bad.length > 0) return PRICES_FROM_ROWS(bad);
+    if (strangers.length > 0) return NOT_IN_FLEET(strangers);
+    return null;
+  };
 
   for (let round = 0; round < MAX_ROUNDS; round += 1) {
-    const message = await chat(messages);
-    const calls = message.tool_calls?.length ? message.tool_calls : toolCallInText(message.content);
+    // What this round has shown the visitor, and why it was stopped, if it was.
+    const draft = { shown: '', stoppedFor: null as string | null };
+
+    const { message, stopped } = await chat(messages, signal, (soFar) => {
+      // Before a search an answer is usually a guess, and text that opens
+      // like JSON is a tool call typed out: hold both until the end.
+      if (!searched || !onDraft || /^\s*[{`]/.test(soFar)) return true;
+      const text = cleanReply(completeSentences(soFar));
+      if (text.length <= draft.shown.length) return true;
+      draft.stoppedFor = fault(text);
+      if (draft.stoppedFor) return false;
+      draft.shown = text;
+      onDraft(text);
+      return true;
+    });
+    const withdraw = () => {
+      if (draft.shown) onDraft?.('');
+    };
+
+    const calls = message.tool_calls?.length ? message.tool_calls : stopped ? [] : toolCallInText(message.content);
 
     if (calls.length === 0) {
       const reply = cleanReply(message.content) || EMPTY;
 
       // A small model will answer from imagination if it can. A draft that
-      // names prices or cars before any search, or quotes a price no tool
-      // returned, is sent back with a correction instead of to the visitor.
-      const bad = ungroundedAmounts(reply, known);
-      const unsearched = !searched && soundsFactual(reply);
-      if ((unsearched || bad.length > 0) && corrections < MAX_CORRECTIONS) {
+      // names cars or prices before any search, names a car no tool
+      // returned, or quotes a price no tool returned, is sent back with a
+      // correction instead of to the visitor.
+      const correction = draft.stoppedFor ?? fault(reply);
+      if (correction && corrections < MAX_CORRECTIONS) {
         corrections += 1;
-        console.warn('[advisor] ungrounded draft:', unsearched ? 'no search yet' : `amounts ${bad.join(', ')}`);
-        messages.push({ role: 'user', content: unsearched ? SEARCH_FIRST : PRICES_FROM_ROWS(bad) });
+        withdraw();
+        console.warn('[advisor] ungrounded draft:', correction.replace(/^Note from the D4Drive server: /, '').slice(0, 90));
+        messages.push({ role: 'user', content: correction });
         continue;
       }
-      if (unsearched || bad.length > 0) return { reply: UNSURE, cars: [] };
+      if (correction) {
+        withdraw();
+        return { reply: UNSURE, cars: [] };
+      }
       return { reply, cars: mentionedCars(reply, seen.values()) };
     }
 
+    // Text before a tool call ("Let me check...") is not the answer.
+    withdraw();
     // The model's turn goes back as it came, then one tool message per call.
     messages.push({ role: 'assistant', content: message.content, tool_calls: calls });
     for (const call of calls) {
@@ -197,4 +332,38 @@ export async function askAdvisor(history: AdvisorTurn[], now = new Date()): Prom
   }
 
   return { reply: TOO_LONG, cars: [] };
+}
+
+/**
+ * Loads the model and has it read the instructions once, at server start
+ * (instrumentation.ts), so the first visitor does not wait for either.
+ * Ollama then keeps both for KEEP_ALIVE. Never throws: without Ollama the
+ * site runs and the advisor says it is off.
+ */
+export async function warmAdvisor(): Promise<void> {
+  const started = Date.now();
+  try {
+    const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // The same system message, tools and options a visitor's request
+      // starts with, so Ollama can reuse what it read; one token of answer.
+      body: requestBody(
+        [
+          { role: 'system', content: systemMessage() },
+          { role: 'user', content: 'Hello' },
+        ],
+        { ...OPTIONS, num_predict: 1 },
+      ),
+      signal: AbortSignal.timeout(ROUND_TIMEOUT_MS),
+    });
+    await response.text();
+    if (!response.ok) {
+      console.warn(`[advisor] warm-up: Ollama answered ${response.status} (is ${ADVISOR_MODEL} pulled?)`);
+      return;
+    }
+    console.info(`[advisor] ${ADVISOR_MODEL} loaded and ready in ${((Date.now() - started) / 1000).toFixed(1)} s`);
+  } catch {
+    console.info(`[advisor] warm-up skipped: Ollama is not reachable at ${OLLAMA_HOST}`);
+  }
 }

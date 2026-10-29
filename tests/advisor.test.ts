@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanReply, mentionedCars } from '../lib/advisor/reply.ts';
+import { cleanReply, completeSentences, givesPartySize, mentionedCars, unknownCars } from '../lib/advisor/reply.ts';
 import {
   ADVISOR_TOOLS,
   MAX_TURNS,
@@ -81,6 +81,14 @@ test('tool arguments are checked before any query', () => {
   assert.ok(!checkAvailabilityInput.safeParse({ car_id: '1 OR 1=1', start_date: '2026-11-01', end_date: '2026-11-03' }).success);
 });
 
+test('a filter sent as "all" or "any" means no filter', () => {
+  // A live run searched for brand "all", found nothing, and answered from the fallback.
+  const parsed = searchFleetInput.parse({ seats_min: 5, brand: 'all', fuel: 'Any', transmission: ' either ', sort: 'all' });
+  assert.deepEqual(parsed, { seats_min: 5, fuel: null, transmission: null, max_price_per_day: null, brand: null, sort: 'price_asc' });
+  assert.equal(searchFleetInput.parse({ brand: 'Tata' }).brand, 'Tata');
+  assert.ok(!searchFleetInput.safeParse({ fuel: 'steam' }).success, 'anything else still has to be a real value');
+});
+
 test('each tool schema lists exactly the fields zod expects, and nothing extra', () => {
   const shapes = { search_fleet: searchFleetInput.shape, check_availability: checkAvailabilityInput.shape };
   const fns = ADVISOR_TOOLS.map((t) => t.function);
@@ -113,6 +121,33 @@ test('only cars a tool returned are linked, in the order the reply names them, a
   assert.equal(mentionedCars('Swift VXi, Creta SX, Nexon EV Max, Innova Crysta', seen).length, 3);
   const twins = [car(5, 'Tata', 'Nexon EV Max'), car(6, 'Tata', 'Nexon XZ')];
   assert.deepEqual(mentionedCars('The Nexon is good.', twins), [], 'a shared first word is ambiguous, so neither is linked');
+});
+
+test('a car the reply names but no tool returned is caught', () => {
+  const seen = [car(1, 'Maruti Suzuki', 'Swift VXi'), car(2, 'Hyundai', 'Creta SX'), car(3, 'Honda', 'City ZX')];
+  // What a live run said before searching: two cars that are not in the fleet.
+  assert.deepEqual(unknownCars('For your group of 5, consider the Toyota Innova or Hyundai i20.', []), ['Toyota Innova', 'Hyundai i20']);
+  assert.deepEqual(unknownCars('Take the Hyundai Creta SX, or the Maruti Suzuki Swift VXi in town.', seen), []);
+  assert.deepEqual(unknownCars('The Honda City is quiet. A Hyundai Verna would be too.', seen), ['Hyundai Verna']);
+  assert.deepEqual(unknownCars('Both Tata cars are electric. Our branch is near MG Road.', seen), [], 'a maker with no model after it, or a street, is not a car');
+  assert.deepEqual(unknownCars('The Kia Seltos HTX fits.', [car(4, 'Kia', 'Seltos HTX')]), []);
+});
+
+test('a message that says how many are coming is spotted, so the advisor does not ask again', () => {
+  assert.ok(givesPartySize('We are 5 people and we are near Whitefield'));
+  assert.ok(givesPartySize('a family of four, going to Coorg'));
+  assert.ok(givesPartySize('Seven seats for a trip to Mysuru'));
+  assert.ok(givesPartySize('need a 7 seater'));
+  assert.ok(!givesPartySize('Something electric for this weekend'));
+  assert.ok(!givesPartySize('Under ₹2,500 a day, for 3 days'));
+});
+
+test('a draft is streamed a finished sentence at a time', () => {
+  assert.equal(completeSentences('The Creta SX is ₹3,200 a'), '');
+  assert.equal(completeSentences('The Creta SX is ₹3,200 a day. The City'), 'The Creta SX is ₹3,200 a day.');
+  assert.equal(completeSentences('Range is 2.5 hours! Next'), 'Range is 2.5 hours!');
+  assert.equal(completeSentences('Three cars:\nThe Swift'), 'Three cars:\n');
+  assert.equal(completeSentences('Done.'), '', 'the last sentence waits for the end of the reply');
 });
 
 test('the prompt carries the delivery tiers from lib/constants and no banned dashes', () => {

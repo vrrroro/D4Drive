@@ -245,7 +245,8 @@ on `OLLAMA_HOST` (default `http://127.0.0.1:11434`).
 CarAdvisor (browser) --POST /api/advisor--> route: rate limit, zod
    route --/api/chat--> Ollama (system prompt, two tool definitions)
    Ollama --tool_calls--> lib/advisor/tools.ts --parameterised SELECT, fn_car_available--> MySQL
-   rows --tool message--> Ollama --draft--> grounding checks --> reply + linked cars
+   rows --tool message--> Ollama --draft, streamed--> grounding checks, a sentence at a time
+   checked sentences --NDJSON draft events--> widget; then a done event with the linked cars
 ```
 
 - **The model never writes SQL.** It names `search_fleet` or
@@ -261,5 +262,15 @@ CarAdvisor (browser) --POST /api/advisor--> route: rate limit, zod
   name (`LIKE ?`, wildcards escaped) and ignores a guessed id.
 - **Read only and stateless.** The widget sends the text of the conversation;
   the route rebuilds the request each turn and changes nothing in MySQL.
-- Without Ollama (or the model), the route answers 503 and the widget says
-  the advisor is off; the rest of the site is unaffected.
+- Without Ollama (or the model), the route sends a 503 `error` event and
+  the widget says the advisor is off; the rest of the site is unaffected.
+- **Speed (Phase 19).** On a laptop CPU most of a reply's time is the model
+  reading and writing. The model is loaded and has read the system message
+  before the first visitor (`instrumentation.ts`, `warmAdvisor`), and stays
+  loaded for 24 h (`keep_alive`); every request starts with the identical
+  system message, tools and `num_ctx`, so Ollama reuses what it read. The
+  route streams `application/x-ndjson`: after a search, each finished
+  sentence is checked, then sent as a `draft` event; a sentence that fails
+  stops the model and withdraws the draft (an empty `draft`). Nothing
+  unchecked reaches the page. 400 and 429 come back before the stream as
+  plain JSON; a closed page aborts the model.
