@@ -45,6 +45,7 @@ export default async function AdminFleetPage() {
             imageUrl: c.image_url,
             description: c.description,
             isActive: c.is_active === 1,
+            bookingCount: Number(c.booking_count),
           }))}
           branches={branches.map((b) => ({ id: b.id, name: b.name, city: b.city }))}
         />

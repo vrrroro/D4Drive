@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createBookingSchema, fieldErrors } from '@/lib/validation/schemas';
-import { createBooking, listUserBookings, DeliveryUnavailableError } from '@/lib/services/bookings';
-import { CarUnavailableError, CarNotFoundError } from '@/lib/services/availability';
+import { createBooking, listUserBookings } from '@/lib/services/bookings';
 import { requireSession, verifyCsrf, errors, handleRouteError } from '@/lib/auth/guards';
 
 export async function GET() {
@@ -39,17 +38,10 @@ export async function POST(request: Request) {
     const booking = await createBooking(auth.session.userId, parsed.data);
     return NextResponse.json({ booking }, { status: 201 });
   } catch (error) {
-    // 409 rather than 500: losing a race for the same dates is an expected
-    // outcome of a correctly locked booking flow, not a server fault.
-    if (error instanceof CarUnavailableError) {
-      return errors.conflict(error.message);
-    }
-    if (error instanceof CarNotFoundError) {
-      return errors.notFound(error.message);
-    }
-    if (error instanceof DeliveryUnavailableError) {
-      return errors.badRequest(error.message);
-    }
+    // sp_create_booking refuses with its own codes, which handleRouteError
+    // maps: 409 when another booking holds the dates (losing that race is an
+    // expected outcome of a correctly locked flow, not a server fault), 404
+    // for a withdrawn car, 422 for an address or branch out of range.
     return handleRouteError('bookings/create', error);
   }
 }

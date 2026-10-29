@@ -20,7 +20,7 @@ export async function PATCH(
     const parsed = bookingStatusSchema.safeParse(body);
     if (!parsed.success) return errors.badRequest('That is not a valid status.');
 
-    const updated = await updateBookingStatus(id, parsed.data.status);
+    const updated = await updateBookingStatus(id, parsed.data.status, auth.session.userId);
     if (!updated) return errors.notFound('Booking not found.');
     return NextResponse.json({ ok: true });
   } catch (error) {

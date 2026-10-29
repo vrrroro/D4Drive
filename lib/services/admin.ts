@@ -1,5 +1,6 @@
-import type { RowDataPacket } from 'mysql2/promise';
-import { query, queryOne, execute } from '@/lib/db';
+import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+import { query, queryOne, execute, withActor } from '@/lib/db';
+import { cancelBooking } from '@/lib/services/bookings';
 import type { CarInput } from '@/lib/validation/schemas';
 import type { BookingStatus, DeliveryStatus } from '@/lib/constants';
 
@@ -64,14 +65,20 @@ export interface AdminCarRow extends RowDataPacket {
   image_url: string | null;
   description: string | null;
   is_active: number;
+  booking_count: number;
 }
 
-/** Includes deactivated cars, which the public catalog deliberately excludes. */
+/**
+ * Includes deactivated cars, which the public catalog deliberately excludes.
+ * booking_count decides whether the fleet page offers a permanent delete
+ * (only a car nobody has ever booked).
+ */
 export async function listAllCars(): Promise<AdminCarRow[]> {
   return query<AdminCarRow>(
     `SELECT c.id, c.branch_id, b.name AS branch_name, c.brand, c.model, c.year,
             c.registration_no, c.fuel_type, c.transmission, c.seats,
-            c.price_per_day, c.image_url, c.description, c.is_active
+            c.price_per_day, c.image_url, c.description, c.is_active,
+            (SELECT COUNT(*) FROM bookings bo WHERE bo.car_id = c.id) AS booking_count
        FROM cars c
        JOIN branches b ON b.id = c.branch_id
       ORDER BY c.is_active DESC, c.brand, c.model`,
@@ -129,13 +136,26 @@ export async function updateCar(id: number, input: CarInput): Promise<boolean> {
 }
 
 /**
- * Soft delete.
+ * Withdraw: the soft delete.
  *
- * A hard delete would orphan the booking history a completed rental needs for
- * its invoice, and the foreign key would refuse it anyway.
+ * The car leaves the catalog but keeps its row, because past bookings and
+ * their invoices point at it. trg_cars_bu_withdraw_guard refuses (5201, a 409)
+ * while the car has a confirmed or running rental.
  */
 export async function deactivateCar(id: number): Promise<boolean> {
   const result = await execute('UPDATE cars SET is_active = 0 WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+/**
+ * Permanent delete, for a car entered by mistake.
+ *
+ * Only possible for a car nobody has booked: fk_bookings_car is ON DELETE
+ * RESTRICT, so MySQL itself refuses (ER_ROW_IS_REFERENCED_2, a 409) for any
+ * car with history. The app does not check first; the constraint is the rule.
+ */
+export async function deleteCar(id: number): Promise<boolean> {
+  const result = await execute('DELETE FROM cars WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
 
@@ -164,9 +184,18 @@ interface StatusRow extends RowDataPacket {
   status: BookingStatus;
 }
 
+/**
+ * Moves a booking along the graph above.
+ *
+ * Cancelling goes through sp_cancel_booking, the same path a customer uses,
+ * so the refund trigger and the history are identical whoever cancels. Every
+ * other move is a plain UPDATE on a connection carrying the admin's id, which
+ * trg_bookings_au_log records as the actor.
+ */
 export async function updateBookingStatus(
   id: number,
   next: BookingStatus,
+  actorId: number,
 ): Promise<boolean> {
   const current = await queryOne<StatusRow>('SELECT status FROM bookings WHERE id = ?', [
     id,
@@ -178,15 +207,22 @@ export async function updateBookingStatus(
     throw new InvalidTransitionError(current.status, next);
   }
 
+  if (next === 'cancelled') {
+    await cancelBooking(id, actorId, true);
+    return true;
+  }
+
   // Compare-and-set: the update only lands if the status is still the one
   // the transition was checked against. Two admins acting on one booking at
   // once cannot both pass the graph check and race each other's write.
-  const result = await execute('UPDATE bookings SET status = ? WHERE id = ? AND status = ?', [
-    next,
-    id,
-    current.status,
-  ]);
-  if (result.affectedRows === 0) throw new InvalidTransitionError(current.status, next);
+  const affected = await withActor(actorId, `marked ${next} by staff`, async (connection) => {
+    const [result] = await connection.execute<ResultSetHeader>(
+      'UPDATE bookings SET status = ? WHERE id = ? AND status = ?',
+      [next, id, current.status],
+    );
+    return result.affectedRows;
+  });
+  if (affected === 0) throw new InvalidTransitionError(current.status, next);
   return true;
 }
 
@@ -216,14 +252,12 @@ export async function updateDeliveryStatus(
     throw new InvalidTransitionError(current.status, next);
   }
 
-  // delivered_at is stamped by the transition rather than supplied by the
-  // client, so the timestamp reflects when it actually happened.
+  // delivered_at is stamped by trg_deliveries_bu_stamp, never supplied by
+  // the client, so it records when the handover actually happened.
   // Compare-and-set, for the same reason as updateBookingStatus.
   const result = await execute(
-    `UPDATE deliveries
-        SET status = ?, delivered_at = IF(? = 'delivered', NOW(), delivered_at)
-      WHERE booking_id = ? AND status = ?`,
-    [next, next, bookingId, current.status],
+    'UPDATE deliveries SET status = ? WHERE booking_id = ? AND status = ?',
+    [next, bookingId, current.status],
   );
   if (result.affectedRows === 0) throw new InvalidTransitionError(current.status, next);
   return true;

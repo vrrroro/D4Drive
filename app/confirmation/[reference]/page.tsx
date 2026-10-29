@@ -1,29 +1,16 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import type { RowDataPacket } from 'mysql2/promise';
 import { StackPanel } from '@/components/motion/StackPanel';
 import { Annotation } from '@/components/ui/Annotation';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { buttonClassName, ButtonContent } from '@/components/ui/button-styles';
 import { getSession } from '@/lib/auth/guards';
-import { queryOne } from '@/lib/db';
+import { getBookingByReference } from '@/lib/services/bookings';
 import { formatCurrency } from '@/lib/services/pricing';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'Booked' };
-
-interface Row extends RowDataPacket {
-  id: number;
-  reference: string;
-  start_date: Date;
-  end_date: Date;
-  days: number;
-  total_amount: string;
-  brand: string;
-  model: string;
-  delivery_mode: string;
-}
 
 const formatDate = (d: Date) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -35,15 +22,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ r
 
   // Scoped to the owner in the query. A reference is guessable enough that
   // fetching it unscoped would leak other people's bookings.
-  const booking = await queryOne<Row>(
-    `SELECT bo.id, bo.reference, bo.start_date, bo.end_date, bo.days,
-            bo.total_amount, c.brand, c.model, d.mode AS delivery_mode
-       FROM bookings bo
-       JOIN cars c ON c.id = bo.car_id
-       JOIN deliveries d ON d.booking_id = bo.id
-      WHERE bo.reference = ? AND bo.user_id = ?`,
-    [reference, session.userId],
-  );
+  const booking = await getBookingByReference(reference, session.userId);
   if (!booking) notFound();
 
   return (
@@ -75,7 +54,14 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ r
             <Item label="Total paid" value={formatCurrency(Number(booking.total_amount))} />
             <Item label="Pickup" value={formatDate(booking.start_date)} />
             <Item label="Return" value={formatDate(booking.end_date)} />
-            <Item label="Handover" value={booking.delivery_mode === 'doorstep' ? 'Delivered to you' : 'Collect from the branch'} />
+            <Item
+              label="Handover"
+              value={
+                booking.delivery_mode === 'doorstep'
+                  ? 'Delivered to you'
+                  : `Collect at ${(booking.pickup_branch ?? booking.home_branch).replace(/^D4Drive /, '')}`
+              }
+            />
             <Item label="Length" value={`${booking.days} ${booking.days === 1 ? 'day' : 'days'}`} />
           </dl>
 

@@ -5,6 +5,7 @@ import { StackPanel } from '@/components/motion/StackPanel';
 import { Annotation } from '@/components/ui/Annotation';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { CarPhoto } from '@/components/ui/CarPhoto';
+import { CancelBookingButton } from '@/components/sections/CancelBookingButton';
 import { getSession } from '@/lib/auth/guards';
 import { listUserBookings, type BookingRow } from '@/lib/services/bookings';
 import { formatCurrency } from '@/lib/services/pricing';
@@ -22,6 +23,14 @@ const DELIVERY_LABEL: Record<string, string> = {
   returned: 'Returned',
 };
 
+/** Matches sp_cancel_booking: not started, and the pickup day is still ahead. */
+function canCancel(b: BookingRow, today: string): boolean {
+  const start = new Date(b.start_date).toISOString().slice(0, 10);
+  return (b.status === 'pending' || b.status === 'confirmed') && start > today;
+}
+
+const shortBranch = (name: string) => name.replace(/^D4Drive /, '');
+
 export default async function BookingsPage() {
   const session = await getSession();
   if (!session) redirect('/login?next=/bookings');
@@ -32,6 +41,8 @@ export default async function BookingsPage() {
   } catch (error) {
     console.error('[bookings/page]', error);
   }
+
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <StackPanel tone="studio" className="panel min-h-[100dvh] pt-[calc(var(--header-h)+clamp(3rem,6vw,6rem))]" aria-labelledby="journeys-title">
@@ -79,15 +90,23 @@ export default async function BookingsPage() {
                     {b.days} {b.days === 1 ? 'day' : 'days'}, <span className="capitalize">{b.status}</span>
                   </p>
                   <p className="mt-1 font-body text-sm text-[var(--muted)]">
-                    {b.delivery_mode === 'doorstep' ? (DELIVERY_LABEL[b.delivery_status] ?? b.delivery_status) : 'Collect from the branch'}
+                    {b.delivery_mode === 'doorstep'
+                      ? (DELIVERY_LABEL[b.delivery_status] ?? b.delivery_status)
+                      : `Collect at ${shortBranch(b.pickup_branch ?? b.home_branch)}`}
                   </p>
+                  {b.payment_status === 'refunded' && (
+                    <p className="mt-1 font-body text-sm text-[var(--accent-text)]">Refunded in full</p>
+                  )}
                 </div>
                 <div className="flex items-center justify-between gap-4 md:col-span-2 md:flex-col md:items-end">
                   <p className="font-display text-2xl font-light">{formatCurrency(Number(b.total_amount))}</p>
-                  <a href={`/api/bookings/${b.id}/invoice`} className="keycap t-label">
-                    <FileText aria-hidden className="h-4 w-4" strokeWidth={1.5} />
-                    Invoice
-                  </a>
+                  <div className="flex gap-3">
+                    <a href={`/api/bookings/${b.id}/invoice`} className="keycap t-label">
+                      <FileText aria-hidden className="h-4 w-4" strokeWidth={1.5} />
+                      Invoice
+                    </a>
+                    {canCancel(b, today) && <CancelBookingButton bookingId={b.id} reference={b.reference} />}
+                  </div>
                 </div>
               </article>
             </li>

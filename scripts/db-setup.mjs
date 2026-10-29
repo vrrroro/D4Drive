@@ -25,33 +25,48 @@ function loadEnv(text) {
  *
  * multipleStatements stays off on the pool for safety, so the script is split
  * here instead. This is a deliberately simple splitter that handles the
- * constructs used in our own schema and seed files; it is not a general SQL
- * parser and should not be pointed at arbitrary scripts.
+ * constructs used in our own files; it is not a general SQL parser and should
+ * not be pointed at arbitrary scripts.
+ *
+ * It understands the mysql client's `DELIMITER` directive, so routines.sql
+ * (procedure and trigger bodies full of semicolons) loads the same way here
+ * as it does through `mysql < database/routines.sql`. Whole-line `--`
+ * comments are dropped; quotes are tracked so a delimiter inside a string
+ * does not end a statement.
  */
 function splitStatements(sql) {
-  const withoutComments = sql
-    .split(/\r?\n/)
-    .filter((line) => !line.trimStart().startsWith('--'))
-    .join('\n');
-
   const statements = [];
+  let delimiter = ';';
   let current = '';
   let inString = null;
 
-  for (let i = 0; i < withoutComments.length; i += 1) {
-    const ch = withoutComments[i];
-    const prev = withoutComments[i - 1];
-
-    if (inString) {
-      if (ch === inString && prev !== '\\') inString = null;
-    } else if (ch === "'" || ch === '"') {
-      inString = ch;
-    } else if (ch === ';') {
-      if (current.trim()) statements.push(current.trim());
-      current = '';
-      continue;
+  for (const line of sql.split(/\r?\n/)) {
+    if (!inString) {
+      if (line.trimStart().startsWith('--')) continue;
+      const directive = /^\s*DELIMITER\s+(\S+)\s*$/i.exec(line);
+      if (directive) {
+        delimiter = directive[1];
+        continue;
+      }
     }
-    current += ch;
+
+    const text = `${line}\n`;
+    for (let i = 0; i < text.length; i += 1) {
+      const ch = text[i];
+      if (inString) {
+        if (ch === inString && text[i - 1] !== '\\') inString = null;
+        current += ch;
+      } else if (ch === "'" || ch === '"') {
+        inString = ch;
+        current += ch;
+      } else if (text.startsWith(delimiter, i)) {
+        if (current.trim()) statements.push(current.trim());
+        current = '';
+        i += delimiter.length - 1;
+      } else {
+        current += ch;
+      }
+    }
   }
 
   if (current.trim()) statements.push(current.trim());
@@ -93,24 +108,41 @@ async function main() {
   );
   await connection.changeUser({ database });
 
-  for (const file of ['database/schema.sql', 'database/seed.sql']) {
+  // Schema, then the stored programs, then the seed: the seed's status
+  // changes rely on the triggers to write the booking history.
+  for (const file of ['database/schema.sql', 'database/routines.sql', 'database/seed.sql']) {
     process.stdout.write(`Loading ${file} `);
     const statements = splitStatements(await readFile(file, 'utf8'));
     for (const statement of statements) {
-      await connection.query(statement);
+      try {
+        await connection.query(statement);
+      } catch (error) {
+        console.error(`\n\nFailed in ${file}:\n${statement.slice(0, 400)}\n`);
+        throw error;
+      }
     }
     console.log(`(${statements.length} statements)`);
   }
 
+  const tables = [
+    'users', 'branches', 'cars', 'bookings', 'deliveries', 'payments',
+    'refresh_tokens', 'booking_status_log',
+  ];
   const [[counts]] = await connection.query(
-    `SELECT (SELECT COUNT(*) FROM users) AS users,
-            (SELECT COUNT(*) FROM branches) AS branches,
-            (SELECT COUNT(*) FROM cars) AS cars`,
+    `SELECT ${tables.map((t) => `(SELECT COUNT(*) FROM ${t}) AS ${t}`).join(', ')}`,
+  );
+  const [routines] = await connection.query(
+    `SELECT ROUTINE_TYPE AS type, COUNT(*) AS n FROM information_schema.ROUTINES
+      WHERE ROUTINE_SCHEMA = DATABASE() GROUP BY ROUTINE_TYPE`,
+  );
+  const [[triggers]] = await connection.query(
+    'SELECT COUNT(*) AS n FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = DATABASE()',
   );
 
-  console.log(
-    `\nReady. ${counts.users} users, ${counts.branches} branches, ${counts.cars} cars.\n`,
-  );
+  console.log('\nReady.');
+  for (const t of tables) console.log(`  ${t.padEnd(20)} ${counts[t]} rows`);
+  for (const r of routines) console.log(`  ${`${r.type.toLowerCase()}s`.padEnd(20)} ${r.n}`);
+  console.log(`  ${'triggers'.padEnd(20)} ${triggers.n}\n`);
 
   await connection.end();
 }

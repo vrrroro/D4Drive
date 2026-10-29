@@ -116,4 +116,48 @@ export async function withTransaction<T>(
   }
 }
 
+/**
+ * Calls a stored procedure and returns its result sets, in order.
+ *
+ * `sql` is a fixed `CALL sp_name(?, ?)` string written at the call site; the
+ * arguments are bound like any other query. A procedure's custom errors
+ * (SIGNAL SQLSTATE '45000') arrive as thrown mysql2 errors carrying the errno;
+ * lib/services/db-errors.ts maps them to HTTP responses.
+ */
+export async function callProcedure(
+  sql: string,
+  params: readonly unknown[] = [],
+): Promise<RowDataPacket[][]> {
+  const [result] = await pool.execute(sql, params as never[]);
+  // mysql2 returns each SELECT the procedure ran as an array of rows, then a
+  // final ResultSetHeader for the CALL itself.
+  return (result as unknown[]).filter(Array.isArray) as RowDataPacket[][];
+}
+
+/**
+ * Runs `fn` on one connection with the audit variables set.
+ *
+ * The booking-history triggers read @d4d_actor_id and @d4d_reason to record
+ * who changed a status and why. Session variables belong to a connection, so
+ * the SET and the UPDATE must share one; they are cleared in `finally` so the
+ * next borrower of the pooled connection cannot inherit them.
+ */
+export async function withActor<T>(
+  actorId: number | null,
+  reason: string,
+  fn: (connection: PoolConnection) => Promise<T>,
+): Promise<T> {
+  const connection = await pool.getConnection();
+  try {
+    await connection.execute('SET @d4d_actor_id = ?, @d4d_reason = ?', [actorId, reason]);
+    return await fn(connection);
+  } finally {
+    try {
+      await connection.query('SET @d4d_actor_id = NULL, @d4d_reason = NULL');
+    } finally {
+      connection.release();
+    }
+  }
+}
+
 export type { PoolConnection, RowDataPacket, ResultSetHeader };

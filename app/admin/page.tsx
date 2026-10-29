@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { StackPanel } from '@/components/motion/StackPanel';
 import { Card } from '@/components/ui/Card';
+import { EndOfDayClose } from '@/components/sections/EndOfDayClose';
 import { getSession } from '@/lib/auth/guards';
 import { getDashboardStats } from '@/lib/services/admin';
 import { formatCurrency } from '@/lib/services/pricing';
@@ -40,6 +41,12 @@ export default async function AdminDashboard() {
         <Link href="/admin/bookings" className="keycap t-label">
           Bookings and deliveries
         </Link>
+        <Link href="/admin/reports" className="keycap t-label">
+          Reports
+        </Link>
+        <Link href="/admin/database" className="keycap t-label">
+          How the database works
+        </Link>
       </nav>
 
       {/* The lead tile spans two columns and carries the one featured rule,
@@ -51,6 +58,17 @@ export default async function AdminDashboard() {
             <p className={`mt-4 font-display font-light ${tile.lead ? 't-mega text-[var(--accent-text)]' : 'text-5xl md:text-6xl'}`}>{tile.value}</p>
           </Card>
         ))}
+      </section>
+
+      <section aria-labelledby="close-title" className="mt-20 max-w-[70ch]">
+        <h2 id="close-title" className="t-sub">Closing up.</h2>
+        <p className="t-body mt-4 text-[var(--muted)]">
+          Starts every rental whose pickup day has come, completes every rental due back, marks
+          delivered cars returned, and clears sessions that have expired. Safe to run more than once.
+        </p>
+        <div className="mt-8">
+          <EndOfDayClose />
+        </div>
       </section>
     </StackPanel>
   );

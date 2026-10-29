@@ -1,0 +1,278 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1470 890" width="1470" height="890" role="img" aria-labelledby="erd-title erd-desc">
+<title id="erd-title">D4Drive entity relationship diagram</title>
+<desc id="erd-desc">Eight tables. users places bookings, holds refresh_tokens, and acts in booking_status_log. branches houses cars and is the collection point of deliveries. cars is booked in bookings. bookings has one delivery, is paid by payments, and logs booking_status_log.</desc>
+<rect width="100%" height="100%" fill="#F9F8F6"/>
+<path d="M330 83 L350 83 L350 123 L400 123" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="338" y1="90" x2="338" y2="76" stroke="#1A1A1A" stroke-width="1.25"/><line x1="344" y1="90" x2="344" y2="76" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="386" y1="123" x2="400" y2="115" stroke="#1A1A1A" stroke-width="1.25"/><line x1="386" y1="123" x2="400" y2="123" stroke="#1A1A1A" stroke-width="1.25"/><line x1="386" y1="123" x2="400" y2="131" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="378" cy="123" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="365" y="70" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">places</text>
+<path d="M180 260 L180 540" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="187" y1="268" x2="173" y2="268" stroke="#1A1A1A" stroke-width="1.25"/><line x1="187" y1="274" x2="173" y2="274" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="180" y1="526" x2="172" y2="540" stroke="#1A1A1A" stroke-width="1.25"/><line x1="180" y1="526" x2="180" y2="540" stroke="#1A1A1A" stroke-width="1.25"/><line x1="180" y1="526" x2="188" y2="540" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="180" cy="518" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="188" y="400" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">holds</text>
+<path d="M330 183 L365 183 L365 653 L400 653" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="338" y1="190" x2="338" y2="176" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="350" cy="183" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="386" y1="653" x2="400" y2="645" stroke="#1A1A1A" stroke-width="1.25"/><line x1="386" y1="653" x2="400" y2="653" stroke="#1A1A1A" stroke-width="1.25"/><line x1="386" y1="653" x2="400" y2="661" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="378" cy="653" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="373" y="418" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">acted in</text>
+<path d="M510 360 L510 520" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="517" y1="368" x2="503" y2="368" stroke="#1A1A1A" stroke-width="1.25"/><line x1="517" y1="374" x2="503" y2="374" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="510" y1="506" x2="502" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><line x1="510" y1="506" x2="510" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><line x1="510" y1="506" x2="518" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="510" cy="498" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="518" y="440" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">logs</text>
+<path d="M770 83 L735 83 L735 143 L700 143" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="762" y1="76" x2="762" y2="90" stroke="#1A1A1A" stroke-width="1.25"/><line x1="756" y1="76" x2="756" y2="90" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="714" y1="143" x2="700" y2="151" stroke="#1A1A1A" stroke-width="1.25"/><line x1="714" y1="143" x2="700" y2="143" stroke="#1A1A1A" stroke-width="1.25"/><line x1="714" y1="143" x2="700" y2="135" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="722" cy="143" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="735" y="70" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">is booked in</text>
+<path d="M1140 83 L1105 83 L1105 103 L1070 103" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="1132" y1="76" x2="1132" y2="90" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1126" y1="76" x2="1126" y2="90" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="1084" y1="103" x2="1070" y2="111" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1084" y1="103" x2="1070" y2="103" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1084" y1="103" x2="1070" y2="95" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="1092" cy="103" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="1105" y="70" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">houses</text>
+<path d="M630 360 L630 452 L920 452 L920 520" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="637" y1="368" x2="623" y2="368" stroke="#1A1A1A" stroke-width="1.25"/><line x1="637" y1="374" x2="623" y2="374" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="920" y1="506" x2="912" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><line x1="920" y1="506" x2="920" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><line x1="920" y1="506" x2="928" y2="520" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="920" cy="498" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="775" y="445" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">paid by</text>
+<path d="M670 360 L670 432 L1105 432 L1105 553 L1140 553" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="677" y1="368" x2="663" y2="368" stroke="#1A1A1A" stroke-width="1.25"/><line x1="677" y1="374" x2="663" y2="374" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="1132" y1="546" x2="1132" y2="560" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1126" y1="546" x2="1126" y2="560" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="887.5" y="425" text-anchor="middle" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">has one</text>
+<path d="M1340 280 L1340 480" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="1347" y1="288" x2="1333" y2="288" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="1340" cy="300" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="1340" y1="466" x2="1332" y2="480" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1340" y1="466" x2="1340" y2="480" stroke="#1A1A1A" stroke-width="1.25"/><line x1="1340" y1="466" x2="1348" y2="480" stroke="#1A1A1A" stroke-width="1.25"/><circle cx="1340" cy="458" r="5" fill="#F9F8F6" stroke="#1A1A1A" stroke-width="1.25"/>
+<text x="1348" y="380" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" font-style="italic" fill="#6C6863">collection point of</text>
+<g>
+<rect x="30" y="30" width="300" height="230" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="30" y="30" width="300" height="34" fill="#A82519"/>
+<text x="42" y="52" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">users</text>
+<text x="42" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="212" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="320" y="86" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="42" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">full_name</text>
+<text x="212" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(120)</text>
+<text x="42" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">email</text>
+<text x="212" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(255)</text>
+<text x="320" y="126" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">UQ</text>
+<text x="42" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">phone</text>
+<text x="212" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(20)</text>
+<text x="42" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">password_hash</text>
+<text x="212" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(255)</text>
+<text x="42" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">role</text>
+<text x="212" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="42" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">licence_number</text>
+<text x="212" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(32)</text>
+<text x="42" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="212" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+<text x="42" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">updated_at</text>
+<text x="212" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="30" y="540" width="300" height="170" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="30" y="540" width="300" height="34" fill="#A82519"/>
+<text x="42" y="562" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">refresh_tokens</text>
+<text x="42" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">jti</text>
+<text x="212" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">CHAR(36)</text>
+<text x="320" y="596" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="42" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">user_id</text>
+<text x="212" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="320" y="616" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="42" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">expires_at</text>
+<text x="212" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="42" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">revoked_at</text>
+<text x="212" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="42" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">replaced_by</text>
+<text x="212" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">CHAR(36)</text>
+<text x="42" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="212" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="400" y="30" width="300" height="330" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="400" y="30" width="300" height="34" fill="#A82519"/>
+<text x="412" y="52" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">bookings</text>
+<text x="412" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="582" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="86" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="412" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">reference</text>
+<text x="582" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(16)</text>
+<text x="690" y="106" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">UQ</text>
+<text x="412" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">user_id</text>
+<text x="582" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="126" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="412" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">car_id</text>
+<text x="582" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="146" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="412" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">start_date</text>
+<text x="582" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATE</text>
+<text x="412" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">end_date</text>
+<text x="582" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATE</text>
+<text x="412" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">days</text>
+<text x="582" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">SMALLINT</text>
+<text x="412" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">rate_per_day</text>
+<text x="582" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="412" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">rental_amount</text>
+<text x="582" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="412" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">delivery_fee</text>
+<text x="582" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="412" y="286" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">total_amount</text>
+<text x="582" y="286" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="412" y="306" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">status</text>
+<text x="582" y="306" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="412" y="326" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="582" y="326" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+<text x="412" y="346" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">updated_at</text>
+<text x="582" y="346" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="400" y="520" width="300" height="190" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="400" y="520" width="300" height="34" fill="#A82519"/>
+<text x="412" y="542" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">booking_status_log</text>
+<text x="412" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="582" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="576" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="412" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">booking_id</text>
+<text x="582" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="596" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="412" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">from_status</text>
+<text x="582" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="412" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">to_status</text>
+<text x="582" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="412" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">actor_user_id</text>
+<text x="582" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="690" y="656" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="412" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">reason</text>
+<text x="582" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(80)</text>
+<text x="412" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">changed_at</text>
+<text x="582" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP(3)</text>
+</g>
+<g>
+<rect x="770" y="30" width="300" height="350" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="770" y="30" width="300" height="34" fill="#A82519"/>
+<text x="782" y="52" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">cars</text>
+<text x="782" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="952" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1060" y="86" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="782" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">branch_id</text>
+<text x="952" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1060" y="106" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="782" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">brand</text>
+<text x="952" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(60)</text>
+<text x="782" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">model</text>
+<text x="952" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(80)</text>
+<text x="782" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">year</text>
+<text x="952" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">SMALLINT</text>
+<text x="782" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">registration_no</text>
+<text x="952" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(20)</text>
+<text x="1060" y="186" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">UQ</text>
+<text x="782" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">fuel_type</text>
+<text x="952" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="782" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">transmission</text>
+<text x="952" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="782" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">seats</text>
+<text x="952" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TINYINT</text>
+<text x="782" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">price_per_day</text>
+<text x="952" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="782" y="286" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">image_url</text>
+<text x="952" y="286" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(500)</text>
+<text x="782" y="306" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">description</text>
+<text x="952" y="306" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TEXT</text>
+<text x="782" y="326" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">is_active</text>
+<text x="952" y="326" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TINYINT(1)</text>
+<text x="782" y="346" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="952" y="346" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+<text x="782" y="366" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">updated_at</text>
+<text x="952" y="366" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="770" y="520" width="300" height="270" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="770" y="520" width="300" height="34" fill="#A82519"/>
+<text x="782" y="542" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">payments</text>
+<text x="782" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="952" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1060" y="576" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="782" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">booking_id</text>
+<text x="952" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1060" y="596" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="782" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">amount</text>
+<text x="952" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(10,2)</text>
+<text x="782" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">method</text>
+<text x="952" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="782" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">status</text>
+<text x="952" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="782" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">reference</text>
+<text x="952" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(40)</text>
+<text x="1060" y="676" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">UQ</text>
+<text x="782" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">card_last_four</text>
+<text x="952" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">CHAR(4)</text>
+<text x="782" y="716" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">upi_handle</text>
+<text x="952" y="716" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(80)</text>
+<text x="782" y="736" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">paid_at</text>
+<text x="952" y="736" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="782" y="756" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">refunded_at</text>
+<text x="952" y="756" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="782" y="776" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="952" y="776" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="1140" y="30" width="300" height="250" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="1140" y="30" width="300" height="34" fill="#A82519"/>
+<text x="1152" y="52" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">branches</text>
+<text x="1152" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="1322" y="86" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1430" y="86" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="1152" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">name</text>
+<text x="1322" y="106" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(120)</text>
+<text x="1430" y="106" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">UQ</text>
+<text x="1152" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">address</text>
+<text x="1322" y="126" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(255)</text>
+<text x="1152" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">city</text>
+<text x="1322" y="146" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(80)</text>
+<text x="1152" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">pincode</text>
+<text x="1322" y="166" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">CHAR(6)</text>
+<text x="1152" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">latitude</text>
+<text x="1322" y="186" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(9,6)</text>
+<text x="1152" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">longitude</text>
+<text x="1322" y="206" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(9,6)</text>
+<text x="1152" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">phone</text>
+<text x="1322" y="226" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(20)</text>
+<text x="1152" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">is_active</text>
+<text x="1322" y="246" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TINYINT(1)</text>
+<text x="1152" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="1322" y="266" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<g>
+<rect x="1140" y="480" width="300" height="350" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.25"/>
+<rect x="1140" y="480" width="300" height="34" fill="#A82519"/>
+<text x="1152" y="502" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">deliveries</text>
+<text x="1152" y="536" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A" text-decoration="underline" font-weight="700">id</text>
+<text x="1322" y="536" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1430" y="536" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#1A1A1A">PK</text>
+<text x="1152" y="556" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">booking_id</text>
+<text x="1322" y="556" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1430" y="556" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK UQ</text>
+<text x="1152" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">mode</text>
+<text x="1322" y="576" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="1152" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#A82519">pickup_branch_id</text>
+<text x="1322" y="596" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">BIGINT</text>
+<text x="1430" y="596" text-anchor="end" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="9.5" font-weight="700" fill="#A82519">FK</text>
+<text x="1152" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">address_line</text>
+<text x="1322" y="616" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(255)</text>
+<text x="1152" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">city</text>
+<text x="1322" y="636" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">VARCHAR(80)</text>
+<text x="1152" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">pincode</text>
+<text x="1322" y="656" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">CHAR(6)</text>
+<text x="1152" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">latitude</text>
+<text x="1322" y="676" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(9,6)</text>
+<text x="1152" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">longitude</text>
+<text x="1322" y="696" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(9,6)</text>
+<text x="1152" y="716" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">distance_km</text>
+<text x="1322" y="716" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DECIMAL(6,2)</text>
+<text x="1152" y="736" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">status</text>
+<text x="1322" y="736" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">ENUM</text>
+<text x="1152" y="756" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">scheduled_at</text>
+<text x="1322" y="756" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="1152" y="776" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">delivered_at</text>
+<text x="1322" y="776" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">DATETIME</text>
+<text x="1152" y="796" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">created_at</text>
+<text x="1322" y="796" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+<text x="1152" y="816" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="12" fill="#1A1A1A">updated_at</text>
+<text x="1322" y="816" font-family="'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" font-size="10.5" fill="#6C6863">TIMESTAMP</text>
+</g>
+<text x="30" y="868" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11" fill="#6C6863">PK primary key, FK foreign key (carmine), UQ unique. Bar: one. Circle: zero. Three prongs: many. Generated from database/schema.sql by npm run build:erd.</text>
+</svg>

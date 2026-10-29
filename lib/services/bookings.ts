@@ -1,21 +1,6 @@
-import type { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import { withTransaction, query, queryOne } from '@/lib/db';
-import { assertAvailableForUpdate } from '@/lib/services/availability';
-import { calculatePrice } from '@/lib/services/pricing';
-import { quoteDelivery } from '@/lib/services/distance';
+import type { RowDataPacket } from 'mysql2/promise';
+import { callProcedure, query, queryOne } from '@/lib/db';
 import type { CreateBookingInput } from '@/lib/validation/schemas';
-
-interface BranchRow extends RowDataPacket {
-  latitude: string;
-  longitude: string;
-}
-
-export class DeliveryUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DeliveryUnavailableError';
-  }
-}
 
 /**
  * Booking reference.
@@ -44,141 +29,126 @@ export interface CreatedBooking {
   distanceKm: number | null;
 }
 
+interface CreatedRow extends RowDataPacket {
+  id: number;
+  reference: string;
+  days: number;
+  rental_amount: string;
+  delivery_fee: string;
+  total_amount: string;
+  distance_km: string;
+}
+
 /**
  * Creates a booking, its delivery record, and its payment record.
  *
- * All three inserts share one transaction. A booking row without its payment
- * row is a corrupt record, so either all of it lands or none of it does.
+ * All of it happens inside `sp_create_booking` (database/routines.sql), in one
+ * transaction: lock the car row with FOR UPDATE, check the dates with
+ * fn_car_available, price the delivery or collection with fn_haversine_km and
+ * fn_delivery_fee, then insert the booking, the delivery and the payment.
+ * Either all three rows land or none do. The lock is what prevents double
+ * booking: a second call for the same car waits until the first commits and
+ * then sees its booking.
  *
- * The availability check happens inside the transaction while holding a row
- * lock on the car, which is what actually prevents double booking. Checking
- * availability before opening the transaction would leave a window in which a
- * concurrent request books the same car between the read and the write.
+ * The rate always comes from the locked car row, never from the client.
+ * Refusals arrive as errors the route maps to 404, 409 or 422
+ * (lib/services/db-errors.ts).
  */
 export async function createBooking(
   userId: number,
   input: CreateBookingInput,
 ): Promise<CreatedBooking> {
-  return withTransaction(async (connection) => {
-    const { pricePerDay, branchId } = await assertAvailableForUpdate(
-      connection,
-      input.carId,
-      input.startDate,
-      input.endDate,
-    );
+  const d = input.delivery;
+  const p = input.payment;
 
-    let deliveryFee = 0;
-    let distanceKm: number | null = null;
-
-    if (input.delivery.mode === 'doorstep') {
-      const [branchRows] = await connection.execute<BranchRow[]>(
-        'SELECT latitude, longitude FROM branches WHERE id = ?',
-        [branchId],
+  // A reference collision is astronomically unlikely (32^8), but it costs
+  // nothing to try again with a fresh one rather than fail the customer.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const [rows] = await callProcedure(
+        'CALL sp_create_booking(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          generateReference(),
+          userId,
+          input.carId,
+          input.startDate,
+          input.endDate,
+          d.mode,
+          d.mode === 'self_pickup' ? (d.pickupBranchId ?? null) : null,
+          d.mode === 'doorstep' ? d.addressLine : null,
+          d.mode === 'doorstep' ? d.city : null,
+          d.mode === 'doorstep' ? d.pincode : null,
+          d.mode === 'doorstep' ? d.latitude : null,
+          d.mode === 'doorstep' ? d.longitude : null,
+          p.method,
+          // Only the last four are ever persisted, never a full card number.
+          p.method === 'card' ? p.cardLastFour : null,
+          p.method === 'upi' ? p.upiHandle : null,
+        ],
       );
-      const branch = branchRows[0];
-      if (!branch) throw new DeliveryUnavailableError('Branch location is unavailable.');
+      const row = rows?.[0] as CreatedRow | undefined;
+      if (!row) throw new Error('sp_create_booking returned no row');
 
-      const quote = quoteDelivery(
-        { latitude: Number(branch.latitude), longitude: Number(branch.longitude) },
-        { latitude: input.delivery.latitude, longitude: input.delivery.longitude },
-      );
-
-      if (!quote.available) {
-        throw new DeliveryUnavailableError(
-          quote.reason ?? 'Doorstep delivery is not available to that address.',
-        );
-      }
-
-      deliveryFee = quote.fee;
-      distanceKm = quote.distanceKm;
+      return {
+        id: row.id,
+        reference: row.reference,
+        days: row.days,
+        rentalAmount: Number(row.rental_amount),
+        deliveryFee: Number(row.delivery_fee),
+        totalAmount: Number(row.total_amount),
+        distanceKm: d.mode === 'doorstep' || Number(row.distance_km) > 0 ? Number(row.distance_km) : null,
+      };
+    } catch (error) {
+      const duplicate =
+        typeof error === 'object' && error !== null && 'code' in error && error.code === 'ER_DUP_ENTRY';
+      if (!duplicate || attempt >= 2) throw error;
     }
+  }
+}
 
-    // Rate comes from the locked car row, never from the client. Trusting a
-    // client-supplied price is how a booking gets placed for one rupee.
-    const price = calculatePrice({
-      startDate: new Date(`${input.startDate}T00:00:00Z`),
-      endDate: new Date(`${input.endDate}T00:00:00Z`),
-      ratePerDay: Number(pricePerDay),
-      deliveryFee,
-    });
+export interface CancelledBooking {
+  reference: string;
+  refundedAmount: number;
+}
 
-    const reference = generateReference();
+interface CancelledRow extends RowDataPacket {
+  reference: string;
+  refunded_amount: string;
+}
 
-    const [bookingResult] = await connection.execute<ResultSetHeader>(
-      `INSERT INTO bookings
-         (reference, user_id, car_id, start_date, end_date, days,
-          rate_per_day, rental_amount, delivery_fee, total_amount, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')`,
-      [
-        reference,
-        userId,
-        input.carId,
-        input.startDate,
-        input.endDate,
-        price.days,
-        price.ratePerDay,
-        price.rentalAmount,
-        price.deliveryFee,
-        price.totalAmount,
-      ],
-    );
-
-    const bookingId = bookingResult.insertId;
-
-    const d = input.delivery;
-    await connection.execute(
-      `INSERT INTO deliveries
-         (booking_id, mode, address_line, city, pincode, latitude, longitude,
-          distance_km, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [
-        bookingId,
-        d.mode,
-        d.mode === 'doorstep' ? d.addressLine : null,
-        d.mode === 'doorstep' ? d.city : null,
-        d.mode === 'doorstep' ? d.pincode : null,
-        d.mode === 'doorstep' ? d.latitude : null,
-        d.mode === 'doorstep' ? d.longitude : null,
-        distanceKm,
-      ],
-    );
-
-    const p = input.payment;
-    await connection.execute(
-      `INSERT INTO payments
-         (booking_id, amount, method, status, reference, card_last_four, upi_handle, paid_at)
-       VALUES (?, ?, ?, 'paid', ?, ?, ?, NOW())`,
-      [
-        bookingId,
-        price.totalAmount,
-        p.method,
-        // Mock gateway reference. Not a real transaction id.
-        `MOCK${reference}`,
-        // Only the last four are ever persisted, never a full card number.
-        p.method === 'card' ? p.cardLastFour : null,
-        p.method === 'upi' ? p.upiHandle : null,
-      ],
-    );
-
-    return {
-      id: bookingId,
-      reference,
-      days: price.days,
-      rentalAmount: price.rentalAmount,
-      deliveryFee: price.deliveryFee,
-      totalAmount: price.totalAmount,
-      distanceKm,
-    };
-  });
+/**
+ * Cancels a booking through `sp_cancel_booking`.
+ *
+ * The procedure checks ownership (a customer only their own, staff any), that
+ * the booking has not started, and that a customer is not cancelling on the
+ * pickup day. Its UPDATE fires trg_bookings_au_log (history) and
+ * trg_bookings_au_refund (the payment becomes refunded).
+ */
+export async function cancelBooking(
+  bookingId: number,
+  actorId: number,
+  isAdmin: boolean,
+): Promise<CancelledBooking> {
+  const [rows] = await callProcedure('CALL sp_cancel_booking(?, ?, ?)', [
+    bookingId,
+    actorId,
+    isAdmin ? 1 : 0,
+  ]);
+  const row = rows?.[0] as CancelledRow | undefined;
+  if (!row) throw new Error('sp_cancel_booking returned no row');
+  return { reference: row.reference, refundedAmount: Number(row.refunded_amount) };
 }
 
 export interface BookingRow extends RowDataPacket {
   id: number;
   reference: string;
   user_id: number;
+  customer_name: string;
+  customer_email: string;
   start_date: Date;
   end_date: Date;
   days: number;
+  rate_per_day: string;
   rental_amount: string;
   delivery_fee: string;
   total_amount: string;
@@ -187,31 +157,34 @@ export interface BookingRow extends RowDataPacket {
   model: string;
   year: number;
   image_url: string | null;
+  registration_no: string;
+  home_branch: string;
   delivery_mode: string;
   delivery_status: string;
   address_line: string | null;
-  distance_km: string | null;
+  distance_km: string;
+  pickup_branch: string | null;
   payment_status: string;
   payment_method: string;
+  card_last_four: string | null;
+  upi_handle: string | null;
+  refunded_at: Date | null;
 }
 
+/** Every column the pages use, from the view in database/routines.sql. */
 const BOOKING_SELECT = `
-  SELECT bo.id, bo.reference, bo.user_id, bo.start_date, bo.end_date, bo.days,
-         bo.rental_amount, bo.delivery_fee, bo.total_amount, bo.status,
-         c.brand, c.model, c.year, c.image_url,
-         d.mode AS delivery_mode, d.status AS delivery_status,
-         d.address_line, d.distance_km,
-         p.status AS payment_status, p.method AS payment_method
-    FROM bookings bo
-    JOIN cars c ON c.id = bo.car_id
-    JOIN deliveries d ON d.booking_id = bo.id
-    JOIN payments p ON p.booking_id = bo.id`;
+  SELECT id, reference, user_id, customer_name, customer_email,
+         start_date, end_date, days, rate_per_day, rental_amount, delivery_fee,
+         total_amount, status, brand, model, year, image_url, registration_no,
+         home_branch, delivery_mode, delivery_status, address_line, distance_km,
+         pickup_branch, payment_status, payment_method, card_last_four,
+         upi_handle, refunded_at
+    FROM v_booking_details`;
 
 export async function listUserBookings(userId: number): Promise<BookingRow[]> {
-  return query<BookingRow>(
-    `${BOOKING_SELECT} WHERE bo.user_id = ? ORDER BY bo.created_at DESC`,
-    [userId],
-  );
+  return query<BookingRow>(`${BOOKING_SELECT} WHERE user_id = ? ORDER BY created_at DESC`, [
+    userId,
+  ]);
 }
 
 /**
@@ -227,14 +200,57 @@ export async function getBookingForUser(
   isAdmin: boolean,
 ): Promise<BookingRow | null> {
   if (isAdmin) {
-    return queryOne<BookingRow>(`${BOOKING_SELECT} WHERE bo.id = ?`, [bookingId]);
+    return queryOne<BookingRow>(`${BOOKING_SELECT} WHERE id = ?`, [bookingId]);
   }
-  return queryOne<BookingRow>(`${BOOKING_SELECT} WHERE bo.id = ? AND bo.user_id = ?`, [
+  return queryOne<BookingRow>(`${BOOKING_SELECT} WHERE id = ? AND user_id = ?`, [
     bookingId,
     userId,
   ]);
 }
 
+/** By public reference, scoped to its owner (the confirmation page). */
+export async function getBookingByReference(
+  reference: string,
+  userId: number,
+): Promise<BookingRow | null> {
+  return queryOne<BookingRow>(`${BOOKING_SELECT} WHERE reference = ? AND user_id = ?`, [
+    reference,
+    userId,
+  ]);
+}
+
 export async function listAllBookings(): Promise<BookingRow[]> {
-  return query<BookingRow>(`${BOOKING_SELECT} ORDER BY bo.created_at DESC LIMIT 200`);
+  return query<BookingRow>(`${BOOKING_SELECT} ORDER BY created_at DESC LIMIT 200`);
+}
+
+export interface StatusLogRow extends RowDataPacket {
+  id: number;
+  booking_id: number;
+  reference: string;
+  from_status: string | null;
+  to_status: string;
+  reason: string;
+  actor_name: string | null;
+  changed_at: Date;
+}
+
+/**
+ * A booking's history, as the triggers wrote it. Scoped like
+ * getBookingForUser: a customer sees only their own booking's history.
+ */
+export async function getBookingHistory(
+  bookingId: number,
+  userId: number,
+  isAdmin: boolean,
+): Promise<StatusLogRow[]> {
+  return query<StatusLogRow>(
+    `SELECT l.id, l.booking_id, b.reference, l.from_status, l.to_status, l.reason,
+            u.full_name AS actor_name, l.changed_at
+       FROM booking_status_log l
+       JOIN bookings b ON b.id = l.booking_id
+       LEFT JOIN users u ON u.id = l.actor_user_id
+      WHERE l.booking_id = ? AND (? = 1 OR b.user_id = ?)
+      ORDER BY l.changed_at, l.id`,
+    [bookingId, isAdmin ? 1 : 0, userId],
+  );
 }

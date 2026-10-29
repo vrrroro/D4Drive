@@ -17,7 +17,8 @@
     "test": "node --import ./tests/register.mjs --experimental-strip-types --test tests/*.test.ts",
     "test:db": "node --env-file=.env --import ./tests/register.mjs --experimental-strip-types --test tests/*.test.ts",
     "smoke": "node scripts/smoke.mjs",
-    "check:leaks": "node scripts/leak-check.mjs"
+    "check:leaks": "node scripts/leak-check.mjs",
+    "build:erd": "node scripts/build-erd.mjs"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",

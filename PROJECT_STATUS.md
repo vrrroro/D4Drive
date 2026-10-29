@@ -1,8 +1,8 @@
 # Project Status and Milestones
 
-**Current phase:** Phase 12 done (2026-10-08). Remaining items need real devices, a real screen reader, or the owner (see Summary)
-**Status:** Complete in code, redesigned
-**Last updated:** 2026-10-08
+**Current phase:** Phase 14, the owner's UI revisions (Phase 13 done 2026-10-12, PR #25)
+**Status:** Phases 12 and 13 complete in code; Phase 14 in progress on `feature/ux-revisions`
+**Last updated:** 2026-10-12
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here and in the
@@ -26,6 +26,64 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 3 | 11: Port the Vite intro effects | Done (optional logo loader blocked, see below) |
 | 4 | 9: Hardening | Done (device and assistive-technology checks need hardware) |
 | 5 | 12: Scroll film and editorial redesign | Done 2026-10-08, PR #24 |
+| 6 | 13: Database coursework (the DBMS rubric) | Done 2026-10-12, PR #25 |
+| 7 | 14: The owner's UI revisions (18 items) | **Active**, branch `feature/ux-revisions` stacked on 13 |
+
+---
+
+### Phase 13: Database coursework (done 2026-10-12, PR #25)
+
+The owner's course rubric, verbatim in substance: 6 to 8 related tables with
+PKs and FKs; NOT NULL, UNIQUE, CHECK and DEFAULT constraints; at least 10
+meaningful records per table; an ER diagram and the relational schema; at
+least 15 meaningful queries (retrieval, joins, aggregation, subqueries and
+more); at least 2 procedures and 2 functions for real business operations; at
+least 1 cursor; at least 2 triggers; INSERT, UPDATE and DELETE demonstrated;
+connectivity from a programming language; and an interactive demonstration of
+User operation, SQL or stored program, database processing, update or
+retrieval, result, explainable per transaction (operation, tables, component,
+effect, result). **Not a collection of independent programs: every component
+must serve the application.**
+
+Design decisions (stated assumptions, see `docs/DATABASE.md`):
+- 8th table `booking_status_log`, written only by triggers: the audit trail the admin sees.
+- `deliveries.pickup_branch_id`: self-pickup can be at any branch (Phase 14 item 13 needs it). Collecting away from the car's home branch is charged on the same distance tiers as delivery.
+- Booking creation moves into `sp_create_booking` (lock, overlap check, fee, three inserts, one transaction). TypeScript keeps validation and maps SIGNALs to HTTP codes.
+- Connectivity is the Next.js app itself, through `mysql2` (Node), which the rubric allows ("any other suitable programming language").
+
+- [x] Plan recorded (this list)
+- [x] Schema: `booking_status_log`, `pickup_branch_id`, `branches.pincode`, `payments.refunded_at`, stronger CHECK/UNIQUE/DEFAULT constraints (2026-10-12)
+- [x] Seed: at least 10 meaningful rows in every table: 11 branches, 12 users, 10 cars, 14 bookings, 14 deliveries, 14 payments, 16 refresh tokens, 27 status-log rows written by the triggers (2026-10-12)
+- [x] `database/routines.sql`: 3 functions (`fn_haversine_km`, `fn_delivery_fee`, `fn_car_available`), 3 procedures (`sp_create_booking`, `sp_cancel_booking`, `sp_end_of_day_close` with a cursor), 5 triggers (status log on insert and update, refund on cancel, delivered stamp, withdraw guard), view `v_booking_details`; `db:setup` learns `DELIMITER` and loads schema, routines, seed (2026-10-12). Every procedure path verified by hand against MySQL 8.0.
+- [x] App wired to them: booking through `sp_create_booking`, availability through `fn_car_available`, customer cancellation (My bookings, `POST /api/bookings/:id/cancel`), admin end-of-day close (`POST /api/admin/operations/close`), withdraw (`POST /api/admin/cars/:id/withdraw`) and FK-protected hard delete (`DELETE /api/admin/cars/:id`), session purge inside the close; DB refusals map to 4xx in `handleRouteError` (2026-10-12)
+- [x] `database/queries.sql`: 18 named queries; `/admin/reports` reads and runs them from the file (2026-10-12)
+- [x] Admin "Reports" page and admin "How the database works" page (`/admin/database`): live inventory from information_schema, ERD, relational schema, 14 transactions in the five-question format, three "Try it" panels showing SQL, bound values and rows, the trigger feed (2026-10-12)
+- [x] `docs/DATABASE.md` (the write-up, with a five minute demo script), `docs/erd.svg` from `npm run build:erd`, `docs/ERD.md`, `ARCHITECTURE.md`, `README.md` updated (2026-10-12)
+- [x] Tests against MySQL: `tests/routines.test.ts` (9), `tests/queries.test.ts`, `tests/walkthrough.test.ts`; `test:db` 56 pass (2026-10-12)
+- [x] Full verification (2026-10-12): `lint`, `lint:copy`, `typecheck`, `npm test` (40 pass, 4 skip; corrected, see the CHANGELOG fix), `test:db` (57 pass), `build`, `smoke` (41/41 against `next start`), `check:leaks` (clean); `/admin`, `/admin/database`, `/admin/reports` reviewed at 1440x900 (`scripts/shoot.mjs`)
+
+### Phase 14: The owner's UI revisions (active)
+
+Owner's list of 2026-10-12, numbered as given:
+
+- [ ] 1. Film opens from blank space between the slogan and the wordmark: a black rectangle fades in there and grows with the scroll, pushing the type above and below away (no peeking window)
+- [ ] 2. During the film the page, text and header turn grey (the page's grey); the film pauses on each shot so its copy can be read, then continues; after the film it fades back and the header returns to white; then flows smoothly into sign-in
+- [ ] 3. Footer is no longer a separate card: sign-in flows on into locations and the fleet button. Arrows of "go on. you know you want to." and "go on, pick one." placed accurately on their buttons
+- [ ] 4. Landing wordmark shown whole, not clipped; remove the "self-drive cars" note and its arrow to the dot; remove every "self-drive" from the site
+- [ ] 5. Film scrub much smoother (more in-between frames, holds)
+- [ ] 6. Header logo: none on the landing's first screen; the landing's wordmark appears top right once the film starts; after the first scroll the header has a grey glass background and content passes under it
+- [ ] 7. "Fleet" link: no jump to the end of the home page; lands on the fleet page top ("pick a car"), on the grey gradient, not a floating red card
+- [ ] 8. Fleet page: overlay-card effect on the car photos while scrolling, popping up slightly; hover greys the car and its name; the closing sign-in ending only for signed-out visitors
+- [ ] 9. Car click: smooth transition to the detail page; the detail photo is level, tilting only on hover
+- [ ] 10. "How it gets to you" moves out of its red card into the detail view under the photo and facts; one Reserve button at the end
+- [ ] 11. Every button hovers red with white text
+- [ ] 12. Reserve while signed out goes to sign-in directly, without the footer's fleet block
+- [ ] 13. Smooth transition into checkout; fix spacing on every page; checkout and summary fit about one screen; delivery dropdown lists collection from every branch; dropdowns grey and readable; doorstep address chosen by search or on a map, distance computed from the branch (no latitude and longitude fields)
+- [ ] 14. "Relax. Nobody gets charged." note placed at the payment area; payment dropdown grey
+- [ ] 15. Confirmation stays red; "keep this one. the keys know it." becomes "this is important."
+- [ ] 16. Signed in: no rotating "Let's ___" link (signed-out only); no example name, number or other placeholder info
+- [ ] 17. Signed in shows "Signed in as <u>Name</u>"; clicking opens a menu: My bookings, Fleet, and the rest
+- [ ] 18. No "back to the top" button: a small up arrow on the left. Footer line: "This Was Bloomed By Rohit"
 
 ---
 
