@@ -149,13 +149,17 @@ film is scrubbed by the scroll, forward and back (`docs/VIDEO_STATE_MACHINE.md`)
 | Element | Motion | Driven by |
 |---|---|---|
 | Whole site | Inertial wheel scrolling (Lenis, lerp 0.085). Touch stays native. | `components/motion/SmoothScroll.tsx` |
-| Landing film | 524 stills drawn to a canvas from the scroll position, one unbroken run with no holds | `components/film/FilmStage.tsx` |
+| Landing film | 523 stills drawn to a canvas from the scroll position, one unbroken run with no holds | `components/film/FilmStage.tsx` |
 | Film chapters | Fade with the scroll over the moving film, drift on a spring: the heading lag | `FilmChapter.tsx` |
-| Hero | One orchestrated entrance after the loader: lines slide in from either side, wordmark letters bounce up; then the film itself fades in between them (no frame, no fill) and the scroll opens it, pushing the type away | `FilmHero.tsx`, `FilmStage.tsx` |
+| Loader | The hero's wordmark, in place, filling grey to ink from the bottom as the film arrives; fades onto the hero's own | `BootLoader.tsx` |
+| Hero | After the loader the slogan's lines slide in from either side; the wordmark is already there. The first scroll blooms the film out of the grey between them through a soft ellipse with no edge, pushing the type away | `FilmHero.tsx`, `FilmStage.tsx` |
 | Panels | Dealt in: scale 0.9 to 1, plus or minus 0.7 degrees to 0, as the top reaches the screen top. Pinned until the next slides over. | `components/motion/StackPanel.tsx` |
 | Notes | Arrow strokes draw themselves once, on view | `HandArrow.tsx` |
-| Header island | Tint follows the panel beneath, 300ms; the glass thickens once the page has moved | `HeaderTone.tsx` |
-| Fleet | A car lifts a little and greys on hover | `globals.css`, `.fleet-*` |
+| Header | At the top of a page, logo top left and links top right, no glass; once the page moves both glide together (760ms) and the glass island closes in around them, and it grows and shrinks with the typed word. Tint follows the panel beneath | `IslandDock.tsx`, `HeaderTone.tsx` |
+| Fleet | A car lifts a little, a soft red shadow pools under it, and its words go red on hover | `globals.css`, `.fleet-*` |
+| Car page | The fleet's photo flies to the top of the car page (view transition); the details rise in just after it | `CarLink.tsx`, `.car-arrive` |
+| Confirmation | A carmine wash slides up over the whole screen and stays, footer included; the booking rises in after it | `.hot-wash` |
+| Between pages | None: pages swap straight onto the same grey (a fade from nothing, and the loading placeholders, flashed bare grey) | |
 | Cursor | A carmine halo trails the pointer on a spring | `CursorHalo.tsx` |
 | Hover | Fleet names, wordmark letters, the detail photo's tilt, keycaps | CSS and Motion |
 
@@ -206,8 +210,8 @@ film sits in a band that follows the car, with copy above and below.
 ## 6. Signature elements
 
 1. **Fraunces at 12vw, light, crushed.**
-2. **Six Caps wordmarks**: the boot loader's, cropped by the screen edge; the
-   hero's, whole; the header island's.
+2. **Six Caps wordmarks**: the hero's, whole, at the bottom right (the
+   loader fills the same letters grey to ink); the header's.
 3. **Letters as photo windows**: hover a letter of the hero wordmark and a fleet
    photograph shows through the glyph.
 4. **Red-pen notes** with self-drawing arrows. One SVG arrow, rotated and flipped
@@ -222,8 +226,10 @@ film sits in a band that follows the car, with copy above and below.
 11. **The fleet grid**: three across, each car standing on the page with no
     card (it replaced the deck on 2026-10-12, at the owner's request).
 12. **Keycap controls.**
-13. **The header island**: a floating pane of frosted glass, centred, with
-    the logo and the links; its tint follows the panel beneath.
+13. **The header island**: open at the top of a page (logo left, links
+    right, no glass); once the page moves, the two glide together into a
+    floating pane of frosted glass, centred, fitted to what it carries and
+    resizing with the typed word; its tint follows the panel beneath.
 14. **No visible scrollbar; the page fades in.**
 
 Removed at the owner's request (2026-10-12): the escalating red dot (the
@@ -240,11 +246,11 @@ condition for keeping them.
 
 | Component | Notes |
 |---|---|
-| `SiteHeader` | The floating island: a centred pane of frosted glass (square, like everything else) with the condensed `D4DRIVE` wordmark, Fleet, Sign in and the typed "Let's ___" link (signed out only), or "Signed in as *Name*" with `AccountMenu` (whose menu hangs from it in the same glass). Skip link. |
-| `SiteFooter` | The slim line on every page: year, simulated payment, photo credits, "This Was Bloomed By Rohit". |
+| `SiteHeader` | The condensed `D4DRIVE` wordmark, Fleet, Sign in and the typed "Let's ___" link (signed out only), or "Signed in as *Name*" with `AccountMenu` (whose menu hangs from it in glass). Open at the top of a page; docked into a centred island of frosted glass (square, like everything else) once the page moves (`IslandDock`: an IntersectionObserver for the dock, ResizeObservers for the fit, transforms only). Skip link. |
+| `SiteFooter` | The slim line on every page: year, simulated payment, "This Was Bloomed By Rohit". (Photo credits left the footer and the account menu at the owner's request; each photo is credited under it on its car page, and `/credits` still lists them all.) |
 | `LocationsSection` | Real branches from the database, "Browse the fleet" with its note. Landing and signed-out fleet only. |
 | `AuthPanel` | Sign in and register as one three-column panel (brand, heading, form). Light at the end of the film, hot and swinging in on `/login`. |
-| `FleetIndex` | The grid: three across on a laptop, two on a tablet, one on a phone. No cards: the photo stands on the grey, the name, specs and price beneath. Hover lifts the car a little and greys it and its name. |
+| `FleetIndex` | The grid: three across on a laptop, two on a tablet, one on a phone. No cards: the photo stands on the grey, the name, specs and price beneath. Hover lifts the car a little, pools a soft carmine shadow under it (a multiplied radial gradient at the photos' ground line, opacity only) and turns its words red. |
 | `CarLink` | A link to a car that carries its photo into the car page with a View Transition where the browser has one. |
 | `CarPhoto` | Studio composite relit to the page grey, or a labelled "Photograph pending" slot (a thin outline). Never a stock image or a CSS shape. |
 | `Field` | Underline input, label always above, error and helper slots always present. `tone` light, dark, hot; `size="lg"` sets values in Fraunces. |

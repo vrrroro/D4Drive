@@ -250,6 +250,14 @@ body {
   padding-block: clamp(3.5rem, 6.5vw, 6.5rem);
 }
 
+/* The first panel on a page starts below the header, whatever the screen.
+   (Its own pt utility loses to the rule above, which is unlayered; on a
+   phone that left the page's first line under the header.) Unchanged on a
+   laptop, where the clamp already clears it. */
+main > .panel:not(.panel ~ .panel) {
+  padding-top: max(clamp(3.5rem, 6.5vw, 6.5rem), calc(var(--header-h) + 1.25rem));
+}
+
 .tone-ground {
   background-color: var(--ground);
   color: var(--ink);
@@ -282,66 +290,119 @@ body {
   color-scheme: dark;
 }
 
-/* The header is a floating island (the owner's rule, 2026-10-12): a small
-   pane of frosted glass, centred at the top, carrying the logo and the
-   links, with the page passing under it. Its tint follows the panel beneath
-   (components/ui/HeaderTone.tsx). Square, like everything else. */
+/* The header (components/ui/SiteHeader.tsx, IslandDock.tsx; the owner's
+   rules, 2026-10-12). At the top of a page there is no island: the logo sits
+   top left and the links top right, straight on the page. Once the page has
+   moved, both slide together to the middle and a pane of frosted glass
+   closes in around them, the island. Its width follows the typed word in
+   "Let's ...", growing and shrinking with it.
+
+   Everything that moves is a transform: IslandDock measures the logo and
+   the links and writes where each goes (--logo-x, --links-x) and where the
+   glass sits (--glass-x) and how far it stretches (--glass-s, a scaleX of a
+   fixed 600px pane); the transitions here make each change glide. Square,
+   like everything else. The fallbacks are the undocked layout, so the
+   server render is already right at the top of the page. */
 .site-header {
   --header-fg: var(--ink);
   --header-accent: var(--accent-text);
-  --island-glass: rgb(238 237 234 / 0.34);
-  --island-edge: rgb(255 255 255 / 0.5);
-  --island-shade: rgb(26 26 26 / 0.4);
+  --island-glass: rgb(242 241 238 / 0.62);
+  --island-edge: rgb(255 255 255 / 0.7);
+  --island-shade: rgb(26 26 26 / 0.42);
+  --dock-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dock-ms: 760ms;
   position: fixed;
   top: 12px;
-  left: 50%;
-  translate: -50% 0;
-  width: max-content;
-  max-width: calc(100vw - 24px);
+  left: 0;
+  width: 100%;
   height: 52px;
-  background-color: var(--island-glass);
-  -webkit-backdrop-filter: blur(22px) saturate(1.8);
-  backdrop-filter: blur(22px) saturate(1.8);
-  border: 1px solid var(--island-edge);
-  box-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 0.45),
-    inset 0 -1px 0 0 rgb(26 26 26 / 0.06),
-    0 14px 34px -16px var(--island-shade),
-    0 2px 8px -3px rgb(26 26 26 / 0.16);
-  transition:
-    color 300ms ease,
-    background-color 400ms ease,
-    border-color 400ms ease,
-    box-shadow 400ms ease;
+  /* Not for layout (everything inside is placed by transform): IslandDock
+     reads the gutter back from here, resolved to pixels. */
+  padding-inline: var(--gutter);
+  pointer-events: none;
+  transition: color 300ms ease;
 }
 
-/* Once the page has moved, the glass thickens a little, so busy content
-   passing under it never fights the links. */
-.site-header[data-scrolled='true'] {
-  --island-glass: rgb(238 237 234 / 0.52);
+.island-glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 600px;
+  height: 100%;
+  transform-origin: 0 50%;
+  transform: translate3d(var(--glass-x, 0px), 0, 0) scaleX(var(--glass-s, 1));
+  opacity: 0;
+  background-color: var(--island-glass);
+  -webkit-backdrop-filter: blur(30px) saturate(2.1) brightness(1.04);
+  backdrop-filter: blur(30px) saturate(2.1) brightness(1.04);
+  border: 1px solid var(--island-edge);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.7),
+    inset 0 -1px 0 0 rgb(26 26 26 / 0.08),
+    0 16px 38px -16px var(--island-shade),
+    0 2px 10px -3px rgb(26 26 26 / 0.18);
+  transition:
+    transform var(--dock-ms) var(--dock-ease),
+    opacity 420ms ease,
+    background-color 400ms ease,
+    border-color 400ms ease;
+}
+
+.header-logo-slot,
+.header-links {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+  transition: transform var(--dock-ms) var(--dock-ease);
+}
+
+.header-logo-slot {
+  transform: translate3d(var(--logo-x, var(--gutter)), 0, 0);
+}
+
+.header-links {
+  transform: translate3d(var(--links-x, calc(100vw - var(--gutter) - 100%)), 0, 0);
+}
+
+/* The rule between the logo and the links belongs to the island. */
+.header-divider {
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.site-header[data-docked='true'] .island-glass {
+  opacity: 1;
+}
+
+.site-header[data-docked='true'] .header-divider {
+  opacity: 0.2;
 }
 
 .site-header[data-tone='hot'] {
   --header-fg: var(--color-blush);
   --header-accent: var(--color-paper);
-  --island-glass: rgb(125 26 18 / 0.42);
-  --island-edge: rgb(243 228 220 / 0.3);
+  --island-glass: rgb(125 26 18 / 0.55);
+  --island-edge: rgb(243 228 220 / 0.34);
   --island-shade: rgb(77 18 12 / 0.6);
 }
 
 .site-header[data-tone='dark'] {
   --header-fg: var(--color-blush);
   --header-accent: #e8806f;
-  --island-glass: rgb(26 26 26 / 0.5);
-  --island-edge: rgb(243 228 220 / 0.18);
+  --island-glass: rgb(26 26 26 / 0.62);
+  --island-edge: rgb(243 228 220 / 0.2);
 }
 
 /* The account menu hangs from the island in the same glass. */
 .island-menu {
-  background-color: rgb(238 237 234 / 0.82);
-  -webkit-backdrop-filter: blur(22px) saturate(1.8);
-  backdrop-filter: blur(22px) saturate(1.8);
-  border: 1px solid rgb(255 255 255 / 0.5);
+  background-color: rgb(242 241 238 / 0.86);
+  -webkit-backdrop-filter: blur(30px) saturate(2.1);
+  backdrop-filter: blur(30px) saturate(2.1);
+  border: 1px solid rgb(255 255 255 / 0.7);
   box-shadow: 0 18px 40px -18px rgb(26 26 26 / 0.45);
 }
 
@@ -439,9 +500,10 @@ body {
 }
 
 /* --- Hero ----------------------------------------------------------------
-   The slogan at the top, the whole wordmark at the bottom, a blank band
-   between. FilmStage fades the film in inside that band and opens it; its
-   edges push the type away (--hero-up, --hero-down), transform only. */
+   The slogan at the top left, the whole wordmark at the bottom right, blank
+   grey between. The first scroll blooms the film out of that grey
+   (FilmStage) and pushes the type away (--hero-up, --hero-down), transform
+   only. */
 
 .hero-slogan {
   position: absolute;
@@ -474,7 +536,8 @@ body {
   bottom: 3dvh;
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  /* The wordmark sits at the bottom right, across from the slogan. */
+  justify-content: flex-end;
   gap: 2rem;
   transform: translate3d(0, var(--hero-down, 0px), 0);
 }
@@ -739,18 +802,21 @@ body {
 .fleet-photo {
   position: relative;
   display: block;
+  /* The glow below blends with the photo only, not the page behind it. */
+  isolation: isolate;
   transition: transform 600ms var(--ease-expo-out);
 }
 
-/* The grey copy for the hover. The filter is static; only opacity moves.
-   Greyscale alone: the backdrop stays the page grey, so no box appears. */
-.fleet-grey {
+/* The hover's red shadow: a soft carmine pool on the floor where the car
+   stands (the photos put every car's lowest point at 84% of the frame),
+   multiplied into the photo so it darkens and reddens the ground the way a
+   shadow does, and leaves the paint above it alone. Static; only its
+   opacity moves. */
+.fleet-glow {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(1);
+  background: radial-gradient(46% 11% at 50% 85%, rgb(168 37 25 / 0.5) 0%, rgb(168 37 25 / 0.22) 55%, rgb(168 37 25 / 0) 100%);
+  mix-blend-mode: multiply;
   opacity: 0;
   transition: opacity 500ms var(--ease-luxury);
   pointer-events: none;
@@ -758,17 +824,27 @@ body {
 
 .fleet-name {
   margin-top: 0.4rem;
+}
+
+.fleet-text {
   transition: color 400ms var(--ease-luxury);
 }
 
-.fleet-link:hover .fleet-grey,
-.fleet-link:focus-visible .fleet-grey {
+.fleet-link:hover .fleet-glow,
+.fleet-link:focus-visible .fleet-glow {
   opacity: 1;
+}
+
+/* Hovered, the car's words go red: the name in carmine (large enough to
+   read on the grey), the small print in carmine's shade. */
+.fleet-link:hover .fleet-text,
+.fleet-link:focus-visible .fleet-text {
+  color: var(--accent-text);
 }
 
 .fleet-link:hover .fleet-name,
 .fleet-link:focus-visible .fleet-name {
-  color: var(--muted);
+  color: var(--color-carmine);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -815,31 +891,116 @@ html[data-vt='car'] [data-car-hero] {
   animation-timing-function: var(--ease-expo-out);
 }
 
-::view-transition-old(root),
+/* The page behind the photo: the grid clears quickly, the car page comes
+   up under the photo as it lands. */
+::view-transition-old(root) {
+  animation-duration: 240ms;
+}
+
 ::view-transition-new(root) {
   animation-duration: 420ms;
 }
 
-/* Every page arrives rather than snapping in (app/template.tsx). Not while a
-   view transition is carrying the page across: it animates that itself. */
-.page-enter {
-  animation: page-enter 650ms var(--ease-expo-out) both;
+/* The header is its own layer while a car is carried across, shown live and
+   never cross-faded: otherwise the grid's docked island and the car page's
+   open header showed at once, a double header. The live layer still plays
+   its own glide from island to open (IslandDock). */
+html[data-vt='car'] .site-header {
+  view-transition-name: site-header;
 }
 
-html[data-vt] .page-enter {
+::view-transition-group(site-header),
+::view-transition-new(site-header) {
   animation: none;
 }
 
-@keyframes page-enter {
+::view-transition-old(site-header) {
+  display: none;
+}
+
+/* Pages swap straight onto the same grey, with no fade between them: a
+   page that faded in from nothing showed the bare grey for a moment (and
+   replayed its fade as a view transition finished), which read as a flash.
+
+   The car page's words arrive just after its photo has landed (CarLink
+   carries the fleet's photo up to the top of the page): a short rise. */
+.car-arrive {
+  animation: car-arrive 620ms var(--ease-expo-out) 360ms both;
+}
+
+@keyframes car-arrive {
   from {
     opacity: 0;
-    transform: translate3d(0, 28px, 0);
+    transform: translate3d(0, 18px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .car-arrive {
+    animation: none;
+  }
+}
+
+/* The confirmation (app/confirmation): the whole page turns carmine. A
+   fixed wash slides up over the screen and stays behind everything (z -1,
+   under the page's content but over the grey), so the footer at the bottom
+   is carmine too. The panel itself goes clear to let it through, and its
+   contents rise in once the wash is up. Transform and opacity only. */
+.hot-wash {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--grad-hot);
+  background-color: var(--color-carmine);
+  animation: hot-wash-in 820ms var(--ease-expo-out) both;
+}
+
+@keyframes hot-wash-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.hot-page {
+  background: transparent !important;
+}
+
+.hot-page > * {
+  animation: hot-content-in 640ms var(--ease-expo-out) 420ms both;
+}
+
+@keyframes hot-content-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+}
+
+/* Once the wash is up, the page itself turns carmine underneath it, so a
+   page taller than the screen, an overscroll or a full-page capture never
+   shows grey at the bottom. Delayed until the slide has finished, so the
+   slide is still seen. */
+body:has(.hot-wash) {
+  background-color: var(--color-carmine-deep);
+  transition: background-color 0s linear 820ms;
+}
+
+body:has(.hot-wash) .site-footer {
+  color: var(--color-blush);
+  --muted: var(--color-blush);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hot-wash,
+  .hot-page > * {
+    animation: none;
   }
 }
 
 /* The checkout's map (AddressPicker). Its own stacking context, so Leaflet's
-   panes (z-index 400 and up) stay under the header; tiles in greyscale so
-   the carmine pin and route are the only colour on it. */
+   panes (z-index 400 and up) stay under the header. The tiles keep their
+   own colours (the owner's call, 2026-10-12): streets, parks and water read
+   at a glance when you are looking for your own address. */
 .address-map {
   isolation: isolate;
   z-index: 0;
@@ -849,10 +1010,6 @@ html[data-vt] .page-enter {
 .address-map .leaflet-container {
   font-family: var(--font-body);
   background-color: var(--studio);
-}
-
-.address-map .leaflet-tile-pane {
-  filter: grayscale(1) contrast(0.92) brightness(1.04);
 }
 
 /* Dropdowns. A closed select is part of the page (its underline is the

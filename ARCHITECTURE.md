@@ -79,7 +79,7 @@ D4Drive/
 │                                  seed.sql, queries.sql (the reports), migrations/
 ├── scripts/                       build-film-frames, build-video-assets, fleet-photos/, db-setup, smoke, leak-check
 ├── public/
-│   ├── film/v2/                   524 stills and engine.m4a (generated, committed)
+│   ├── film/v3/                   523 stills and engine.m4a (generated, committed)
 │   ├── cars/                      fleet photographs and credits.json (generated, committed)
 │   ├── videos/                    the film as video, for reduced motion's play control
 │   └── posters/
@@ -178,7 +178,7 @@ transaction walkthrough the course asks for.
 Generated assets are committed, so a fresh clone runs without the sources.
 
 **The film** (`npm run build:frames`, `scripts/build-film-frames.mjs`) turns the
-encoded film into 524 WebP stills at 60 a second (11.2 MB), an engine clip, and
+encoded film into 523 WebP stills at 60 a second (11.1 MB), an engine clip, and
 `lib/film-manifest.ts` with the per-frame position of the car. The scrubber is
 specified in `docs/VIDEO_STATE_MACHINE.md`. `npm run build:assets` still builds
 the MP4 and WebM encodes from the 16 MB source (not in git); only the reduced
@@ -203,7 +203,7 @@ the binary, so no global install is needed.
 | LCP | under 2.5s | The loader's wordmark is the first large paint; the film must not block it |
 | INP | under 200ms | Film progress or frame arrivals written to React state |
 | CLS | under 0.1 | Fonts swapping; the film track's height arriving late (it is CSS, so it does not) |
-| Film bytes | 11.2 MB desktop, 5.6 MB phone | Loaded coarse to fine; the loader waits for under 1 MB |
+| Film bytes | 11.1 MB desktop, 5.5 MB phone | Loaded coarse to fine; the loader waits for under 1 MB |
 
 The film draws on demand, outside React. Fleet photographs on the wordmark are
 attached on idle so they do not race the film for bandwidth.

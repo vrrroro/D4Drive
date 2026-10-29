@@ -28,13 +28,18 @@ keyframe, which stutters in Safari and Firefox and depends on the encode. The
 film ships instead as a numbered sequence of stills drawn into a canvas:
 
 - `scripts/build-film-frames.mjs` cuts the film from 1.25s (past the fade up
-  from black) to the end at 60 stills a second, interpolating between the
-  source's 30 with ffmpeg's motion-compensated `minterpolate`: 524 stills,
-  1600x900 WebP at quality 70, about 22 KB each, 11.2 MB in all. A slow scroll
-  then steps through real in-between frames instead of cross-fading stills
-  33ms apart, which read as judder. Phones load every other still (5.6 MB,
-  the same as the old 30-a-second cut). `--fps 30` rebuilds without
-  interpolation.
+  from black) to the end at 60 stills a second: 523 stills, 1600x900 WebP at
+  quality 70, about 22 KB each, 11.1 MB in all. Phones load every other still
+  (about 5.5 MB).
+- **The source is 24 frames a second padded to 30** (pulldown: every fifth
+  frame repeats; ffmpeg's `mpdecimate` keeps 72 of 90 over three seconds).
+  v2 interpolated the padded 30 straight to 60, so every repeat became a dead
+  spot of three identical stills in every ten, and a slow scroll felt the car
+  stop, then lurch on (the owner's "jitters as I scroll slowly"). Since v3
+  the script drops the repeats first (`decimate=cycle=5`) and interpolates
+  from the real 24 with ffmpeg's motion-compensated `minterpolate`, so every
+  still moves the car the same distance. `--fps 30` builds a 30-a-second cut
+  the same way.
 - It also measures where the car is in each frame (it is the only saturated red
   on a grey set) and writes that, smoothed, to `lib/film-manifest.ts`, along
   with the count and sizes.
@@ -42,7 +47,7 @@ film ships instead as a numbered sequence of stills drawn into a canvas:
   the RMS climbs from -23 dB to -12 dB). Only the red-dot easter egg played
   it, and that was removed on 2026-10-12; the clip is still cut, unused.
 
-The output folder is versioned (`public/film/v2`) and served immutable. Change
+The output folder is versioned (`public/film/v3`) and served immutable. Change
 the film, bump `VERSION` in the script.
 
 ---
@@ -59,19 +64,22 @@ Two ways to put a 16:9 film on a screen (`timeline.fitModeFor`):
 | `cover` | aspect at least 1.1 | Fills the viewport, crops symmetrically |
 | `band` | portrait | A horizontal band (46% of the height), cropped to keep the car centred using the manifest's per-frame focus, never past the frame's own edges. The band's top and bottom dissolve into the page. |
 
-**The hero and the window.** The first screen is type only: the slogan at
-the top, the whole `D4DRIVE` wordmark at the bottom (sized to the height left,
-never cropped), and a blank band between them. FilmStage measures that band
-from the layout (`[data-hero-slogan]`, `[data-hero-wordmark]`) and puts the
-closed window in its middle (`timeline.closedWindow`). Nothing is drawn there
-at first. 1.5s after the slogan lands (`APPEAR_ENTRANCE`), or with the first
-scroll, the film itself fades in inside it (`appearAlpha`): no slab, no fill,
-the picture appears out of the page, framed on the red door panel at 1.12x
-(`HERO_FOCUS`), so what appears is a ribbon of the car's paint. Scrolling
-opens the window to the film rectangle, easing back to the film's own framing
-as a short dolly out. Its opening pushes the slogan up and the wordmark down
-(`heroPush`, written as `--hero-up` and `--hero-down`, transform only) until
-both are off the screen, in either fit mode.
+**The hero and the bloom.** The first screen is type only: the slogan at
+the top left, the whole `D4DRIVE` wordmark at the bottom right (sized to the
+height left, never cropped), and blank grey between them. Nothing is drawn
+there while the page is at its top: no slab, no window, no rectangle (the
+owner's rule, 2026-10-12). The first scroll blooms the film out of that grey
+(`BLOOM`, 0.004 to 0.075 of the track): FilmStage measures the gap from the
+layout (`[data-hero-slogan]`, `[data-hero-wordmark]`) and draws the whole film
+frame through a soft ellipse centred in it (`timeline.bloomShape`): solid in
+its core (`BLOOM_CORE`, 45% of the radius), feathering to nothing with a
+smoothstep falloff, so there is never an edge. The ellipse grows (slowly at
+first) and drifts to the film's centre until its core covers the whole film
+rectangle, then the mask is dropped. The picture fades up over the first part
+of it (`bloomAlpha`) and settles from 1.06x to its own framing
+(`bloomFraming`), a short dolly out. The bloom pushes the slogan up and the
+wordmark down (`heroPush`, written as `--hero-up` and `--hero-down`, transform
+only) until both are off the screen, in either fit mode.
 
 **One grey.** The page is the film's own studio grey (`#BDBCBA`, measured off
 the stills), so the film needs no toning layer: it sits on the page, and when
@@ -127,13 +135,16 @@ Each draw:
 1. Sets the canvas opacity from the fade (`FADE_OUT`, 0.88 to 0.95). Always,
    even when the frame has not changed.
 2. Writes the hero push (`--hero-up`, `--hero-down`) when it changed.
-3. Works out the fractional frame and the window. Skips if nothing moved.
-4. Draws the exact still, or the nearest loaded one, clipped to the window at
-   `appearAlpha`, with nothing behind it. If the playhead sits between two
+3. Works out the fractional frame and the bloom. Skips if nothing moved.
+4. Draws the exact still, or the nearest loaded one, into the film rectangle
+   at `bloomAlpha`, with nothing behind it. If the playhead sits between two
    stills, blends the next one in by the fraction.
-5. In band mode, fades the band's edges into the page ground (to the ground
-   colour at zero alpha, not to transparent black, which draws a grey bar).
-6. Asks the loader to decode the next eight stills in the direction of travel
+5. While it blooms, keeps only what lies inside the soft ellipse
+   (`destination-in` with a radial gradient, squashed to the ellipse).
+6. In band mode, once bloomed, fades the band's edges into the page ground
+   (to the ground colour at zero alpha, not to transparent black, which draws
+   a grey bar).
+7. Asks the loader to decode the next eight stills in the direction of travel
    (`FrameLoader.warm`, `img.decode()`), so a still's first draw is never a
    synchronous decode. Each still is also decoded as it arrives.
 
@@ -155,15 +166,21 @@ does not show.
 Stills stay as `HTMLImageElement`s. Each is decoded (`img.decode()`, off the
 main thread) before it is offered for drawing, and the ones ahead of the
 playhead are decoded again on the way (`warm`), because the browser may drop
-decoded pixels it is not using. They are not held as ImageBitmaps: 524 decoded
+decoded pixels it is not using. They are not held as ImageBitmaps: 523 decoded
 frames would pin about 3 GB.
 
 ---
 
 ## 6. The boot loader
 
-The loader (wordmark, real progress rule) covers the landing until the coarse
-pass is in: frame 0, one still every 8 beats, and the first few
+The loader covers the landing until the coarse pass is in. It is the
+wordmark alone, in the very place the hero keeps it (it uses the hero's own
+`.hero-base` and `.hero-wordmark`), filling from grey to ink from the bottom
+up as the stills arrive: the ink is a second copy of the letters inside a
+window that rises while the letters inside it move down by the same amount,
+two transforms. It fades only once the letters are full, onto the hero's
+wordmark, which is already in place underneath (it no longer has an entrance
+of its own). The coarse pass is frame 0, one still every 8 beats, and the first few
 (`timeline.bootSet`, about 40 stills, under 1 MB, at either cut). Its progress is the share of that set that has
 actually arrived. It never moves backward.
 
@@ -218,12 +235,12 @@ components/film/
   FilmHero.tsx       the opening frame and its entrance
   FilmChapter.tsx    one beat of copy
   FilmOnRequest.tsx  the film as a video, for reduced motion
-  BootLoader.tsx     wordmark and progress rule
+  BootLoader.tsx     the wordmark filling grey to ink
   FilmContext.tsx    progress, ready, reduced
   frame-loader.ts    fetch order and nearest-frame lookup
   timeline.ts        every number above, pure
   constants.ts       loader timings, spring, video sources
 lib/film-manifest.ts generated: count, sizes, per-frame car position
 scripts/build-film-frames.mjs
-public/film/v2/      the stills and engine.m4a
+public/film/v3/      the stills and engine.m4a
 ```

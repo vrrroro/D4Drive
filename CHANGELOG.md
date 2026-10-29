@@ -7,6 +7,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-10-12: Phase 16, the island and the bloom (branch `feature/island-motion`, stacked on PR #27)
+
+The owner's list after Phase 15, with a screenshot of the red ribbon in the
+hero's gap.
+
+#### Fixed
+- **The scrub's jitter on a slow scroll.** The source film is 24 frames a
+  second padded to 30 (every fifth frame repeated); v2 interpolated the
+  padded 30 to 60, so three stills in every ten were identical and a slow
+  scroll felt the car stop and lurch (measured: frame-to-frame difference
+  0.4 against 5 to 8 around it). `build-film-frames.mjs` now drops the
+  repeats (`decimate=cycle=5`) before `minterpolate`; the stills are rebuilt
+  as `public/film/v3` (523 stills, 11.1 MB), v2 removed. No dead steps left.
+- **Pages opening at the bottom** (the header's Fleet, or a car from the
+  grid). A click while Lenis was still coasting left the coast writing the
+  old position on every frame of the new page; even a forced immediate
+  `scrollTo` lost to it. `SmoothScroll` now throws the instance away on every
+  route change, jumps to the top, and starts a fresh one.
+- **The grey flash between pages.** `.page-enter` (app/template.tsx) faded
+  every page in from nothing, and replayed that fade the moment a view
+  transition finished (`html[data-vt]` came off); and `loading.tsx`
+  placeholders showed an empty grey page between pages. Both removed (the
+  template, the five `loading.tsx` and `RouteLoading`): pages swap straight
+  onto the same grey.
+- **First line under the header on phones.** A page's `pt-[...]` lost to the
+  unlayered `.panel` rule, so phones started content at 56px under a 64px
+  header. The first panel on a page now clears the header (92px on a phone,
+  unchanged on a laptop).
+
+#### Changed
+- **The film blooms out of the grey.** No rectangle and no entrance by time:
+  the gap between the slogan and the wordmark is plain grey at the top of
+  the page, and the first scroll blooms the film out of it through a soft
+  ellipse with no edge (`BLOOM`, `bloomShape`, `bloomAlpha`,
+  `bloomFraming`) until it fills the screen. `closedWindow`, `windowRect`,
+  `appearAlpha`, `heroFraming`, `HERO_FOCUS` and `APPEAR_ENTRANCE` removed.
+- **The wordmark back at the bottom right** of the landing's first screen.
+- **The loader** is now the wordmark alone, in the hero's place, filling
+  from grey to ink as the stills arrive, and fading onto the hero's own
+  (which no longer bounces in).
+- **The header** is open at the top of every page (logo top left, links top
+  right, no glass); once the page moves the two glide together and a pane of
+  frosted glass closes in around them (`IslandDock`: IntersectionObserver on
+  the sentinel, ResizeObservers, transforms only). The island fits what it
+  carries and grows and shrinks with the typed "Let's ___" word. Glass
+  thicker and more opaque (62%, blur 30px, saturate 2.1).
+- **Fleet hover**: no greying; a soft carmine shadow pools under the car
+  (`.fleet-glow`, a multiplied radial gradient at the photos' ground line)
+  and its words go red.
+- **Car page**: the name at display size, the details fitted beside the
+  photo (specs three across), "How it gets to you" straight beneath; the
+  details rise in just after the photo lands (`.car-arrive`). The header has
+  its own view-transition layer, so it no longer shows double mid-flight.
+- **Confirmation**: a carmine wash slides up over the whole screen and stays,
+  footer included (`.hot-wash`; the page turns carmine-deep underneath once
+  it is up); the booking rises in after it. "this is important." sits to the
+  reference's right with its arrow curling back to it, clear of the words.
+- **Checkout**: the map in colour (the greyscale filter is gone); the note
+  reads "relax, nobody gets charged yet." on two lines, its arrow clear.
+- **Photo credits** left the account menu and the footer. Each photo is
+  still credited under it on its car page, and `/credits` still exists.
+- **Branches** five across, two rows; the fleet invitation sits beside the
+  heading, its note pointing into the button.
+
+#### Verified
+- `lint`, `lint:copy`, `typecheck`, `npm test` (46 pass, 4 skip), `build`,
+  `npm run smoke` 59/59 against `next start` (new: blank gap at the top,
+  wordmark bottom right, open then docked header, the island resizing, a soft
+  bloom, the red hover, a coasting click landing at the top of the fleet and
+  of a car, the carmine confirmation). Screens at 1440x900 and 390x844.
+
 ### 2026-10-12: Phase 15, one grey (branch `feature/one-grey`, stacked on PR #26)
 
 The owner's next list, after seeing Phase 14 (most likely in dark mode, where

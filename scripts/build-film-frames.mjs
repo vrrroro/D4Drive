@@ -24,10 +24,16 @@
  * apart, which is what read as judder. Phones still load every other still,
  * so their download is the same as v1.
  *
+ * v3 (2026-10-12) drops the source's pulldown repeats before interpolating.
+ * The source is 24 frames a second of picture padded to 30 by repeating
+ * every fifth frame; interpolated as it stood, each repeat became a dead spot
+ * of three stills in every ten, and a slow scroll felt the car stop and
+ * lurch. Now every still moves the car the same distance.
+ *
  * Usage:
  *   npm run build:frames
  *   npm run build:frames -- --input ~/Downloads/D4Drive.mp4
- *   npm run build:frames -- --input ~/Downloads/D4Drive.mp4 --fps 30   (v1's rate, no interpolation)
+ *   npm run build:frames -- --input ~/Downloads/D4Drive.mp4 --fps 30   (30 a second, from the 24 real frames)
  */
 
 import { execFile } from 'node:child_process';
@@ -40,7 +46,7 @@ import sharp from 'sharp';
 
 const run = promisify(execFile);
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 /** Seconds into the source where the scrub begins: past the fade up from black. */
 const FILM_START = 1.25;
 const WIDTH = 1600;
@@ -53,7 +59,7 @@ const AUDIO_LENGTH = 3.4;
 const OUT = resolve('public/film', VERSION);
 const MANIFEST = resolve('lib/film-manifest.ts');
 
-/** Stills per second of film. 60 interpolates; 30 is the source rate. */
+/** Stills per second of film, interpolated from the source's 24 real frames. */
 function parseFps() {
   const args = process.argv.slice(2);
   const index = args.indexOf('--fps');
@@ -138,10 +144,12 @@ async function main() {
   const scratch = await mkdtemp(join(tmpdir(), 'd4drive-frames-'));
   try {
     console.log(`\nExtracting frames from ${FILM_START}s of ${input} at ${fps} a second`);
-    // Interpolate on the source's own frames before scaling, so the motion
-    // search works on full detail. mci + aobmc + bidirectional search is the
-    // slow, clean mode: a few minutes for the nine-second film.
-    const interpolate = fps === 30 ? '' : `minterpolate=fps=${fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,`;
+    // `decimate` first: drop the pulldown repeat in every five source frames,
+    // leaving the film's real 24 a second (see v3 above). Then interpolate on
+    // those, before scaling, so the motion search works on full detail.
+    // mci + aobmc + bidirectional search is the slow, clean mode: a few
+    // minutes for the nine-second film.
+    const interpolate = `decimate=cycle=5,minterpolate=fps=${fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1,`;
     await run(
       ffmpegPath,
       ['-v', 'error', '-ss', String(FILM_START), '-i', input, '-an', '-vf', `${interpolate}scale=1920:1080:flags=lanczos`, '-q:v', '1', '-qmin', '1', join(scratch, 'f%03d.jpg')],

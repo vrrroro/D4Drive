@@ -1,11 +1,11 @@
 'use client';
 
-import { animate, useMotionValue, useScroll, useSpring } from 'motion/react';
+import { useScroll, useSpring } from 'motion/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BootLoader } from './BootLoader';
 import { FilmContext, usePrefersReducedMotion } from './FilmContext';
 import { FilmStage } from './FilmStage';
-import { APPEAR_ENTRANCE, BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING } from './constants';
+import { BOOT_MAX_MS, BOOT_MIN_MS, ENTRANCE_SEEN_KEY, PROGRESS_SPRING } from './constants';
 import { filmPhase } from './timeline';
 
 /**
@@ -22,8 +22,6 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
   const trackRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
-  // The film's own fade-in in the hero's gap, once the hero has arrived (time, not scroll).
-  const entrance = useMotionValue(0);
 
   const { scrollYProgress } = useScroll({ target: trackRef, offset: ['start start', 'end end'] });
   const progress = useSpring(scrollYProgress, PROGRESS_SPRING);
@@ -90,12 +88,6 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
   }, [progress, reduced]);
 
   const ready = reduced || loaderGone;
-
-  useEffect(() => {
-    if (!ready || reduced) return undefined;
-    const controls = animate(entrance, 1, APPEAR_ENTRANCE);
-    return () => controls.stop();
-  }, [ready, reduced, entrance]);
   const value = useMemo(() => ({ progress, ready, reduced }), [progress, ready, reduced]);
 
   return (
@@ -110,7 +102,7 @@ export function FilmStory({ children, label }: { children: ReactNode; label: str
       >
         <div ref={stageRef} className="film-stage">
           {!reduced && (
-            <FilmStage progress={progress} entrance={entrance} stageRef={stageRef} onBootProgress={handleBoot} />
+            <FilmStage progress={progress} stageRef={stageRef} onBootProgress={handleBoot} />
           )}
           <div className="film-layer">{children}</div>
         </div>

@@ -33,17 +33,19 @@ function Line({
 }
 
 /**
- * The landing's opening frame: the slogan at the top, the whole wordmark at
- * the bottom, and a blank band between them.
+ * The landing's opening frame: the slogan at the top left, the whole
+ * wordmark at the bottom right, and blank grey between them.
  *
- * The film fades in out of that band by itself (drawn by FilmStage), and as
- * the visitor scrolls it opens to the whole screen. Its edges push the type
- * out of the way: the slogan up, the wordmark down (`--hero-up`,
- * `--hero-down`, written by FilmStage), transform only.
+ * The first scroll blooms the film out of that grey (drawn by FilmStage)
+ * until it fills the screen, pushing the type out of the way: the slogan up,
+ * the wordmark down (`--hero-up`, `--hero-down`, written by FilmStage),
+ * transform only.
+ *
+ * The wordmark is already in place when the page opens: the boot loader
+ * fills the same letters, at the same spot, from grey to ink, and fades off
+ * them.
  */
 export function FilmHero({ images }: { images: string[] }) {
-  const { ready } = useFilm();
-
   return (
     <div data-chapter="hero" className="film-chapter film-hero absolute inset-0">
       <div className="hero-slogan" data-hero-slogan>
@@ -62,7 +64,7 @@ export function FilmHero({ images }: { images: string[] }) {
 
       <div className="hero-base">
         <div className="hero-wordmark" data-hero-wordmark>
-          <Wordmark text="D4Drive" images={images} play={ready} delay={0.8} className="pointer-events-auto text-[var(--ink)]" />
+          <Wordmark text="D4Drive" images={images} className="pointer-events-auto text-[var(--ink)]" />
         </div>
       </div>
     </div>
