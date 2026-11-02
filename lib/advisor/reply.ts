@@ -44,9 +44,13 @@ export function numbersIn(value: unknown, into: Set<number> = new Set()): Set<nu
   return into;
 }
 
-/** Does a draft talk about specific cars or prices (so it must rest on a search)? */
+/**
+ * Does a draft talk about specific cars or prices (so it must rest on a search)?
+ * "Per day" and "a day" count only after a number: a live run's greeting asked
+ * "do you have a budget per day?", and was sent back twice as if it quoted a price.
+ */
 export function soundsFactual(reply: string): boolean {
-  return /₹|\b\d+\s*seats?\b|\bper day\b|\ba day\b/i.test(reply);
+  return /₹|\b\d+\s*seats?\b|\d[\d,]*(?:\.\d+)?\s*(?:rupees\s*|rs\.?\s*)?(?:per|a) day\b/i.test(reply);
 }
 
 const COUNT = '(?:\\d+|two|three|four|five|six|seven|eight|nine)';

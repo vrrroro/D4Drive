@@ -9,6 +9,8 @@ its smoke fades into the sign-in panel. Every other page follows the same
 editorial system: Fraunces at poster scale, a condensed wordmark cropped by the
 page, red-pen notes, and full-bleed panels dealt in like cards.
 
+**Live:** https://d4drive-omega.vercel.app (see "Hosting" below).
+
 ---
 
 ## Stack
@@ -92,12 +94,30 @@ cached forever. The fleet photographs rebuild with `scripts/fleet-photos/`
 | `npm run lint:copy` | Fails on em-dashes and en-dashes in user-visible strings |
 | `npm run build:assets` | Transcodes the hero film and extracts poster stills |
 | `npm run build:frames` | Cuts the film into scrubbed stills and writes `lib/film-manifest.ts` |
-| `npm run db:setup` | Creates the database, loads schema, routines and seed from `.env` |
+| `npm run db:setup` | Creates the database, loads schema, routines and seed from `.env` (`-- --env <file>` for another, such as `.env.cloud`) |
 | `npm run build:erd` | Redraws `docs/erd.svg` and `public/erd.svg` from the schema |
 | `npm run test` | Unit tests; the MySQL tests skip unless `DB_HOST` and `DB_NAME` are set |
 | `npm run test:db` | Same, with `.env` loaded, so the double-booking and refresh-rotation tests run |
 | `npm run smoke` | Browser smoke test against a running server (see `scripts/smoke.mjs`) |
 | `npm run check:leaks` | Hostile requests against a running server; fails if any response leaks internals |
+
+## Hosting
+
+The live site runs on Vercel (functions in `bom1`, Mumbai), with the database on
+Aiven's free MySQL 8.4 (Bengaluru) and the car advisor on Ollama Cloud
+(`beam`, the free model with tool calls).
+
+1. Create the Aiven MySQL service, save its CA certificate as `aiven-ca.pem`,
+   and fill a `.env.cloud` from `.env.example` (`DB_SSL_CA_FILE=aiven-ca.pem`,
+   `OLLAMA_HOST=https://ollama.com`, `OLLAMA_MODEL=beam`, `OLLAMA_API_KEY`).
+   Git ignores both files.
+2. `npm run db:setup -- --env .env.cloud` loads the schema, routines and seed.
+3. In Vercel, set the same variables for Production, with `DB_SSL_CA` holding
+   the certificate's text in place of `DB_SSL_CA_FILE`, then
+   `npx vercel deploy --prod`.
+
+Aiven's free plan powers the service off after a long idle spell; power it on
+again in the Aiven console.
 
 ## Documentation
 

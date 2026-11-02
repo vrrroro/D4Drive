@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanReply, completeSentences, givesPartySize, mentionedCars, unknownCars } from '../lib/advisor/reply.ts';
+import { cleanReply, completeSentences, givesPartySize, mentionedCars, soundsFactual, unknownCars } from '../lib/advisor/reply.ts';
 import {
   ADVISOR_TOOLS,
   MAX_TURNS,
@@ -140,6 +140,14 @@ test('a message that says how many are coming is spotted, so the advisor does no
   assert.ok(givesPartySize('need a 7 seater'));
   assert.ok(!givesPartySize('Something electric for this weekend'));
   assert.ok(!givesPartySize('Under ₹2,500 a day, for 3 days'));
+});
+
+test('a price or seat count needs a search first, a question about a budget does not', () => {
+  assert.equal(soundsFactual('The Swift is ₹1,650 a day.'), true);
+  assert.equal(soundsFactual('It costs 1650 per day.'), true);
+  assert.equal(soundsFactual('It has 7 seats.'), true);
+  assert.equal(soundsFactual('Hi! How many people, and do you have a budget per day?'), false);
+  assert.equal(soundsFactual('How long do you need it, a day or a week?'), false);
 });
 
 test('a draft is streamed a finished sentence at a time', () => {

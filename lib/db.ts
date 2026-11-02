@@ -23,6 +23,16 @@ function required(name: string): string {
   return value;
 }
 
+/**
+ * TLS for a hosted MySQL (Aiven requires it). DB_SSL_CA holds the provider's
+ * CA certificate in PEM; a value pasted as one line with literal \n works
+ * too. Unset for a local server, which then connects in plain text.
+ */
+function ssl(): { ca: string; rejectUnauthorized: true } | undefined {
+  const ca = process.env.DB_SSL_CA;
+  return ca ? { ca: ca.replace(/\\n/g, '\n'), rejectUnauthorized: true } : undefined;
+}
+
 function createPool(): Pool {
   return mysql.createPool({
     host: required('DB_HOST'),
@@ -41,6 +51,7 @@ function createPool(): Pool {
     // Hard off. Multiple statements per call turns any injection slip into a
     // full arbitrary-SQL execution rather than a single-query problem.
     multipleStatements: false,
+    ssl: ssl(),
   });
 }
 
