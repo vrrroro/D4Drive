@@ -22,6 +22,10 @@ import { advisorRequestSchema, type AdvisorEvent } from '@/lib/advisor/schema';
  * status is 200, so a later failure travels as an `error` event.
  */
 
+// A reply can take several model rounds; on Vercel a function stops at its
+// maxDuration, so allow a minute.
+export const maxDuration = 60;
+
 const LIMIT = 20;
 const WINDOW_MS = 10 * 60 * 1000;
 

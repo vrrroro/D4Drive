@@ -1,8 +1,8 @@
 # Project Status and Milestones
 
-**Current phase:** 20, the admin's header and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`); the stack waits on the owner's review
-**Status:** Complete in code; Phases 12 to 20 verified
-**Last updated:** 2026-10-21
+**Current phase:** 21, hosting the site online (live 2026-11-02 at https://d4drive-omega.vercel.app, branch `feature/cloud-hosting`)
+**Status:** Live; Phases 12 to 20 merged to `main` (PRs #23 to #32)
+**Last updated:** 2026-11-02
 
 Work only the active phase. Tick boxes as sub-tasks land, in the same commit as
 the work. When a phase is finished, set the next one as current here.
@@ -33,8 +33,26 @@ tests run against MySQL), `npm test` without a database (27 pass, 2 skipped),
 | 11 | 18: The AI car advisor | Done in code 2026-10-21, PR #30 |
 | 12 | 19: A faster car advisor | Done in code 2026-10-21, PR #31 |
 | 13 | 20: The admin's header, and where the advisor appears | Done in code 2026-10-21, PR #32 |
+| 14 | 21: Hosting the site online | Live 2026-11-02, branch `feature/cloud-hosting` |
 
 ---
+
+### Phase 21: Hosting the site online (live 2026-11-02, branch `feature/cloud-hosting`)
+
+The owner's request of 2026-11-02: host it online so it works without the
+laptop. Chosen: Vercel for the site, Aiven for MySQL, Ollama Cloud for the
+advisor.
+
+- [x] Database: Aiven free MySQL 8.4 (`mysql-943134d`, DigitalOcean Bengaluru), TLS required and verified against the project CA; `npm run db:setup -- --env .env.cloud` loaded all 8 tables, 3 functions, 3 procedures, 5 triggers and the seed
+- [x] `lib/db.ts` and `scripts/db-setup.mjs` connect over TLS when `DB_SSL_CA` / `DB_SSL_CA_FILE` is set
+- [x] Site: Vercel project `d4drive`, functions pinned to `bom1` (Mumbai, nearest the database) in `vercel.json`; `.vercelignore` keeps `.env*`, `*.pem` and the film master out of uploads; 18 production variables set as sensitive
+- [x] Advisor: Ollama Cloud with `OLLAMA_API_KEY`; `beam` is the only free model that answers (every other cloud model returned 402) and it supports tool calls; `think: false` for the cloud model, since its thinking used up `num_predict` and left an empty reply about one time in three; no warm-up call when a key is set; `maxDuration = 60` on the route
+- [x] `soundsFactual` no longer counts "per day" or "a day" without a number, which sent a greeting ("a budget per day?") back twice and ended in the empty-reply fallback; new unit test
+- [x] Verification: `lint`, `lint:copy`, `typecheck`, `npm test` (59 pass, 5 skip); live: `/`, `/cars`, `/cars/6`, `/login`, `/api/cars`, availability 200; the advisor in the page and through `/api/advisor` (greeting about 2 s, searches 5 to 8 s, answers match the Aiven rows)
+- [ ] Signed-in flows on the live site (booking, invoice PDF, cancel, admin pages) to be checked by the owner signing in
+- [ ] The seeded passwords are in the public repo, so anyone can sign in to the live site as the seeded admin: change them on the hosted database (owner's call)
+- [ ] Aiven's free plan powers the service off after a long idle spell; it must be powered on again in the console. Booking dates in the seed are relative to the day it loads (2026-11-02 on Aiven)
+- [ ] Optional: connect the GitHub repo in Vercel so every push to `main` deploys
 
 ### Phase 20: The admin's header, and where the advisor appears (done in code 2026-10-21, branch `feature/admin-hud`)
 

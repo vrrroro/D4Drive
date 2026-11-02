@@ -30,12 +30,20 @@ import { runTool } from '@/lib/advisor/tools';
  * on; a sentence that fails a check stops the draft, withdraws what was
  * shown, and sends the model back with a correction.
  *
- * Nothing leaves the server: no API key, no third party, no quota. The
- * browser talks only to /api/advisor (the page's CSP keeps connect-src
- * 'self'), and this file talks only to Ollama on OLLAMA_HOST.
+ * The browser talks only to /api/advisor (the page's CSP keeps connect-src
+ * 'self'), and this file talks only to Ollama on OLLAMA_HOST: a local
+ * Ollama by default, or Ollama Cloud (OLLAMA_HOST=https://ollama.com with
+ * OLLAMA_API_KEY) where the site is hosted without one, as on Vercel.
  */
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+
+/** Set only for Ollama Cloud; a local Ollama needs no key. */
+const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY || '';
+
+const HEADERS: Record<string, string> = OLLAMA_API_KEY
+  ? { 'Content-Type': 'application/json', Authorization: `Bearer ${OLLAMA_API_KEY}` }
+  : { 'Content-Type': 'application/json' };
 
 /** Small enough for a laptop CPU, and reliable at tool calls. `ollama pull qwen2.5:3b`. */
 export const ADVISOR_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
@@ -102,8 +110,16 @@ interface OllamaChunk {
   error?: string;
 }
 
+/**
+ * Ollama Cloud's free model thinks before it answers, and the thinking
+ * counts against num_predict: often enough nothing was left for the reply.
+ * The tools and the server's checks do the reasoning, so it is turned off.
+ * A local model gets no `think` field (qwen2.5 does not think).
+ */
+const THINK = OLLAMA_API_KEY ? { think: false } : {};
+
 function requestBody(messages: OllamaMessage[], options: Record<string, number> = OPTIONS) {
-  return JSON.stringify({ model: ADVISOR_MODEL, messages, tools: ADVISOR_TOOLS, stream: true, keep_alive: KEEP_ALIVE, options });
+  return JSON.stringify({ model: ADVISOR_MODEL, messages, tools: ADVISOR_TOOLS, stream: true, keep_alive: KEEP_ALIVE, options, ...THINK });
 }
 
 /** A failed fetch or read, as the route should report it. */
@@ -138,7 +154,7 @@ async function chat(
   try {
     response = await fetch(`${OLLAMA_HOST}/api/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: HEADERS,
       body: requestBody(messages),
       signal: AbortSignal.any(signals),
     });
@@ -341,11 +357,13 @@ export async function askAdvisor(history: AdvisorTurn[], { now = new Date(), sig
  * site runs and the advisor says it is off.
  */
 export async function warmAdvisor(): Promise<void> {
+  // Ollama Cloud keeps its models loaded; a warm-up there would only spend quota.
+  if (OLLAMA_API_KEY) return;
   const started = Date.now();
   try {
     const response = await fetch(`${OLLAMA_HOST}/api/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: HEADERS,
       // The same system message, tools and options a visitor's request
       // starts with, so Ollama can reuse what it read; one token of answer.
       body: requestBody(

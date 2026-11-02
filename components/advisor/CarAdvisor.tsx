@@ -288,7 +288,7 @@ export function CarAdvisor() {
                 </button>
               </div>
               <p className="mt-3 font-body text-[0.7rem] leading-snug text-[var(--muted)]">
-                Answered by an AI model running on our own server, from the live fleet. It can make mistakes: the car page has the final word.
+                Answered by an AI model from the live fleet. It can make mistakes: the car page has the final word.
               </p>
             </form>
           </motion.div>

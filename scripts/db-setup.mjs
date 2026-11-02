@@ -74,7 +74,10 @@ function splitStatements(sql) {
 }
 
 async function main() {
-  const env = loadEnv(await readFile('.env', 'utf8'));
+  // `npm run db:setup -- --env .env.cloud` loads a hosted database instead.
+  const flag = process.argv.indexOf('--env');
+  const envFile = flag === -1 ? '.env' : process.argv[flag + 1];
+  const env = loadEnv(await readFile(envFile, 'utf8'));
   const database = env.DB_NAME ?? 'd4drive';
 
   const config = {
@@ -83,6 +86,11 @@ async function main() {
     user: env.DB_USER ?? 'root',
     password: env.DB_PASSWORD ?? '',
     multipleStatements: false,
+    // A hosted MySQL such as Aiven requires TLS: DB_SSL_CA_FILE names its CA
+    // certificate (a .pem file, which .gitignore keeps out of the repo).
+    ssl: env.DB_SSL_CA_FILE
+      ? { ca: await readFile(env.DB_SSL_CA_FILE, 'utf8'), rejectUnauthorized: true }
+      : undefined,
   };
 
   let connection;
@@ -90,7 +98,7 @@ async function main() {
     connection = await mysql.createConnection(config);
   } catch (error) {
     if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.error(`\nMySQL refused the credentials in .env for user "${config.user}".`);
+      console.error(`\nMySQL refused the credentials in ${envFile} for user "${config.user}".`);
       console.error('The server is running; the username or password is wrong.');
       console.error('Fix DB_USER and DB_PASSWORD in .env, then run this again.\n');
     } else if (error.code === 'ECONNREFUSED') {

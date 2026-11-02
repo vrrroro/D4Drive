@@ -1,0 +1,16 @@
+# Never upload local secrets, the owner's film master or agent notes.
+.env
+.env.*
+*.pem
+*.key
+D4DRIVEMAIN.mp4
+CLAUDE.md
+AGENTS.md
+
+# Not needed to build or run the site.
+smoke-shots/
+reference/
+docs/
+dist/
+tests/
+scripts/fleet-photos/

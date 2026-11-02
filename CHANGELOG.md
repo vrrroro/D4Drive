@@ -7,6 +7,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Entries are grouped by session date, newest first. Every session adds one.
 
+### 2026-11-02: Phase 21, the site online (branch `feature/cloud-hosting`)
+
+Live at https://d4drive-omega.vercel.app: Vercel for the site, Aiven free
+MySQL 8.4 for the database, Ollama Cloud for the advisor.
+
+#### Added
+- `vercel.json` (functions in `bom1`, Mumbai, next to the Bengaluru database)
+  and `.vercelignore` (no `.env*`, `*.pem`, film master or agent notes in uploads).
+- TLS to a hosted MySQL: `DB_SSL_CA` in `lib/db.ts`, `DB_SSL_CA_FILE` and
+  `--env <file>` in `scripts/db-setup.mjs`.
+- `OLLAMA_API_KEY` for Ollama Cloud: sent as a bearer token, skips the
+  warm-up, and sets `think: false`. `maxDuration = 60` on `/api/advisor`.
+
+#### Fixed
+- `soundsFactual` flagged "a budget per day?" as a price, so a greeting was
+  sent back twice and ended as "Sorry, I lost my train of thought". "Per day"
+  and "a day" now count only after a number. Unit test added.
+
+#### Changed
+- The advisor's small print no longer says the model runs on our own server.
+
 ### 2026-10-25: the AI advisor deck's wording (branch `feature/admin-hud`)
 
 #### Changed
